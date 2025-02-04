@@ -10,6 +10,14 @@
 // Custom definitions may go here
 // Include common definitions from above.
 apply from: '../build.common.gradle'
+
+repositories {
+    mavenCentral()
+    google() // Needed for androidx
+    maven { url = 'https://maven.brott.dev/' }
+    maven { url 'https://s01.oss.sonatype.org/content/repositories/snapshots/'}
+}
+
 dependencies {
     /*
      * Other Modules
@@ -19,6 +27,11 @@ dependencies {
     implementation project(':RobotCore')
     implementation project(':FtcCommon')
     implementation project(':Vision')
-
+    implementation('com.acmerobotics.dashboard:dashboard:0.4.15') {
+        exclude group: 'org.firstinspires.ftc'
+    }
+    implementation('com.w8wjb.ftc:ftc-neodriver:1.0-SNAPSHOT') {
+        exclude group: 'org.firstinspires.ftc'
+    }
     implementation 'org.firstinspires.ftc:gameAssets-FreightFrenzy:1.0.0'
 }
