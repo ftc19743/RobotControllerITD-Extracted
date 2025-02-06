@@ -48,6 +48,9 @@ public class Hang {
     public static float HOOKGRABBER_RELEASE = 1f;
     public static float HOOKGRABBER_PRE_RELEASE = 0.79f;
     public static int HOOKS_RELEASED= 2067;
+    public static int HANG_STOWED_ON_WAY_UP= 2500;
+    public static int HOOK_ARM_MOVED_ON_WAY_UP = 4500;
+
     public static long HANG_PHASE_2_ENGAGE_PAUSE = 1500;
     public static int HANG_PHASE_2_SLACK_PAUSE = 500;
     public static int SLACK_LEVEL = 1000;
@@ -181,10 +184,12 @@ public class Hang {
     }
 
     public void joystickDriveV2(float x, float y) {
+        boolean details = false;
         if (hang_Left.getCurrentPosition()> (STRINGS_TENSIONED-startString)) {
             stringsTensioned = true;
         }
-        if (Math.abs(y)> JOYSTICK_Y_DEADBAND && x > JOYSTICK_X_DEADBAND) { // actively moving Left side only
+        if (Math.abs(y)> JOYSTICK_Y_DEADBAND && x > JOYSTICK_X_DEADBAND) {// actively moving Left side only
+            if (details) teamUtil.log("Joystick Drive V2 moving left side");
             if (!hangingR) { // do nothing if we were already hanging
                 hangingR = true; // put right motor into hanging mode
                 hang_Right.setTargetPosition(hang_Right.getCurrentPosition());
@@ -195,6 +200,8 @@ public class Hang {
             hang_Left.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             hang_Left.setVelocity(HANG_VELOCITY * y * -1 );
         } else if (Math.abs(y)> JOYSTICK_Y_DEADBAND && x < -JOYSTICK_X_DEADBAND) { // actively moving Right side only
+            if (details) teamUtil.log("Joystick Drive V2 moving right side");
+
             if (!hangingL) { // do nothing if we were already hanging
                 hangingL = true; // put left motor into hanging mode
                 hang_Left.setTargetPosition(hang_Left.getCurrentPosition());
@@ -205,6 +212,8 @@ public class Hang {
             hang_Right.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             hang_Right.setVelocity(HANG_VELOCITY * y * -1 );
         } else if (Math.abs(y)> JOYSTICK_Y_DEADBAND) { // Actively moving both motors
+            if (details) teamUtil.log("Joystick Drive V2 moving both sides");
+
             hangingL = false;
             hang_Left.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             if(y<-0.8){
@@ -224,6 +233,8 @@ public class Hang {
 
             }
         } else { // Joystick neutral
+            if (details) teamUtil.log("Joystick Drive V2 Neutral");
+
             if (!hangingL) { // do nothing if we were already hanging
                 hangingL = true; // put left motor into hanging mode
                 hang_Left.setTargetPosition(hang_Left.getCurrentPosition());

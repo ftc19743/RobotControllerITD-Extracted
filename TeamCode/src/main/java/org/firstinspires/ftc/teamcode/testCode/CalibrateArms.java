@@ -331,8 +331,8 @@ public class CalibrateArms extends LinearOpMode {
             intake.retractAll(false,5000);
         }
         if (gp1.wasXPressed()) {
-            //intake.grabberReady();
-            intake.retractAll(true, 5000);
+            intake.grabberReady();
+            //intake.retractAll(true, 5000);
         }
         if (gp1.wasAPressed()) {
             //intake.goToSampleV2(5000);

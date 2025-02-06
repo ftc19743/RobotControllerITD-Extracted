@@ -286,10 +286,10 @@ public class Intake {
             telemetry.addData("Camera", "Ready");
             telemetry.update();
         }
-        sampleDetector.configureCam(arduPortal, true, OpenCVSampleDetector.AEPRIORITY, 1, OpenCVSampleDetector.GAIN, OpenCVSampleDetector.WHITEBALANCEAUTO, OpenCVSampleDetector.TEMPERATURE, OpenCVSampleDetector.AFOCUS, OpenCVSampleDetector.FOCUSLENGTH);
+        sampleDetector.configureCam(arduPortal, true, OpenCVSampleDetectorV2.AEPRIORITY, 1, OpenCVSampleDetectorV2.GAIN, OpenCVSampleDetectorV2.WHITEBALANCEAUTO, OpenCVSampleDetectorV2.TEMPERATURE, OpenCVSampleDetectorV2.AFOCUS, OpenCVSampleDetectorV2.FOCUSLENGTH);
         // TODO: Do we need a pause here?
         teamUtil.pause(2000);
-        sampleDetector.configureCam(arduPortal, OpenCVSampleDetector.APEXPOSURE, OpenCVSampleDetector.AEPRIORITY, OpenCVSampleDetector.EXPOSURE, OpenCVSampleDetector.GAIN, OpenCVSampleDetector.WHITEBALANCEAUTO, OpenCVSampleDetector.TEMPERATURE, OpenCVSampleDetector.AFOCUS, OpenCVSampleDetector.FOCUSLENGTH);
+        sampleDetector.configureCam(arduPortal, OpenCVSampleDetectorV2.APEXPOSURE, OpenCVSampleDetectorV2.AEPRIORITY, OpenCVSampleDetectorV2.EXPOSURE, OpenCVSampleDetectorV2.GAIN, OpenCVSampleDetectorV2.WHITEBALANCEAUTO, OpenCVSampleDetectorV2.TEMPERATURE, OpenCVSampleDetectorV2.AFOCUS, OpenCVSampleDetectorV2.FOCUSLENGTH);
         stopCVPipeline();
         teamUtil.log("Initializing CV in Intake - Finished");
     }
@@ -686,10 +686,10 @@ public class Intake {
 
 
     public void setSeekSignal() {
-        if(OpenCVSampleDetector.targetColor== OpenCVSampleDetector.TargetColor.BLUE){
+        if(OpenCVSampleDetectorV2.targetColor== OpenCVSampleDetectorV2.TargetColor.BLUE){
             teamUtil.theBlinkin.setSignal(Blinkin.Signals.BLUE_PATH_1);
         }
-        else if(OpenCVSampleDetector.targetColor== OpenCVSampleDetector.TargetColor.RED){
+        else if(OpenCVSampleDetectorV2.targetColor== OpenCVSampleDetectorV2.TargetColor.RED){
             teamUtil.theBlinkin.setSignal(Blinkin.Signals.RED);
         }
         else{
@@ -1075,14 +1075,14 @@ public class Intake {
     public boolean inGrabZone(double xOffset, double yOffset){
         boolean details = false;
         yOffset *= -1;
-        yOffset += OpenCVSampleDetector.CAMERA_OFFSET_Y;
-        xOffset += OpenCVSampleDetector.CAMERA_OFFSET_X;
+        yOffset += OpenCVSampleDetectorV2.CAMERA_OFFSET_Y;
+        xOffset += OpenCVSampleDetectorV2.CAMERA_OFFSET_X;
         if (details) {
             teamUtil.log("Camera Offset: " + xOffset +" ," + yOffset);
          teamUtil.log("dist from center: " + Math.sqrt(xOffset*xOffset+yOffset*yOffset));
-            teamUtil.log("in zone?: " + (Math.sqrt(xOffset*xOffset+yOffset*yOffset)<OpenCVSampleDetector.GOLDILOCKS_ZONE_RADIUS));
+            teamUtil.log("in zone?: " + (Math.sqrt(xOffset*xOffset+yOffset*yOffset)<OpenCVSampleDetectorV2.GOLDILOCKS_ZONE_RADIUS));
         }
-        return (Math.sqrt(xOffset*xOffset+yOffset*yOffset)<OpenCVSampleDetector.GOLDILOCKS_ZONE_RADIUS);
+        return (Math.sqrt(xOffset*xOffset+yOffset*yOffset)<OpenCVSampleDetectorV2.GOLDILOCKS_ZONE_RADIUS);
 
     }
 

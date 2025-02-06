@@ -2,7 +2,9 @@ package org.firstinspires.ftc.teamcode.assemblies;
 
 import static org.firstinspires.ftc.teamcode.assemblies.Intake.EXTENDER_HOLD_RETRACT_VELOCITY;
 
+import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -69,6 +71,9 @@ public class Teleop extends LinearOpMode {
 
 
     public void runOpMode() {
+        FtcDashboard dashboard = FtcDashboard.getInstance();
+        //FtcDashboard.setDrawDefaultField(false); // enable to eliminate field drawing
+        telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry()); // write telemetry to Driver Station and Dashboard
         teamUtil.init(this);
 
 
@@ -119,6 +124,7 @@ public class Teleop extends LinearOpMode {
         robot.intake.extender.setVelocity(EXTENDER_HOLD_RETRACT_VELOCITY);
         robot.intake.setTargetColor(OpenCVSampleDetectorV2.TargetColor.YELLOW);
         boolean liftDropped = false;
+
         while (opModeIsActive()){
             driverGamepad.loop();
             armsGamepad.loop();
@@ -249,9 +255,12 @@ public class Teleop extends LinearOpMode {
 
             if(hangManualControl){
 
+
                 robot.drive.stopMotors();
                 robot.hang.joystickDriveV2(gamepad1.left_stick_x, gamepad1.left_stick_y);
                 robot.dropLiftWhenNeeded();
+                robot.stowHangWhenNeeded();
+                robot.moveHookArmWhenNeeded();
                 //break out
                 if(driverGamepad.wasHomePressed()){
                     hangManualControl=false;
@@ -274,6 +283,8 @@ public class Teleop extends LinearOpMode {
 
             robot.outputTelemetry();
             robot.drive.odo.update();
+            telemetry.addData("Left Hang Velocity", robot.hang.hang_Left.getVelocity());
+            telemetry.addData("Right Hang Velocity", robot.hang.hang_Right.getVelocity());
             telemetry.addLine("Low Bucket Toggled: " + lowBucketToggle);
             telemetry.addLine("Hang Manual: " + hangManualControl);
             telemetry.update();

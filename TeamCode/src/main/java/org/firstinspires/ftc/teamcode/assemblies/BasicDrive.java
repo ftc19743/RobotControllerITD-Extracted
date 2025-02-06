@@ -242,7 +242,8 @@ public class BasicDrive {
     }
 
     public void stopMotors() {
-        teamUtil.log("Stopping Motors");
+        boolean details = false;
+        if (details) teamUtil.log("Stopping Motors");
         lastVelocity = 0;
         fl.setVelocity(0);
         fr.setVelocity(0);

@@ -171,8 +171,8 @@ public class Robot {
     static public int F27_CYCLE_PICKUP_VELOCITY = 300;
     static public int F28_CYCLE_PICKUP_PAUSE = 200;
 
-    static public long DROP_SAMPLE_OUT_BACK_WITH_FLIPPER_RESET_1 = 350;
-    static public long DROP_SAMPLE_OUT_BACK_WITH_FLIPPER_RESET_2 = 250;
+    static public long DROP_SAMPLE_OUT_BACK_WITH_FLIPPER_RESET_1 = 500;
+    static public long DROP_SAMPLE_OUT_BACK_WITH_FLIPPER_RESET_2 = 300;
 
     public AtomicBoolean autoUnloadNoWaitDone = new AtomicBoolean(false);
 
@@ -524,6 +524,7 @@ public class Robot {
         hang.hang_Right.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         hang.hang_Left.setVelocity(Hang.HANG_VELOCITY);
         hang.hang_Right.setVelocity(Hang.HANG_VELOCITY);
+        teamUtil.log("Both Joystick Drive Booleans HANGINGL and HANGINGR set true in hang Phase 2");
         hang.hangingL = true; hang.hangingR = true;// fake out control code to let it go up automatically until someone touches the joystick
     }
 
@@ -554,6 +555,25 @@ public class Robot {
         }
 
     }
+    boolean hangStowed = false;
+    public void stowHangWhenNeeded() {
+        if (hang.hang_Left.getCurrentPosition() > Hang.HANG_STOWED_ON_WAY_UP && !hangStowed) {
+            hangStowed = true;
+            hang.stowHang();
+        }
+
+    }
+
+    boolean hookArmMoved = false;
+    public void moveHookArmWhenNeeded() {
+        if (hang.hang_Left.getCurrentPosition() > Hang.HOOK_ARM_MOVED_ON_WAY_UP && !hookArmMoved) {
+            hookArmMoved = true;
+            hang.deployHookGrabber();
+        }
+
+    }
+
+
 
 
     public void goToSampleAndGrabAndLiftToBucket(boolean HighBucket){

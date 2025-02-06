@@ -55,7 +55,7 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
     static public double CAMERA_OFFSET_X = TARGET_X-WIDTH/2f;
     static public int MIN_AREA_THRESHOLD = 2000;
     static public int MAX_AREA_THRESHOLD = 15000; // was 13000 for meet #2 build
-    static public int GOLDILOCKS_ZONE_RADIUS = 160;
+    static public int GOLDILOCKS_ZONE_RADIUS = 350;
 
     public static float CAM_ANGLE_ADJUST_NEG_Y = .82f;
     public static float CAM_ANGLE_ADJUST_POS_Y = .84f;
@@ -92,6 +92,8 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
     public static double LONG_LENGTH_THRESHOLD = 10;
     public static double SHORT_LENGTH_TARGET = 73;
     public static double SHORT_LENGTH_THRESHOLD = 8;
+
+    public static double adjYCoefficient = 0.284;
 
 
 
@@ -531,6 +533,8 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
             imgData.rectCenterYOffset = -1 * ((int) foundRects[closestAreaSelectionNum].center.y - TARGET_Y);
             imgData.adjRectCenterXOffset=  adjustXCenter((int)foundRects[closestAreaSelectionNum].center.x) - TARGET_X;
             imgData.adjRectCenterYOffset= -1 * (adjustYCenter((int)foundRects[closestAreaSelectionNum].center.y) - TARGET_Y);
+            imgData.adjRectCenterYOffset = adjYForRotation(imgData.adjRectCenterYOffset,imgData.rectAngle);
+
             imgData.rectArea = (int) foundRects[closestAreaSelectionNum].size.area();
             imgData.captureTime = captureTimeNanos/1000000;
             imgData.processingTime = System.currentTimeMillis() - startProcessingTime;
@@ -564,6 +568,10 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
         context.contours = contours;
         context.foundOne = foundOne.get();
         return context;
+    }
+
+    public int adjYForRotation(int y, int angle){
+        return (int) (y-adjYCoefficient*(double) ( 90-(Math.abs(90-angle) ) ));
     }
 
     public RotatedRect[] findRectsInPolys(List <MatOfPoint> contours) {
