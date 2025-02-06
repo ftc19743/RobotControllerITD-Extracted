@@ -371,6 +371,59 @@ public class Robot {
     }
 
 
+    public void AutoReadyToSeek(int sliderPos, int extenderPos) {
+        // get flipper/wrist in position and turn lights on
+        intake.goToSeekNoExtenders();
+        // move extender and flipper to specified positions
+        intake.axonSlider.runToEncoderPositionNoWait(sliderPos, true, 1500); // get slider going
+        intake.extendersToPositionMaxVelo(extenderPos,1500);
+    }
+
+    public void AutoReadyToSeekNoWait(int sliderPos, int extenderPos) {
+        teamUtil.log("Launching Thread to AutoReadyToSeek");
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                AutoReadyToSeek(sliderPos, extenderPos);
+            }
+        });
+        thread.start();
+    }
+
+    public void autoRetractAllNoWait(boolean unload, long timeOut) {
+        teamUtil.log("Launching Thread to retractAll");
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                intake.retractAll(unload, timeOut);
+            }
+        });
+        thread.start();
+    }
+
+    public void autoGrab () {
+        // Wait for robot to come to rest
+
+        // detect and grab sample and retract
+
+        // Temp code!
+        intake.lightsOff();
+        intake.retractAll(false, 1500);
+        intake.unloadV2(true);
+        output.dropSampleOutBack();
+    }
+    public void autograbNoWait() {
+        teamUtil.log("Launching Thread to autGrab");
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                autoGrab();
+            }
+        });
+        thread.start();
+    }
+
+
 
     //Collects all blocks using arms
     public void specimenCollectBlocksV2() {
@@ -428,7 +481,10 @@ public class Robot {
         teamUtil.pause(F17_PICKUP_1_PAUSE);
     }
 
-    public boolean specimenCycleV2(int cycle){
+    public int nextSliderPos = (int) AxonSlider.SLIDER_READY; // default value for a grab
+    public int nextExtenderPos = Intake.EXTENDER_AUTO_START_SEEK; // default value for a grab
+
+    public boolean specimenCycleV2(int cycle, boolean grabSample){
         outtake.outakearm.setPosition(Outtake.ARM_UP);
 
         BasicDrive.MIN_STRAFE_START_VELOCITY = 2000;
@@ -441,6 +497,7 @@ public class Robot {
                     @Override
                     public void action() {
                         outtake.outakewrist.setPosition(Outtake.WRIST_RELEASE);
+                        if (grabSample) AutoReadyToSeekNoWait(nextSliderPos, nextExtenderPos); // move intake out for the grab if needed
                     }
                 },F22_CYCLE_WRIST_CALLBACK,5000);
         outtake.deployArm();
@@ -449,6 +506,10 @@ public class Robot {
         drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY,F21_CYCLE_PLACE_SAMPLE_X,(cycle==1? F18_CYCLE_PLACE_SPECIMEN_1_Y :F18a_CYCLE_PLACE_SPECIMEN_Y)+(F20_CYCLE_SPECIMEN_Y_ADJUSTMENT*(cycle-1)),0,BasicDrive.MAX_VELOCITY, false, null,0,4000);
         drive.stopMotors();
         teamUtil.pause(F23_CYCLE_PLACE_SPECIMEN_PAUSE); // give it time to decelerate and coast to submersable
+
+        if (grabSample) {
+            autograbNoWait();
+        }
 
         //moves robot out of the way of the submersible
         drive.lastVelocity = BasicDrive.MAX_VELOCITY; // back up fast
@@ -473,7 +534,7 @@ public class Robot {
         specimenCollectBlocksV2();
         for(int i = 1; i<=cycles;i++){
             teamUtil.log("Auto V3 Specimen Cycle Number: " + i);
-            specimenCycleV2(i);
+            specimenCycleV2(i, i>2);
         }
         drive.stopMotors();
         return true;

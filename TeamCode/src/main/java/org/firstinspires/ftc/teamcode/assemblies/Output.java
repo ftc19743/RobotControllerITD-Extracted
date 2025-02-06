@@ -98,13 +98,12 @@ public class Output {
     }
 
     public void dropSampleOutBack(){
+        teamUtil.log("DropSampleOutBack");
         outputMoving.set(true);
         if(outputLiftAtBottom.get()){
             bucket.setPosition(BUCKET_DEPLOY_AT_BOTTOM);
-
         }else{
             bucket.setPosition(BUCKET_DEPLOY_AT_TOP);
-
         }
         teamUtil.pause(DROP_SAMPLE_TIME);
         if(outputLiftAtBottom.get()){

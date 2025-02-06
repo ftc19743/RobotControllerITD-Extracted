@@ -86,7 +86,7 @@ public class BasicDrive {
     static public double SPIN_DRIFT_DEGREES = 1; // Calibrated 11/2/24
     static public double SPIN_CRAWL_SPEED = 150; // Calibrated 11/2/24
     static public double SPIN_CRAWL_DEGREES = 10; // Calibrated 11/2/24 (could be more aggresive?)
-    static public boolean details = true;
+    static public boolean details = false;
     public double CMS_PER_INCH = 2.54;
     static public float STRAIGHT_HEADING_DECLINATION = 1f; // convert strafe encoder error into heading declination
     static public float STRAIGHT_MAX_DECLINATION = 27f; // don't veer off of straight more than this number of degrees
@@ -460,7 +460,7 @@ public class BasicDrive {
         // move based on a cruise, end, and max velocity, distance, and headings
         teamUtil.log("MoveCM cms:" + centimeters + " driveH:" + driveHeading + " robotH:" + robotHeading + " MaxV:" + maxVelocity + " EndV:" + endVelocity);
 
-        details = true;
+        details = details;
         MotorData data = new MotorData();
         getDriveMotorData(data);
 
@@ -849,7 +849,7 @@ public class BasicDrive {
         odo.update();
         double pos = odo.getPosX();
         while (Double.isNaN(pos)) {
-            teamUtil.log("Pinpoint returned Nan!");
+            teamUtil.log("ERROR ----------------------------------------------- Pinpoint returned NaN!");
             odo.update();
             pos = odo.getPosX();
         }
@@ -860,7 +860,7 @@ public class BasicDrive {
         odo.update();
         double pos = odo.getPosY();
         while (Double.isNaN(pos)) {
-            teamUtil.log("Pinpoint returned Nan!");
+            teamUtil.log("ERROR ----------------------------------------------- Pinpoint returned NaN!");
             odo.update();
             pos = odo.getPosY();
         }
@@ -904,7 +904,7 @@ public class BasicDrive {
         }
 
         teamUtil.log("straightHoldingStrafeEncoder target: " + straightTarget +  " Strafe target: " + strafeTarget + " robotH: " + robotHeading + " MaxV: " + maxVelocity + " EndV: " + endVelocity);
-        details = false; // default to class level details member instead of false
+        details = details; // default to class level details member instead of false
         long startTime = System.currentTimeMillis();
         long timeoutTime = startTime+timeout;
 
@@ -975,7 +975,7 @@ public class BasicDrive {
             odo.update();
             currentPos = odo.getPosX();
             if (Double.isNaN(currentPos)) {
-                teamUtil.log("Pinpoint returned Nan!");
+                teamUtil.log("ERROR ----------------------------------------------- Pinpoint returned NaN in Acc Phase");
                 stopMotors();
                 return false;
             }
@@ -1013,7 +1013,7 @@ public class BasicDrive {
             odo.update();
             currentPos = odo.getPosX();
             if (Double.isNaN(currentPos)) {
-                teamUtil.log("Pinpoint returned Nan!");
+                teamUtil.log("ERROR ----------------------------------------------- Pinpoint returned NaN in cruise phase");
                 stopMotors();
                 return false;
             }
@@ -1046,7 +1046,7 @@ public class BasicDrive {
                 odo.update();
                 currentPos = odo.getPosX();
                 if (Double.isNaN(currentPos)) {
-                    teamUtil.log("Pinpoint returned Nan!");
+                    teamUtil.log("ERROR ----------------------------------------------- Pinpoint returned NaN in decel phase");
                     stopMotors();
                     return false;
                 }
@@ -1076,7 +1076,7 @@ public class BasicDrive {
                     odo.update();
                     currentPos = odo.getPosX();
                     if (Double.isNaN(currentPos)) {
-                        teamUtil.log("Pinpoint returned Nan!");
+                        teamUtil.log("ERROR ----------------------------------------------- Pinpoint returned NaN during power braking");
                         stopMotors();
                         return false;
                     }
@@ -1104,7 +1104,7 @@ public class BasicDrive {
                     odo.update();
                     currentPos = odo.getPosX();
                     if (Double.isNaN(currentPos)) {
-                        teamUtil.log("Pinpoint returned Nan!");
+                        teamUtil.log("ERROR ----------------------------------------------- Pinpoint returned NaN during power braking");
                         stopMotors();
                         return false;
                     }
@@ -1124,7 +1124,7 @@ public class BasicDrive {
                     odo.update();
                     currentPos = odo.getPosX();
                     if (Double.isNaN(currentPos)) {
-                        teamUtil.log("Pinpoint returned Nan!");
+                        teamUtil.log("ERROR ----------------------------------------------- Pinpoint returned NaN during power braking");
                         stopMotors();
                         return false;
                     }
@@ -1350,7 +1350,7 @@ public class BasicDrive {
         teamUtil.log("MoveTo StrafeTarget: " + strafeTarget +  " Straight target: " + straightTarget + " robotH: " + robotHeading + " MaxV: " + maxVelocity + " EndV: " + endVelocity + " EndInDeadband: " + endInDeadband);
 
         //TODO THIS CODE SHALL NOT BE USED UNTIL THE ANGLE PROBLEM IS FIXED
-        details = true;
+        details = details;
         teamUtil.log("moveTo");
         odo.update();
         long timeoutTime = System.currentTimeMillis()+timeout;
@@ -1457,7 +1457,7 @@ public class BasicDrive {
         teamUtil.log("MoveTo StrafeTarget: " + strafeTarget +  " Straight target: " + straightTarget + " robotH: " + robotHeading + " MaxV: " + maxVelocity + " EndV: " + endVelocity + " EndInDeadband: " + endInDeadband);
 
         //TODO THIS CODE SHALL NOT BE USED UNTIL THE ANGLE PROBLEM IS FIXED
-        details = true;
+        details = false;
         teamUtil.log("moveTo");
         odo.update();
         long timeoutTime = System.currentTimeMillis()+timeout;
@@ -1572,7 +1572,7 @@ public class BasicDrive {
     public boolean waitForStall(long timeout){
         // wait for the robot to slow down on the wall
         // expects setPower
-        boolean details = false;
+        details = details;
         teamUtil.log("Waiting For Stall");
         long timeoutTime = System.currentTimeMillis()+timeout;
         int lastEncoder = forwardEncoder.getCurrentPosition();
@@ -1686,7 +1686,7 @@ public class BasicDrive {
     // Attempts to hold the last heading that was commanded via a turn
     public void driveJoyStick(float leftJoyStickX, float leftJoyStickY, float rightJoyStickX, boolean isFast) {
         // returns values to drive to the main loop
-        boolean details = true;
+         details = details;
         //Old Declarations
         /*
         float DEADBAND = 0.1f;
@@ -1794,7 +1794,7 @@ public class BasicDrive {
     }
 
     public void driveJoyStickV2(float leftJoyStickX, float leftJoyStickY, float rightJoyStickX, boolean isFast, boolean isSlow) {
-        boolean details = true;
+        details = details;
 
         float DEADBAND = 0.1f;
         float SLOWSLOPE =0.22f;

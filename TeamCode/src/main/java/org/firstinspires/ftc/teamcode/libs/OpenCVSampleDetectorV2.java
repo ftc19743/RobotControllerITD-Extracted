@@ -132,6 +132,7 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
 
     static public int blurFactor = 5;
     static public boolean undistort = true;
+    static public boolean details = false;
 
     /* 4 leds (Meet 1)
     static public int yellowLowH = 15, yellowLowS = 85, yellowLowV = 150;
@@ -338,7 +339,6 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
     }
 
     public FrameData processNextFrame(boolean waitForDetection, boolean turnOffProcessor, boolean captureImages, long timeOut){
-        boolean details = true;
         teamUtil.log("ProcessNextFrame");
         long timeoutTime = System.currentTimeMillis() + timeOut;
         myPortal.setProcessorEnabled(this, true);
@@ -362,7 +362,6 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
 
     @Override
     public Object processFrame(Mat frame, long captureTimeNanos) {
-        boolean details = false;
         if (details) teamUtil.log("Sample Detector: Process Frame");
 
         // Set up the various objects needed to do the image processing
@@ -432,7 +431,7 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
         List<MatOfPoint> contours = new ArrayList<>();
         contours.clear(); // empty the list from last time
         Imgproc.findContours(erodedMat, contours, hierarchyMat, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE); // find contours around white areas
-        System.out.println("=========================================================  NEW FRAME ==========================================");
+        if (details) teamUtil.log("=========================================================  NEW FRAME ==========================================");
         RotatedRect[] foundRects = findRectsInPolys(contours);
 
         if (foundRects.length>0) {
@@ -583,10 +582,10 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
             for (MatOfPoint contour : contours) { // run though the external contours
                 double area = Imgproc.contourArea(contour);
                 if (area < AREA_THRESHOLD) {
-                    System.out.println("Disregarding Contour with area: "+ area);
+                    if (details) teamUtil.log("Disregarding Contour with area: "+ area);
                     continue;
                 } else {
-                    System.out.println("Considering Contour with area: "+ area);
+                    if (details) teamUtil.log("Considering Contour with area: "+ area);
                 }
                 MatOfPoint2f contour2f = new MatOfPoint2f(contour.toArray());
                 MatOfPoint2f polygon2f = new MatOfPoint2f();
@@ -602,15 +601,15 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
         RotatedRect[] rects= new RotatedRect[0];
         Point[] points = poly.toArray();
         if (points.length<4) {
-            System.out.println("Disregarding polygon with less than 4 points");
+            if (details) teamUtil.log("Disregarding polygon with less than 4 points");
             return rects; // no rectangles in this polygon
         }
 
-        System.out.println("==========================Analyizing Poly.  Points: "+ points.length);
+        if (details) teamUtil.log("==========================Analyizing Poly.  Points: "+ points.length);
         points = removeShortSegments(points); // remove all the short segments
         points = combineStraightLineSegments(points); // combine segments that form a straight line
         for (int p1 = 0; p1 < points.length;p1++) {
-            System.out.println("---- Starting at "+p1);
+            if (details) teamUtil.log("---- Starting at "+p1);
             int p2 = (p1+1)%points.length;
             int p3 = (p2+1)%points.length;
 
@@ -623,43 +622,43 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
             double l1 = findLength(points[p1], points[p2]);
             double l2 = findLength(points[p2], points[p3]);
 
-            System.out.println("--");
-            System.out.println("Looking at points: "+ p1+ points[p1] + ", " + p2+ points[p2] + ", " + p3+ points[p3]);
-            System.out.println(String.format("s1: %.1f s2: %.1f L1: %.1f L2: %.0f", slope1, slope2, l1, l2));
+            if (details) teamUtil.log("--");
+            if (details) teamUtil.log("Looking at points: "+ p1+ points[p1] + ", " + p2+ points[p2] + ", " + p3+ points[p3]);
+            if (details) teamUtil.log(String.format("s1: %.1f s2: %.1f L1: %.1f L2: %.0f", slope1, slope2, l1, l2));
 
             // Start by looking for an approximately 90 degree angle
             if (!isRightAngle(slope1, slope2, RIGHT_ANGLE_TOLERANCE)) {
                 // two lines didn't form a right angle
-                System.out.println("Disregarding candidate with non-right angle");
+                if (details) teamUtil.log("Disregarding candidate with non-right angle");
                 continue;
             }
 
             // now check lengths and adjust
             if (Math.abs(l1-LONG_LENGTH_TARGET)<LONG_LENGTH_THRESHOLD && Math.abs(l2-SHORT_LENGTH_TARGET)<SHORT_LENGTH_THRESHOLD) {
-                System.out.println("Lengths OK-L1 long side");
+                if (details) teamUtil.log("Lengths OK-L1 long side");
                 // adjust p1 to match long target?
                 // adjust p3 to match short target?
             } else if (Math.abs(l2-LONG_LENGTH_TARGET)<LONG_LENGTH_THRESHOLD && Math.abs(l1-SHORT_LENGTH_TARGET)<SHORT_LENGTH_THRESHOLD) {
-                System.out.println("Lengths OK-L2 long side");
+                if (details) teamUtil.log("Lengths OK-L2 long side");
                 // adjust p1 to match short target?
                 // adjust p3 to match long target?
             } else {
                 // lengths not close enough so move on
-                System.out.println("Disregarding candidate with wrong lengths");
+                if (details) teamUtil.log("Disregarding candidate with wrong lengths");
                 continue;
             }
 
             // We found one, so impute point 4
             Point point4 = findFourthPoint(points[p1], points[p2], points[p3]);
-            System.out.println("Computing 4th point: "+ point4);
+            if (details) teamUtil.log("Computing 4th point: "+ point4);
             // Test to make sure it is inside the polygon
             double result = Imgproc.pointPolygonTest(poly, point4, true );
             if (result+EXTERNAL_THRESHOLD < 0) {
                 // imputed 4th point too far outside polygon (we are in a convex portion)
-                System.out.println("Disregarding candidate with 4th point outside polygon: "+result);
+                if (details) teamUtil.log("Disregarding candidate with 4th point outside polygon: "+result);
                 continue;
             } else {
-                System.out.println("4th point inside (or close to) polygon: "+result);
+                if (details) teamUtil.log("4th point inside (or close to) polygon: "+result);
             }
 
             // It all looks good so lets set up the found rect and subtract it from remaining poly
@@ -669,7 +668,7 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
             updatedRects[rects.length] = foundRect;
             rects = updatedRects;
 
-            System.out.println("||||||||||||||||||||||||Found One-------------------------------------------------");
+            if (details) teamUtil.log("||||||||||||||||||||||||Found One-------------------------------------------------");
 
             points[p2].x = point4.x;
             points[p2].y = point4.y;
@@ -712,7 +711,7 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
 
             // Check if the next segment forms part of a straight line
             while (isStraightLine(current, next, polygon[(i + 2) % n])) {
-                System.out.println("Disregarding point on straight line "+((i + 1) % n)+polygon[(i + 1) % n]);
+                if (details) teamUtil.log("Disregarding point on straight line "+((i + 1) % n)+polygon[(i + 1) % n]);
                 i++;
                 next = polygon[(i + 2) % n]; // Extend the sequence to the next segment
             }
@@ -744,13 +743,13 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
                 updatedPolygon.add(current);
                 i++; // Move to the next segment
             } else {
-                System.out.println("Disregarding short segment between "+i+polygon[i]+" and "+(i+1)+polygon[(i + 1) % n]+ " with length: "+distance);
+                if (details) teamUtil.log("Disregarding short segment between "+i+polygon[i]+" and "+(i+1)+polygon[(i + 1) % n]+ " with length: "+distance);
 
                 // Start collecting a sequence of short segments
                 int start = i; // Start of the short segment sequence
                 distance = findLength(polygon[(i + 1) % n], polygon[(i + 2) % n]);
                 while (distance < SEGMENT_THRESHOLD) {
-                    System.out.println("Disregarding segment between "+(i + 1)+polygon[(i + 1) % n]+" and "+(i+2)+polygon[(i + 2) % n]+ " with length: "+distance);
+                    if (details) teamUtil.log("Disregarding segment between "+(i + 1)+polygon[(i + 1) % n]+" and "+(i+2)+polygon[(i + 2) % n]+ " with length: "+distance);
                     i++;
                     distance = findLength(polygon[(i + 1) % n], polygon[(i + 2) % n]);
                 }
@@ -812,7 +811,7 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
 
     public boolean isRightAngle(double s1, double s2, double maxDeviationDegrees) {
         double angle = Math.toDegrees(Math.atan(Math.abs((s1 - s2) / (1 + s1 * s2))));
-        System.out.println("Checking Angle: "+ angle);
+        if (details) teamUtil.log("Checking Angle: "+ angle);
         return Math.abs(90 - angle) <= maxDeviationDegrees;
     }
 

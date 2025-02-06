@@ -185,6 +185,7 @@ public class Intake {
     static public int EXTENDER_UNLOAD = 5;
     static public int EXTENDER_CALIBRATE = 5;
     static public int EXTENDER_START_SEEK = 60; // TODO Determine this number
+    static public int EXTENDER_AUTO_START_SEEK = 500;
     static public int EXTENDER_CRAWL_INCREMENT = 30;
     static public int EXTENDER_FAST_INCREMENT = 100;
     static public int EXTENDER_MIN = 10;
@@ -354,6 +355,14 @@ public class Intake {
             neopixels.fill(Color.argb(0,0,0,0));
             neopixels.show();
         }
+    }
+
+    public void lightsOn() {
+        lightsOnandOff(WHITE_NEOPIXEL,RED_NEOPIXEL,GREEN_NEOPIXEL,BLUE_NEOPIXEL,true);
+    }
+
+    public void lightsOff() {
+        lightsOnandOff(WHITE_NEOPIXEL,RED_NEOPIXEL,GREEN_NEOPIXEL,BLUE_NEOPIXEL,false);
     }
 
     public void testWiring() {
@@ -1136,6 +1145,7 @@ public class Intake {
     }
 
 
+
     public void goToSafeRetract(long timeOut) {
         teamUtil.log("goToSafeRetract");
         long timeoutTime = System.currentTimeMillis()+timeOut;
@@ -1235,7 +1245,7 @@ public class Intake {
     }
 
     public void unloadV2(boolean fromSeek){
-        boolean details = true;
+        boolean details = false;
         teamUtil.log("unloadV2 has started");
         if(fromSeek){
             flipper.setPosition(FLIPPER_PRE_UNLOAD);
@@ -1401,7 +1411,7 @@ public class Intake {
         if (details) teamUtil.log("RotateToSample has finished");
     }
     public void extendersToPositionMaxVelo(int position, long timeOut){
-        teamUtil.log("extendersToPosition Started: ");
+        teamUtil.log("extendersToPositionMaxVelo Started: "+ position);
         long timeoutTime = System.currentTimeMillis()+timeOut;
         extender.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
         extender.setTargetPosition(position);
@@ -1411,9 +1421,9 @@ public class Intake {
         }
         if (System.currentTimeMillis() > timeoutTime) {
             timedOut.set(true);
-            teamUtil.log("extendersToPosition TIMED OUT: ");
+            teamUtil.log("extendersToPositionMaxVelo TIMED OUT: ");
         } else {
-            teamUtil.log("extendersToPosition Finished" );
+            teamUtil.log("extendersToPositionMaxVelo Finished" );
         }
     }
 

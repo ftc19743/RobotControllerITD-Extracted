@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.RobotLog;
 
+import org.firstinspires.ftc.teamcode.assemblies.Intake;
 import org.firstinspires.ftc.teamcode.assemblies.Robot;
 import org.firstinspires.ftc.teamcode.libs.TeamGamepad;
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
@@ -26,6 +27,7 @@ public class testAutoPaths extends LinearOpMode {
     public static boolean liveStream = true;
     public static int BLOCKS = 2;
     public static int CYCLES = 0;
+    public static boolean GRAB_SAMPLE = false;
     public static boolean useCV = false;
 
     public static boolean ASCENT = true;
@@ -112,10 +114,11 @@ public class testAutoPaths extends LinearOpMode {
                 robot.drive.setRobotPosition(0,0,0);
             }
             if(driverGamepad.wasXPressed()) {
+                robot.nextExtenderPos = Intake.EXTENDER_AUTO_START_SEEK;
                 long startTime = System.currentTimeMillis();
                 for(int i = 1; i<=CYCLES;i++){
                     teamUtil.log("Auto V3 Specimen Cycle Number: " + i);
-                    robot.specimenCycleV2(i);
+                    robot.specimenCycleV2(i, GRAB_SAMPLE);
                 }
 
                 robot.drive.stopMotors();
