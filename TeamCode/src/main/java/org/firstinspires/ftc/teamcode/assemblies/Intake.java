@@ -19,7 +19,6 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.CameraName;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.teamcode.libs.AdafruitNeoDriverImpl3;
 import org.firstinspires.ftc.teamcode.libs.Blinkin;
-import org.firstinspires.ftc.teamcode.libs.OpenCVSampleDetector;
 import org.firstinspires.ftc.teamcode.libs.OpenCVSampleDetectorV2;
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
 import org.firstinspires.ftc.vision.VisionPortal;
@@ -584,7 +583,7 @@ public class Intake {
 
 
 
-    public boolean goToSampleAndGrabV3(boolean unload){
+    public boolean goToSampleAndGrabV3(boolean unload,boolean retract){
         autoSeeking.set(true);
         teamUtil.log("Launched GoToSample and Grab" );
         timedOut.set(false);
@@ -605,7 +604,7 @@ public class Intake {
 //                if(unload){
 //                    unload();
 //                }
-                retractAll(unload,4000);
+                if(retract) retractAll(unload,4000);
 
                 autoSeeking.set(false);
                 moving.set(false);
@@ -619,6 +618,8 @@ public class Intake {
         autoSeeking.set(false);
         return false;
     }
+
+
 /*
     public boolean goToSampleAndGrabV4(boolean unload){
         autoSeeking.set(true);
@@ -1703,7 +1704,7 @@ public class Intake {
             Thread thread = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    goToSampleAndGrabV3(unload);
+                    goToSampleAndGrabV3(unload, true);
                 }
             });
             thread.start();

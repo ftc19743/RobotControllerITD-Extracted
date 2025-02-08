@@ -33,6 +33,7 @@ public class CalibrateDrive extends LinearOpMode {
         Find_Max_Left,
         Brake_Test_Forward,
         Brake_Test_Right,
+        Reverse_Test,
         Test_Spins,
         Test_Move_CMs,
         Test_Holding_Target,
@@ -58,6 +59,7 @@ public class CalibrateDrive extends LinearOpMode {
             case Move_Encoder_Target_Test : goForADriveTarget();break;
             case Brake_Test_Forward : brakeTestForward();break;
             case Brake_Test_Right : brakeTestRight();break;
+            case Reverse_Test:  reverseTest();break;
 
         }
     }
@@ -120,6 +122,8 @@ public class CalibrateDrive extends LinearOpMode {
                 testHoldingTarget();
             } else if (AAOP==Ops.Test_Move_To){
                 testMoveTo();
+            } else if (AAOP==Ops.Reverse_Test){
+                reverseTest();
             }
 
             // Drawing stuff on the field
@@ -143,6 +147,23 @@ public class CalibrateDrive extends LinearOpMode {
             telemetry.update();
             //sleep(20);
         }
+    }
+
+    public static int REVERSE_BRAKING_PAUSE1= 150;
+    public void reverseTest() {
+        if (gamepad1.dpad_up) {
+            drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY, 300, 0,0,BasicDrive.MAX_VELOCITY, false, null,0,4000);
+            drive.stopMotors();
+            teamUtil.pause(REVERSE_BRAKING_PAUSE1);
+            drive.lastVelocity = BasicDrive.MAX_VELOCITY; // make motors start at full power
+            drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY, 1100, 0,0,0, false, null,0,4000);
+        }
+        if (gamepad1.dpad_down) {
+            drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY, 300, 0,0,BasicDrive.MAX_VELOCITY, false, null,0,4000);
+            drive.lastVelocity = BasicDrive.MAX_VELOCITY; // make motors start at full power
+            drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY, 1100, 0,0,0, false, null,0,4000);
+        }
+
     }
 
     public void testDriveMotorWiring() {
@@ -224,7 +245,7 @@ public class CalibrateDrive extends LinearOpMode {
 
     public void testHoldingTarget() {
         if (gamepad1.dpad_up) {
-            drive.setHeading(0);
+            //drive.setHeading(0);
             drive.loop();
             double startForward = drive.odo.getPosX();
             double forwardTarget = (long) (startForward + testDistance);
@@ -248,7 +269,7 @@ public class CalibrateDrive extends LinearOpMode {
             }
         }
         if (gamepad1.dpad_right) {
-            drive.setHeading(0);
+            //drive.setHeading(0);
             drive.loop();
             double startStrafe = drive.odo.getPosY();
             double strafeTarget = (long) (startStrafe - testDistance);

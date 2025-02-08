@@ -190,9 +190,9 @@ public class Auto extends LinearOpMode {
             teamUtil.telemetry.update();
         }
 
-        if (teamUtil.SIDE == teamUtil.SIDE.BASKET) { // get camera running but only if we will use it
+        //if (teamUtil.SIDE == teamUtil.SIDE.BASKET) { // get camera running but only if we will use it
             robot.initCV(false); // no live stream enabled means better FPS
-        }
+        //}
 
         while (!opModeIsActive()) {
             telemetry.addLine("Ready to Go!");

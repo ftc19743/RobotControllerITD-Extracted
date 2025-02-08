@@ -79,7 +79,7 @@ public class BasicDrive {
 
     static public double MAX_VELOCITY = 2200; // Calibrated 11/2/24
     static public double MAX_VELOCITY_STRAFE = 1750; // Calibrated 11/2/24
-    static public double ROTATION_ADJUST_FACTOR = 0.02;
+    static public double ROTATION_ADJUST_FACTOR = 40; //was .02
     static public double SIDE_VECTOR_COEFFICIENT = .92;
     static public double FORWARD_VECTOR_COEFFICIENT = 1.08;
     static public double SPIN_DECEL_THRESHOLD_DEGREES = 120; // Calibrated 11/2/24 (could be more aggresive?)
@@ -298,8 +298,9 @@ public class BasicDrive {
 
         // Determine how much adjustment for rotational drift
         double headingError = getHeadingError(robotHeading); // Difference between desired and actual robot heading
+        if(details) teamUtil.log("RobotHeading: " + robotHeading + " RobotHeadingError: " + headingError + " DriveHeading: " +driveHeading + "IMUHeading: " + getHeading() + "ODOHeading: " + getHeadingODO());
         //double headingError = Math.max(-45.0, Math.min(getHeadingError(robotHeading), 45.0)); // clip this to 45 degrees in either direction to control rate of spin
-        double rotationAdjust = ROTATION_ADJUST_FACTOR * velocity * headingError; // scale based on velocity AND amount of rotational error
+        double rotationAdjust = ROTATION_ADJUST_FACTOR * headingError; // scale based on velocity AND amount of rotational error.....Took out velocity
 
         // Covert heading to cartesian on the unit circle and scale so largest value is 1
         // This is essentially creating joystick values from the heading
@@ -331,6 +332,7 @@ public class BasicDrive {
     // Will rotate robot as needed to achieve and hold robotHeading RELATIVE TO FIELD by moving to a set target
     public void driveMotorsHeadingsFR(double driveHeading, double robotHeading, double velocity) {
         double RRDriveHeading = getHeadingError(driveHeading);
+        if(details)teamUtil.log("RRDriveHeading: " + RRDriveHeading + " RobotHeading: " + robotHeading + " DriveHeading: " + driveHeading);
         driveMotorsHeadings(RRDriveHeading, robotHeading, velocity);
     }
 

@@ -28,7 +28,7 @@ public class testAutoPaths extends LinearOpMode {
     public static int BLOCKS = 2;
     public static int CYCLES = 0;
     public static boolean GRAB_SAMPLE = false;
-    public static boolean useCV = false;
+    public static boolean useCV = true;
 
     public static boolean ASCENT = true;
 
@@ -118,7 +118,7 @@ public class testAutoPaths extends LinearOpMode {
                 long startTime = System.currentTimeMillis();
                 for(int i = 1; i<=CYCLES;i++){
                     teamUtil.log("Auto V3 Specimen Cycle Number: " + i);
-                    robot.specimenCycleV2(i, GRAB_SAMPLE);
+                    robot.specimenCycleV2(i, GRAB_SAMPLE,true);
                 }
 
                 robot.drive.stopMotors();
