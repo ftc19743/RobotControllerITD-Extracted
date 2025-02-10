@@ -103,9 +103,9 @@ public class testAutoPaths extends LinearOpMode {
                 robot.resetRobot();
             }
             if(driverGamepad.wasUpPressed()) {
-                long startTime = System.currentTimeMillis();
-               robot.autoV1Bucket(BLOCKS,ASCENT);
-               elapsedTime = System.currentTimeMillis()-startTime;
+               //long startTime = System.currentTimeMillis();
+               //robot.autoV1Bucket(BLOCKS,ASCENT);
+               //elapsedTime = System.currentTimeMillis()-startTime;
             }
             if(driverGamepad.wasDownPressed()) {
                 robot.specimenCollectBlocksV2();
@@ -113,18 +113,34 @@ public class testAutoPaths extends LinearOpMode {
             if(driverGamepad.wasRightTriggerPressed()) {
                 robot.drive.setRobotPosition(0,0,0);
             }
+            if(driverGamepad.wasYPressed()){
+                robot.outtake.outtakeGrab();
+            }
             if(driverGamepad.wasXPressed()) {
                 robot.nextExtenderPos = Intake.EXTENDER_AUTO_START_SEEK;
                 long startTime = System.currentTimeMillis();
                 for(int i = 1; i<=CYCLES;i++){
                     teamUtil.log("Auto V3 Specimen Cycle Number: " + i);
-                    robot.specimenCycleV2(i, GRAB_SAMPLE,true);
+                    switch (i) {
+                        case 1 : robot.specimenCycleV3(1, Robot.F33_5_CYCLE_Y_PLACEMENTS[0],false, true, true); break;
+                        case 2 : robot.specimenCycleV3(2, Robot.F33_5_CYCLE_Y_PLACEMENTS[1],false, true, true); break;
+                        case 3 : robot.specimenCycleV3(3, Robot.F33_5_CYCLE_Y_PLACEMENTS[2],false, true, true); break;
+                        case 4 : robot.specimenCycleV3(4, Robot.F33_5_CYCLE_Y_PLACEMENTS[3],false, true, true); break;          }
                 }
-
                 robot.drive.stopMotors();
                 elapsedTime = System.currentTimeMillis()-startTime;
             }
-
+            if(driverGamepad.wasAPressed()){
+                long startTime = System.currentTimeMillis();
+                robot.autoV4Specimen();
+                elapsedTime = System.currentTimeMillis()-startTime;
+            }
+            if(driverGamepad.wasBPressed()){
+                long startTime = System.currentTimeMillis();
+                robot.placeFirstSpecimen();
+                robot.drive.stopMotors();
+                elapsedTime = System.currentTimeMillis()-startTime;
+            }
             // TESTING HANG
             if(armsGamepad.wasAPressed()) {
                 robot.hangPhase1();
@@ -140,11 +156,7 @@ public class testAutoPaths extends LinearOpMode {
             robot.dropLiftWhenNeeded();
             telemetry.addLine("left: " + robot.hang.hang_Left.getCurrentPosition()+ " right: "+ robot.hang.hang_Right.getCurrentPosition());
 
-            if(driverGamepad.wasAPressed()){
-                long startTime = System.currentTimeMillis();
-                robot.autoV3Specimen(CYCLES);
-                elapsedTime = System.currentTimeMillis()-startTime;
-            }
+
             /*
             if(driverGamepad.wasOptionsPressed()){
                 robot.intake.setTargetColor(OpenCVSampleDetector.TargetColor.RED);
