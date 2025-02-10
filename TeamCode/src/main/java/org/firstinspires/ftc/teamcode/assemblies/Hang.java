@@ -47,7 +47,9 @@ public class Hang {
     public static float HOOKGRABBER_DEPLOY = 0.86f;
     public static float HOOKGRABBER_RELEASE = 1f;
     public static float HOOKGRABBER_PRE_RELEASE = 0.79f;
+    public static int HANG_STARTUP_SPINDLE_PAUSE = 250;
     public static int HOOKS_RELEASED= 2067;
+    public static int HANG_TENSION_THRESHOLD= 200;
     public static int HANG_STOWED_ON_WAY_UP= 2500;
     public static int HOOK_ARM_MOVED_ON_WAY_UP = 4500;
 

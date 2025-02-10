@@ -148,13 +148,19 @@ public class testAutoPaths extends LinearOpMode {
             if(armsGamepad.wasBPressed()) {
                 robot.hangPhase2();
             }
+            if(armsGamepad.wasYPressed()) {
+                robot.hangPhase2V2();
+            }
             if(armsGamepad.wasXPressed()) {
                 robot.hang.hang_Left.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                 robot.hang.hang_Right.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             }
             robot.hang.joystickDriveV2(gamepad2.left_stick_x, gamepad2.left_stick_y);
             robot.dropLiftWhenNeeded();
-            telemetry.addLine("left: " + robot.hang.hang_Left.getCurrentPosition()+ " right: "+ robot.hang.hang_Right.getCurrentPosition());
+            robot.stowHangWhenNeeded();
+            robot.moveHookArmWhenNeeded();
+            //teamUtil.log("Hangleft: " + robot.hang.hang_Left.getCurrentPosition()+ " Hangright: "+ robot.hang.hang_Right.getCurrentPosition());
+            telemetry.addLine("Hangleft: " + robot.hang.hang_Left.getCurrentPosition()+ " Hangright: "+ robot.hang.hang_Right.getCurrentPosition());
 
 
             /*

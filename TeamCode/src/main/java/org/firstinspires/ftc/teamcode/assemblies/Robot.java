@@ -635,6 +635,56 @@ public class Robot {
         hang.hangingL = true; hang.hangingR = true;// fake out control code to let it go up automatically until someone touches the joystick
     }
 
+    public void hangPhase2V2(){
+        long timeOutTime = System.currentTimeMillis() + 8000;
+        hang.hang_Left.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        hang.hang_Right.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        hang.engageHang();
+        teamUtil.pause(Hang.HANG_PHASE_2_ENGAGE_PAUSE); // don't put hooks on bar until we are off of ground
+        output.lift.setVelocity(Robot.PLACE_HOOKS_VELOCITY);
+        output.lift.setTargetPosition(Output.LIFT_AT_BAR);
+        hang.hang_Left.setTargetPosition(Hang.AUTO_LIFT_LEVEL);
+        hang.hang_Right.setTargetPosition(Hang.AUTO_LIFT_LEVEL);
+        hang.hang_Left.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        hang.hang_Right.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        hang.hang_Left.setVelocity(Hang.HANG_VELOCITY);
+        hang.hang_Right.setVelocity(Hang.HANG_VELOCITY);
+
+        teamUtil.pause(Hang.HANG_STARTUP_SPINDLE_PAUSE);
+        int lastLeft = hang.hang_Left.getCurrentPosition();
+        int lastRight = hang.hang_Right.getCurrentPosition();
+        boolean leftTensioned = false;
+        boolean rightTensioned = false;
+        while ((!leftTensioned || !rightTensioned) && teamUtil.keepGoing(timeOutTime)) {
+            dropLiftWhenNeeded();
+            teamUtil.log("Hangleft: " + hang.hang_Left.getCurrentPosition()+ " Hangright: "+ hang.hang_Right.getCurrentPosition());
+            teamUtil.pause(100);
+            if (!leftTensioned && hang.hang_Left.getCurrentPosition() - lastLeft < Hang.HANG_TENSION_THRESHOLD) {
+                leftTensioned = true;
+                hang.hang_Left.setTargetPosition(hang.hang_Left.getCurrentPosition());
+                teamUtil.log("Left String Tensioned ");
+            }
+            if (!rightTensioned && hang.hang_Right.getCurrentPosition() - lastRight < Hang.HANG_TENSION_THRESHOLD) {
+                rightTensioned = true;
+                hang.hang_Right.setTargetPosition(hang.hang_Right.getCurrentPosition());
+                teamUtil.log("Right String Tensioned ");
+            }
+            lastLeft = hang.hang_Left.getCurrentPosition();
+            lastRight = hang.hang_Right.getCurrentPosition();
+        }
+        if (System.currentTimeMillis() > timeOutTime) {
+            teamUtil.log("Hang Phase 2 V2 Timed Out!");
+            return;
+        }
+
+        // TODO: Establish new targets for both encoders based on current position
+
+        teamUtil.log("Both Joystick Drive Booleans HANGINGL and HANGINGR set true in hang Phase 2");
+        hang.hangingL = true; hang.hangingR = true;// fake out control code to let it go up automatically until someone touches the joystick
+    }
+
+
     public void hangPhase2NoWait(){
 
         teamUtil.log("hangPhase1NoWait");
@@ -647,21 +697,33 @@ public class Robot {
         thread.start();
 
     }
+
+    public void dropLift() {
+        hang.hook_grabber.setPosition(Hang.HOOKGRABBER_PRE_RELEASE);
+        output.lift.setVelocity(Output.LIFT_MAX_VELOCITY); // Run to near bottom
+        output.lift.setTargetPosition(Output.LIFT_DOWN);
+        while (output.lift.getCurrentPosition() > Output.LIFT_DOWN+10) {
+            teamUtil.pause(50);
+        }
+        output.lift.setVelocity(0); // Turn off lift motor at bottom
+        output.bucket.setPosition(Output.BUCKET_DEPLOY_AT_BOTTOM); // rotate bucket to avoid string while tensioning
+    }
+
     boolean liftDropped = false;
     public void dropLiftWhenNeeded() {
         if (hang.hang_Left.getCurrentPosition() > Hang.HOOKS_RELEASED && !liftDropped) {
             liftDropped = true;
-            hang.hook_grabber.setPosition(Hang.HOOKGRABBER_PRE_RELEASE);
-            output.lift.setVelocity(Output.LIFT_MAX_VELOCITY); // Run to near bottom
-            output.lift.setTargetPosition(Output.LIFT_DOWN);
-            while (output.lift.getCurrentPosition() > Output.LIFT_DOWN+10) {
-                teamUtil.pause(50);
-            }
-            output.lift.setVelocity(0); // Turn off lift motor at bottom
-            output.bucket.setPosition(Output.BUCKET_DEPLOY_AT_BOTTOM); // rotate bucket to avoid string while tensioning
+            teamUtil.log("Launching Thread to drop Lift");
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    dropLift();
+                }
+            });
+            thread.start();
         }
-
     }
+
     boolean hangStowed = false;
     public void stowHangWhenNeeded() {
         if (hang.hang_Left.getCurrentPosition() > Hang.HANG_STOWED_ON_WAY_UP && !hangStowed) {

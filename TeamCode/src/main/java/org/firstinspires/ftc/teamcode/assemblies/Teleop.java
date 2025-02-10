@@ -258,6 +258,7 @@ public class Teleop extends LinearOpMode {
 
                 robot.drive.stopMotors();
                 robot.hang.joystickDriveV2(gamepad1.left_stick_x, gamepad1.left_stick_y);
+                telemetry.addLine("Hangleft: " + robot.hang.hang_Left.getCurrentPosition()+ " Hangright: "+ robot.hang.hang_Right.getCurrentPosition());
                 robot.dropLiftWhenNeeded();
                 robot.stowHangWhenNeeded();
                 robot.moveHookArmWhenNeeded();
@@ -283,10 +284,10 @@ public class Teleop extends LinearOpMode {
 
             robot.outputTelemetry();
             robot.drive.odo.update();
-            telemetry.addData("Left Hang Velocity", robot.hang.hang_Left.getVelocity());
-            telemetry.addData("Right Hang Velocity", robot.hang.hang_Right.getVelocity());
-            telemetry.addLine("Low Bucket Toggled: " + lowBucketToggle);
-            telemetry.addLine("Hang Manual: " + hangManualControl);
+            //telemetry.addData("Left Hang Velocity", robot.hang.hang_Left.getVelocity());
+            //telemetry.addData("Right Hang Velocity", robot.hang.hang_Right.getVelocity());
+            //telemetry.addLine("Low Bucket Toggled: " + lowBucketToggle);
+            //telemetry.addLine("Hang Manual: " + hangManualControl);
             telemetry.update();
 
 
