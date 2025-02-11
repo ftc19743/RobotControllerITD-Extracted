@@ -26,14 +26,8 @@ public class Robot {
     public Hang hang;
     public Blinkin blinkin;
 
-    public static int PICK_UP_HOOKS_PAUSE_1 = 450;
-    public static int PICK_UP_HOOKS_PAUSE_2 = 300;
-    public static int PICK_UP_HOOKS_PAUSE_3 = 250;
-    public static int PICK_UP_HOOKS_PAUSE_4 = 1000;
 
-    public static int READY_TO_PLACE_HOOKS_PAUSE_1 = 1000;
-    public static int READY_TO_PLACE_HOOKS_VELOCITY = 1400;
-    public static int PLACE_HOOKS_VELOCITY = 400;
+
     public static boolean AUTO_INTAKE_SAMPLE = true;
 
     public static int F0a_FAST_STRAFE_ADJUST = 300;
@@ -69,8 +63,12 @@ public class Robot {
 
     static public int F20_CYCLE_SPECIMEN_Y_ADJUSTMENT = 25;
     static public int F21_CYCLE_PLACE_SAMPLE_X = 700;
+    static public int F21b_CYCLE_PLACE_SAMPLE_X = 690;
     static public int F22_CYCLE_WRIST_CALLBACK = -600;
+    static public int F22b_CYCLE1_WRIST_CALLBACK = -800;
     static public int F23_CYCLE_PLACE_SPECIMEN_PAUSE = 200;
+    static public int F23b_CYCLE_REVERSE_PLACE_SPECIMEN_PAUSE = 200;
+
     static public int F24_CYCLE_BACKUP_X = 700;
     static public int F25_CYCLE_PICKUP_Y = -690; //was 550
     static public int F26_CYCLE_PREPARE_FOR_PICKUP_X = 300;
@@ -394,7 +392,7 @@ public class Robot {
 
         BasicDrive.MIN_STRAFE_START_VELOCITY = 2000;
         BasicDrive.MIN_START_VELOCITY = 1000;
-        drive.lastVelocity = BasicDrive.MAX_VELOCITY; //come off wall fast
+        //drive.lastVelocity = BasicDrive.MAX_VELOCITY; //come off wall fast
 
         //Moves robot from the observation zone to the middle of the field in front of place position account for some strafe drift
         if (grabSample) {
@@ -409,14 +407,23 @@ public class Robot {
                         public void action() {
                             outtake.outakewrist.setPosition(Outtake.WRIST_RELEASE);
                         }
-                    }, F22_CYCLE_WRIST_CALLBACK, 5000);
+                    }, cycle == 1? F22b_CYCLE1_WRIST_CALLBACK:F22_CYCLE_WRIST_CALLBACK, 5000);
             BasicDrive.STRAFE_MAX_DECLINATION = strafeMaxDeclination;
             outtake.deployArm();
 
-            //moves robot to submersible to score the specimen
-            drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY, F21_CYCLE_PLACE_SAMPLE_X, cycleYTarget, 0, BasicDrive.MAX_VELOCITY, false, null, 0, 4000);
-            drive.stopMotors(); // TODO: Reconsider this, maybe reverse
-            teamUtil.pause(F23_CYCLE_PLACE_SPECIMEN_PAUSE); // give it time to decelerate and coast to submersable
+            if(cycle>=2){
+                drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY, F21b_CYCLE_PLACE_SAMPLE_X, cycleYTarget, 0, BasicDrive.MAX_VELOCITY, false, null, 0, 4000);
+
+                drive.driveMotorsHeadingsFR(180,0,BasicDrive.MAX_VELOCITY);
+                //drive.stopMotors(); // TODO: Try reverse motors instead
+                teamUtil.pause(F23b_CYCLE_REVERSE_PLACE_SPECIMEN_PAUSE); // give it time to decelerate
+            }
+            else{
+                drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY, F21_CYCLE_PLACE_SAMPLE_X, cycleYTarget, 0, BasicDrive.MAX_VELOCITY, false, null, 0, 4000);
+
+                drive.stopMotors(); // TODO: Reconsider this, maybe reverse
+                teamUtil.pause(F23_CYCLE_PLACE_SPECIMEN_PAUSE); // give it time to decelerate and coast to submersable
+            }
         }
 
         boolean grabbedSample = false;
@@ -477,7 +484,7 @@ public class Robot {
     }
 
     static public int[] F33_6_CYCLE_Y_PLACEMENTS = {100, 80, 60, 40, 20};
-    static public int[] F33_5_CYCLE_Y_PLACEMENTS = {0, 30, 60, 90};
+    static public int[] F33_5_CYCLE_Y_PLACEMENTS = {0, 47, 94, 140};
 
     public void fiveSpecimenCycle() {
         specimenCycleV3(1, F33_5_CYCLE_Y_PLACEMENTS[0],false, true, true);
@@ -585,12 +592,22 @@ public class Robot {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // HANG
+    public static int PICK_UP_HOOKS_PAUSE_1 = 450;
+    public static int PICK_UP_HOOKS_PAUSE_2 = 300;
+    public static int PICK_UP_HOOKS_PAUSE_3 = 250;
+    public static int PICK_UP_HOOKS_PAUSE_4 = 250;
+    public static int READY_TO_PLACE_HOOKS_PAUSE_1 = 250;
+    public static int READY_TO_PLACE_HOOKS_VELOCITY = 1400;
+    public static int PLACE_HOOKS_VELOCITY = 400;
+
 
     public void hangPhase1(){
         hang.extendHang();
         output.bucket.setPosition(Output.BUCKET_HANG);
         pickUpHooks();
         readyToPlaceHooks();
+        intake.extender.setTargetPosition(Intake.EXTENDER_CALIBRATE);
+        intake.extender.setVelocity(Intake.EXTENDER_HOLD_RETRACT_VELOCITY);
     }
 
     public void hangPhase1NoWait(){
@@ -677,8 +694,49 @@ public class Robot {
             teamUtil.log("Hang Phase 2 V2 Timed Out!");
             return;
         }
+        hang.hang_Right.setTargetPosition(hang.hang_Right.getCurrentPosition()+Hang.HANG_LEVEL_3);
+        teamUtil.pause(Hang.HANG_PAUSE_FOR_LEFT);
+        hang.hang_Left.setTargetPosition(hang.hang_Left.getCurrentPosition()+Hang.HANG_LEVEL_3);
 
-        // TODO: Establish new targets for both encoders based on current position
+
+        teamUtil.log("Both Joystick Drive Booleans HANGINGL and HANGINGR set true in hang Phase 2");
+        hang.hangingL = true; hang.hangingR = true;// fake out control code to let it go up automatically until someone touches the joystick
+    }
+    public void hangPhase2V3(){
+        long timeOutTime = System.currentTimeMillis() + 8000;
+        hang.hang_Left.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER); // Assumes 33" of string out
+        hang.hang_Right.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER); // Assumes 39" of string out
+
+        hang.engageHang();
+        teamUtil.pause(Hang.HANG_PHASE_2_ENGAGE_PAUSE); // don't put hooks on bar until we are off of ground
+        output.lift.setVelocity(Robot.PLACE_HOOKS_VELOCITY);
+        output.lift.setTargetPosition(Output.LIFT_AT_BAR);
+
+        teamUtil.log("Tensioning Strings");
+        hang.hang_Left.setTargetPosition(Hang.HANG_TENSION_L); // Start tensioning strings while hooks are being placed--there is enough slack
+        hang.hang_Right.setTargetPosition(Hang.HANG_TENSION_R);
+        hang.hang_Left.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        hang.hang_Right.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        hang.hang_Left.setVelocity(Hang.HANG_VELOCITY);
+        hang.hang_Right.setVelocity(Hang.HANG_VELOCITY);
+
+        // Wait until we are in the right position to leave the barrier at the bottom
+        while (teamUtil.keepGoing(timeOutTime) &&
+                (Hang.HANG_TENSION_L - hang.hang_Left.getCurrentPosition() > 50 ||
+                 Hang.HANG_TENSION_R - hang.hang_Right.getCurrentPosition() > 50 ))  {
+            dropLiftWhenNeeded();
+            teamUtil.log("Hangleft: " + hang.hang_Left.getCurrentPosition()+ " HangRight: "+ hang.hang_Right.getCurrentPosition());
+            teamUtil.pause(50);
+        }
+        if (System.currentTimeMillis() > timeOutTime) {
+            teamUtil.log("Hang Phase 2 V3 Timed Out!");
+            return;
+        }
+
+        // Head to the top
+        teamUtil.log("Heading Up");
+        hang.hang_Right.setTargetPosition(Hang.HANG_LEVEL_3_R);
+        hang.hang_Left.setTargetPosition(Hang.HANG_LEVEL_3_L);
 
         teamUtil.log("Both Joystick Drive Booleans HANGINGL and HANGINGR set true in hang Phase 2");
         hang.hangingL = true; hang.hangingR = true;// fake out control code to let it go up automatically until someone touches the joystick

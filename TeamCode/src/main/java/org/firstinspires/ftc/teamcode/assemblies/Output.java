@@ -30,23 +30,23 @@ public class Output {
     static public int LIFT_MIN_VELOCITY = 200;
     static public int LIFT_DOWN = 2;
     static public int LIFT_TOP_BUCKET = 1850;
-    static public int LIFT_SAFE_FOR_HOOK_HOLDER= 150; // TODO FIND OUT
-    static public int LIFT_PICKUP_FOR_HOOK_HOLDER= 5; // TODO FIND OUT
-    static public int LIFT_ABOVE_BAR= 1160; // TODO FIND OUT
-    static public int LIFT_ONTO_BAR= 820; // TODO FIND OUT
-    static public int LIFT_AT_BAR= 900; // TODO FIND OUT
+    static public int LIFT_SAFE_FOR_HOOK_HOLDER= 175;
+    static public int LIFT_PICKUP_FOR_HOOK_HOLDER= 5;
+    static public int LIFT_ABOVE_BAR= 1160;
+    static public int LIFT_ONTO_BAR= 820;
+    static public int LIFT_AT_BAR= 900;
     static public int LIFT_HIGH_BUCKET_THRESHOLD = 250;
 
 
 
 
-    static public int LIFT_MIDDLE_BUCKET = 880; // TODO Determine this number
+    static public int LIFT_MIDDLE_BUCKET = 880;
     static public double LIFT_P_COEFFICIENT = 10;
 
     static public float BUCKET_DEPLOY_AT_BOTTOM = 0.12f;
     static public float BUCKET_DEPLOY_AT_TOP = 0.18f;
     static public float BUCKET_SAFE = 0.66f;
-    static public float BUCKET_READY_TO_DEPLOY = 0.35f; //TODO Possibly use for going up to buckets (optimization for driver)
+    static public float BUCKET_READY_TO_DEPLOY = 0.35f;
     static public float BUCKET_RELOAD = 0.66f; //was .66
     static public float BUCKET_TRAVEL = 0.5f;
     static public float BUCKET_HANG = 0.245f;

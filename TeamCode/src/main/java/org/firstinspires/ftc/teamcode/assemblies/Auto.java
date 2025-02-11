@@ -84,15 +84,14 @@ public class Auto extends LinearOpMode {
             }
             teamUtil.telemetry.update();
         }
-
         while (!gamepad.wasAPressed()) {
             gamepad.loop();
-            if (gamepad.wasUpPressed()) {
-                specimen++;
-                if (specimen > 3) {
-                    specimen = 0;
-                }
-            }
+//            if (gamepad.wasUpPressed()) {
+//                specimen++;
+//                if (specimen > 3) {
+//                    specimen = 0;
+//                }
+//            }
             teamUtil.telemetry.addLine("Alliance: " + teamUtil.alliance);
             teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
             teamUtil.telemetry.addLine("Delay: " + delay);
@@ -120,7 +119,7 @@ public class Auto extends LinearOpMode {
                 teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
                 teamUtil.telemetry.addLine("Blocks: " + blocks);
                 teamUtil.telemetry.addLine("Delay: " + delay);
-                teamUtil.telemetry.addLine("Press Up to Add Block");
+                //teamUtil.telemetry.addLine("Press Up to Add Block");
                 teamUtil.telemetry.addLine("Press X to Move On");
 
 
@@ -191,7 +190,7 @@ public class Auto extends LinearOpMode {
         }
 
         //if (teamUtil.SIDE == teamUtil.SIDE.BASKET) { // get camera running but only if we will use it
-            robot.initCV(false); // no live stream enabled means better FPS
+        //robot.initCV(false); // no live stream enabled means better FPS
         //}
 
         while (!opModeIsActive()) {
@@ -217,7 +216,7 @@ public class Auto extends LinearOpMode {
         if(teamUtil.SIDE == teamUtil.Side.BASKET){
             //robot.autoV1Bucket(blocks, ascent);
         }else{
-            robot.autoV3Specimen(specimen);
+            robot.autoV4Specimen();
         }
         long endTime = System.currentTimeMillis();
         long elapsedTime = endTime - startTime;

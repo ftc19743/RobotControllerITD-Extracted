@@ -19,7 +19,7 @@ public class teamUtil {
     public enum Alliance {RED, BLUE}
     public static Alliance alliance = Alliance.RED;
     public enum Side {BASKET, OBSERVATION}
-    public static Side SIDE = Side.BASKET;
+    public static Side SIDE = Side.OBSERVATION;
 
     public static Blinkin theBlinkin = null;
 

@@ -53,6 +53,14 @@ public class Hang {
     public static int HANG_STOWED_ON_WAY_UP= 2500;
     public static int HOOK_ARM_MOVED_ON_WAY_UP = 4500;
 
+    public static int HANG_TENSION_L = 2300;
+    public static int HANG_TENSION_R = 4200;
+    public static int HANG_LEVEL_3_L = 9400;
+    public static int HANG_LEVEL_3_R = 10500;
+
+    public static int HANG_LEVEL_3 = 7000;
+    public static int HANG_PAUSE_FOR_LEFT =250;
+
     public static long HANG_PHASE_2_ENGAGE_PAUSE = 1500;
     public static int HANG_PHASE_2_SLACK_PAUSE = 500;
     public static int SLACK_LEVEL = 1000;

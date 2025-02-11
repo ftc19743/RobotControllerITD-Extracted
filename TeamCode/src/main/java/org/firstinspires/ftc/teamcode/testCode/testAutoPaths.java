@@ -26,7 +26,8 @@ public class testAutoPaths extends LinearOpMode {
     boolean useArms = false;
     public static boolean liveStream = true;
     public static int BLOCKS = 2;
-    public static int CYCLES = 0;
+    public static int END_CYCLES = 0;
+    public static int START_CYCLE = 1;
     public static boolean GRAB_SAMPLE = false;
     public static boolean useCV = true;
 
@@ -119,7 +120,7 @@ public class testAutoPaths extends LinearOpMode {
             if(driverGamepad.wasXPressed()) {
                 robot.nextExtenderPos = Intake.EXTENDER_AUTO_START_SEEK;
                 long startTime = System.currentTimeMillis();
-                for(int i = 1; i<=CYCLES;i++){
+                for(int i = START_CYCLE; i<=END_CYCLES;i++){
                     teamUtil.log("Auto V3 Specimen Cycle Number: " + i);
                     switch (i) {
                         case 1 : robot.specimenCycleV3(1, Robot.F33_5_CYCLE_Y_PLACEMENTS[0],false, true, true); break;
@@ -141,6 +142,8 @@ public class testAutoPaths extends LinearOpMode {
                 robot.drive.stopMotors();
                 elapsedTime = System.currentTimeMillis()-startTime;
             }
+
+            ////////////////////////////////////////////////////////////////////////////
             // TESTING HANG
             if(armsGamepad.wasAPressed()) {
                 robot.hangPhase1();
@@ -149,7 +152,7 @@ public class testAutoPaths extends LinearOpMode {
                 robot.hangPhase2();
             }
             if(armsGamepad.wasYPressed()) {
-                robot.hangPhase2V2();
+                robot.hangPhase2V3();
             }
             if(armsGamepad.wasXPressed()) {
                 robot.hang.hang_Left.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
