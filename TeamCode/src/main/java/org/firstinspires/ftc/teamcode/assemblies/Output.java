@@ -47,7 +47,7 @@ public class Output {
     static public float BUCKET_DEPLOY_AT_TOP = 0.18f;
     static public float BUCKET_SAFE = 0.66f;
     static public float BUCKET_READY_TO_DEPLOY = 0.35f;
-    static public float BUCKET_RELOAD = 0.66f; //was .66
+    static public float BUCKET_RELOAD = 0.665f; //was .66
     static public float BUCKET_TRAVEL = 0.5f;
     static public float BUCKET_HANG = 0.245f;
 

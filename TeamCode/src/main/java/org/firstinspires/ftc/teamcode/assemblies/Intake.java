@@ -149,6 +149,8 @@ public class Intake {
     static public float GRABBER_READY = 0.25f; //No Pot .25f
     static public float GRABBER_GRAB = 0.64f; // No Pot .64f
     static public float GRABBER_RELEASE = .17f; // No Pot .63f TODO: Is this really the right value? Almost the same as grab?
+    static public long GRABBER_UNLOAD_PAUSE = 0; // No Pot .63f TODO: Is this really the right value? Almost the same as grab?
+
 
     /* Values with potentiometer--NOT CALIBRATED YET!
     static public float GRABBER_READY = 0.25f; //No Pot .25f
@@ -182,11 +184,12 @@ public class Intake {
     static public int EXTENDER_MM_DEADBAND = 5;
     static public int EXTENDER_THRESHOLD = 30;
     static public int EXTENDER_UNLOAD = 5;
+    static public int EXTENDER_UNLOAD_POST = 50;
     static public int EXTENDER_CALIBRATE = 5;
     static public int EXTENDER_START_SEEK = 60; // TODO Determine this number
     static public int EXTENDER_AUTO_START_SEEK = 400;
     static public int EXTENDER_CRAWL_INCREMENT = 30;
-    static public int EXTENDER_FAST_INCREMENT = 100;
+    static public int EXTENDER_FAST_INCREMENT = 170;
     static public int EXTENDER_MIN = 10;
     static public int EXTENDER_TOLERANCE_RETRACT = 10;
 
@@ -291,6 +294,7 @@ public class Intake {
         teamUtil.pause(2000);
         sampleDetector.configureCam(arduPortal, OpenCVSampleDetectorV2.APEXPOSURE, OpenCVSampleDetectorV2.AEPRIORITY, OpenCVSampleDetectorV2.EXPOSURE, OpenCVSampleDetectorV2.GAIN, OpenCVSampleDetectorV2.WHITEBALANCEAUTO, OpenCVSampleDetectorV2.TEMPERATURE, OpenCVSampleDetectorV2.AFOCUS, OpenCVSampleDetectorV2.FOCUSLENGTH);
         stopCVPipeline();
+        lightsOff();
         teamUtil.log("Initializing CV in Intake - Finished");
     }
 
@@ -760,7 +764,7 @@ public class Intake {
         //TODO THERE IS A BUG!!!! IT SOMETIMES DOESN"T REACH ITS ROTATION PRIOR TO ENDING THIS METHOD (AND FLIPPING DOWN)
     }
 
-    public boolean jumpToSampleV5(double blockX, double blockY, int rotation, long timeOut) {
+    public boolean jumpToSampleV5(double blockX, double blockY, int rotation, long timeOut, boolean last) {
         long timeoutTime = System.currentTimeMillis() + timeOut;
         boolean details = true;
         extender.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
@@ -793,6 +797,7 @@ public class Intake {
 
             return false;
         }
+        if(last){flipper.setPosition(FLIPPER_PRE_GRAB);}
         extender.setVelocity(EXTENDER_JUMP_VELOCITY);
 
         if (details) {
@@ -933,12 +938,11 @@ public class Intake {
             if (lastJumpStartedInGrabZone) {
                 teamUtil.log("Starting Jump IN Grab Zone; Setting Flipper Down To Pre Grab");
                 setToPreGrabTime=System.currentTimeMillis();
-                flipper.setPosition(FLIPPER_PRE_GRAB);
             } else {
                 teamUtil.log("Starting Jump OUTSIDE Grab Zone");
             }
             //if (!jumpToSampleV5(frame.rectCenterXOffset, frame.rectCenterYOffset, frame.rectAngle, 2000)) {
-            if (!jumpToSampleV5(frame.adjRectCenterXOffset, frame.adjRectCenterYOffset, frame.rectAngle, 2000)) {
+            if (!jumpToSampleV5(frame.adjRectCenterXOffset, frame.adjRectCenterYOffset, frame.rectAngle, 2000, lastJumpStartedInGrabZone)) {
                  // We failed, clean up and bail out
                  moving.set(false);
                  stopCVPipeline();
@@ -1268,6 +1272,10 @@ public class Intake {
             teamUtil.pause(FLIPPER_UNLOAD_LOOP_TIME);
         }
         grabber.setPosition(GRABBER_RELEASE);
+        teamUtil.pause(GRABBER_UNLOAD_PAUSE);
+        extender.setTargetPosition(EXTENDER_UNLOAD_POST);
+        extender.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
+        extender.setVelocity(EXTENDER_MAX_VELOCITY);
         if(details)teamUtil.log("GRABBER Set to RELEASE");
         teamUtil.log("unloadV2 has finished");
 
@@ -1692,6 +1700,7 @@ public class Intake {
             thread.start();
         }
     }
+
 */
     public void goToSampleAndGrabNoWaitV3(boolean unload) {
         if (autoSeeking.get()) { // Intake is already moving in another thread

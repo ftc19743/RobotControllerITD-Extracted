@@ -89,7 +89,7 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
     public static double STRAIGHT_THRESHOLD = 10f; // degrees
     public static double RIGHT_ANGLE_TOLERANCE = 5f;// degrees
     public static double LONG_LENGTH_TARGET = 192;
-    public static double LONG_LENGTH_THRESHOLD = 10;
+    public static double LONG_LENGTH_THRESHOLD = 15;
     public static double SHORT_LENGTH_TARGET = 73;
     public static double SHORT_LENGTH_THRESHOLD = 8;
 

@@ -595,7 +595,7 @@ public class Robot {
     public static int PICK_UP_HOOKS_PAUSE_1 = 450;
     public static int PICK_UP_HOOKS_PAUSE_2 = 300;
     public static int PICK_UP_HOOKS_PAUSE_3 = 250;
-    public static int PICK_UP_HOOKS_PAUSE_4 = 250;
+    public static int PICK_UP_HOOKS_PAUSE_4 = 500;
     public static int READY_TO_PLACE_HOOKS_PAUSE_1 = 250;
     public static int READY_TO_PLACE_HOOKS_VELOCITY = 1400;
     public static int PLACE_HOOKS_VELOCITY = 400;

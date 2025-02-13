@@ -121,6 +121,7 @@ public class Teleop extends LinearOpMode {
         //TODO: FIX ALL STATE MANAGEMENT
         waitForStart();
 
+        robot.intake.extender.setTargetPosition(robot.intake.extender.getCurrentPosition());
         robot.intake.extender.setVelocity(EXTENDER_HOLD_RETRACT_VELOCITY);
         robot.intake.setTargetColor(OpenCVSampleDetectorV2.TargetColor.YELLOW);
         boolean liftDropped = false;
@@ -162,6 +163,10 @@ public class Teleop extends LinearOpMode {
             }
             if(armsGamepad.wasLeftPressed()){
                 robot.outtake.outtakeRest();
+            }
+            if(armsGamepad.wasRightPressed()){
+                robot.outtake.outakearm.setPosition(Outtake.ARM_DOWN);
+                robot.outtake.outakewrist.setPosition(Outtake.WRIST_GRAB);
             }
 
 
@@ -248,7 +253,7 @@ public class Teleop extends LinearOpMode {
                 if(optionsPresses==1){
                     robot.hangPhase1NoWait();
                 }if(optionsPresses==2){
-                    robot.hangPhase2NoWait();
+                    robot.hangPhase2V3();
                     hangManualControl=true;
                 }
             }
