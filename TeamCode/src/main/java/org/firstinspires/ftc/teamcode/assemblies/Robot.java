@@ -73,7 +73,7 @@ public class Robot {
     static public int F25_CYCLE_PICKUP_Y = -690; //was 550
     static public int F26_CYCLE_PREPARE_FOR_PICKUP_X = 300;
     static public int F26a_CYCLE_PICKUP_X = 75;
-    static public int F27_CYCLE_PICKUP_VELOCITY = 300;
+    static public int F27_CYCLE_PICKUP_VELOCITY = 500;
     static public int F28_CYCLE_PICKUP_PAUSE = 200;
     static public long F29_AUTO_MOMENTUM_PAUSE = 200;
     static public long F32_CYCLE_PICKUP_Y_SPECIAL = -790; //was -650
@@ -421,7 +421,6 @@ public class Robot {
                 drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY, F21b_CYCLE_PLACE_SAMPLE_X, cycleYTarget, 0, BasicDrive.MAX_VELOCITY, false, null, 0, 4000);
 
                 drive.driveMotorsHeadingsFR(180,0,BasicDrive.MAX_VELOCITY);
-                //drive.stopMotors(); // TODO: Try reverse motors instead
                 teamUtil.pause(F23b_CYCLE_REVERSE_PLACE_SPECIMEN_PAUSE); // give it time to decelerate
             }
             else{
