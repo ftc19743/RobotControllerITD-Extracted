@@ -18,7 +18,7 @@ public class Outtake {
 
 
     static public float ARM_UP = 0.22f;
-    static public float ARM_DOWN = 0.79f;
+    static public float ARM_DOWN = 0.805f;
     static public float ARM_BUCKET_SAFE = .55f;
     static public float WRIST_GRAB = 0.15f;
     static public float WRIST_RELEASE = .82f;
@@ -33,6 +33,8 @@ public class Outtake {
     static public double POTENTIOMETER_GRAB = .83;
     static public float ARM_START = 0.85f;
     static public float ARM_LEVEL_ONE_ASCENT = 0.13f;
+    static public double POTENTIOMETER_WRIST_DEPLOY = 2.2;
+
 
 
 
@@ -76,9 +78,29 @@ public class Outtake {
 
 
     }
+    public void deployArmTeleOP(long timeout){
+        outakearm.setPosition(ARM_UP);
+        long timeoutTime = System.currentTimeMillis()+timeout;
+        while(outakePotentiometer.getVoltage()<POTENTIOMETER_WRIST_DEPLOY&&teamUtil.keepGoing(timeoutTime)){
+            teamUtil.pause(30);
+        }
+        outakewrist.setPosition(WRIST_RELEASE);
+    }
+
     public void deployArm(){
         outakearm.setPosition(ARM_UP);
+
         outakewrist.setPosition(WRIST_RELEASE);
+    }
+    public void deployArmNoWait(long timeout){
+        teamUtil.log("Launching Thread to deployArm");
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                deployArmTeleOP(timeout);
+            }
+        });
+        thread.start();
     }
 
     public void outtakeGrab(){

@@ -97,6 +97,7 @@ public class BasicDrive {
     static public double MOVE_TO_THRESHOLD = 10;
     static public double MOVE_TO_DECCEL_COEFFICIENT = 0.5;
 
+    public static float SPIN_DEADBAND = 0.3f;
     public static float DEADBAND = 0.1f;
     public static float SLOPE = 1.6f;
     public static float FASTSLOPE = 3.6f;
@@ -104,6 +105,10 @@ public class BasicDrive {
     public static float STRAFESLOWSPEED = 0.25f;
     public static float MAXROTATIONFACTOR = 0.8f;
     public static float ROTATION_ADJUST_HELD_HEADING = 0.05f;
+    public static float SLOWSLOPE =0.22f;
+    public static float SLOWSLOPESTRAFE =0.35f;
+
+
 
 
     /************************************************************************************************************/
@@ -899,7 +904,7 @@ public class BasicDrive {
     // Drive straight forward or backward while attempting to hold the strafe encoder at a specific value
     // Robot heading should be 0,90,180, or 270.  Drive Heading will be determined by the target
     public boolean straightHoldingStrafeEncoder(double maxVelocity, double straightTarget, double strafeTarget, int robotHeading, double endVelocity, boolean powerBraking, ActionCallback action, double actionTarget, long timeout) {
-        if(robotHeading!=90&&robotHeading!=270&&robotHeading!=0&&robotHeading!=180){
+        if(robotHeading != 90 && robotHeading != 270 && robotHeading != 0 && robotHeading != 180){
             teamUtil.log("straightHoldingStrafeEncoder - ERROR INCOMPATIBLE ROBOT HEADING");
             stopMotors();
             return false;
@@ -1798,9 +1803,6 @@ public class BasicDrive {
     public void driveJoyStickV2(float leftJoyStickX, float leftJoyStickY, float rightJoyStickX, boolean isFast, boolean isSlow) {
         details = details;
 
-        float DEADBAND = 0.1f;
-        float SLOWSLOPE =0.22f;
-        float SLOWSLOPESTRAFE =0.35f;
         float SLOPE = 0.55f;
         float FASTSLOPE = 1f;
         float SLOWSPEED = .1f;
@@ -1823,7 +1825,7 @@ public class BasicDrive {
         if (Math.abs(leftJoyStickY) < DEADBAND) {
             leftJoyStickY = 0;
         }
-        if (Math.abs(rightJoyStickX) < DEADBAND) {
+        if (Math.abs(rightJoyStickX) < SPIN_DEADBAND) {
             rightJoyStickX = 0;
         }
 

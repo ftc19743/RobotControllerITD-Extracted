@@ -226,13 +226,19 @@ public class Robot {
     }
 
     public void dropSampleOutBackWithFlipperReset(){
+        teamUtil.log("DropSampleOutBack");
         output.outputMoving.set(true);
+
+        if (output.outputLiftAtBottom.get() && intake.moving.get()) { // still unloading
+            teamUtil.log("Attempt to flip bucket at bottom while intake unload still in progress.  Ignored");
+            output.outputMoving.set(false);
+            return;
+        }
+
         if(output.outputLiftAtBottom.get()){
             output.bucket.setPosition(Output.BUCKET_DEPLOY_AT_BOTTOM);
-
         }else{
             output.bucket.setPosition(Output.BUCKET_DEPLOY_AT_TOP);
-
         }
 
         teamUtil.pause(DROP_SAMPLE_OUT_BACK_WITH_FLIPPER_RESET_1);
@@ -789,6 +795,7 @@ public class Robot {
             hang.stowHang();
         }
 
+
     }
 
     boolean hookArmMoved = false;
@@ -806,7 +813,7 @@ public class Robot {
         output.lift.setVelocity(Output.LIFT_MAX_VELOCITY);
         hang.extendHang();
 
-
+        output.lift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         output.lift.setTargetPosition(Output.LIFT_SAFE_FOR_HOOK_HOLDER);
         teamUtil.pause(PICK_UP_HOOKS_PAUSE_1);
         hang.hook_grabber.setPosition(Hang.HOOKGRABBER_READY);

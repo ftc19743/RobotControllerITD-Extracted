@@ -176,7 +176,7 @@ public class Intake {
     static public float PIX_PER_MM_X = 2.01f;
 
 
-    static public int EXTENDER_MAX = 1130;
+    static public int EXTENDER_MAX = 1200;
     static public int EXTENDER_MAX_VELOCITY = 2800;
     static public int EXTENDER_MAX_RETRACT_VELOCITY = 2000;
     static public int EXTENDER_MIN_VELOCITY = 50;
@@ -257,12 +257,12 @@ public class Intake {
         extender.setDirection(DcMotorEx.Direction.REVERSE);
         extender.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-
         teamUtil.log("Intake Initialized");
     }
 
     public void initCV(boolean enableLiveView){
         teamUtil.log("Initializing CV in Intake");
+        lightsOff();
         CameraName arducam = (CameraName)hardwareMap.get(WebcamName.class, "arducam"); // arducam  logitechhd
         CameraCharacteristics chars = arducam.getCameraCharacteristics();
 
@@ -593,10 +593,11 @@ public class Intake {
         timedOut.set(false);
         long timeOutTime = System.currentTimeMillis() + 1000;
         if(goToSampleV5(3000) && !timedOut.get()) {
-            long loopStarTime = System.currentTimeMillis();
-            while(System.currentTimeMillis()-setToPreGrabTime<FLIPPER_SEEK_TO_PRE_GRAB_TIME&&teamUtil.keepGoing(timeOutTime)){
+            long loopStartTime = System.currentTimeMillis();
+            //TODO: This looks like a bug...setToPreGrabTime
+            while( System.currentTimeMillis()-setToPreGrabTime <FLIPPER_SEEK_TO_PRE_GRAB_TIME && teamUtil.keepGoing(timeOutTime)){
             }
-            long loopTime = System.currentTimeMillis()-loopStarTime;
+            long loopTime = System.currentTimeMillis()-loopStartTime;
             teamUtil.log("Time Taken In Order to make sure that Pre Grab Is Achieved: " + loopTime);
             flipToSampleAndGrab(1500);
 
@@ -771,8 +772,6 @@ public class Intake {
         extender.setTargetPositionTolerance(EXTENDER_TOLERANCE_SEEK);
         extender.setPositionPIDFCoefficients(EXTENDER_SEEK_P_COEFFICIENT);
 
-
-
         teamUtil.log("Starting jumpToSampleV5");
         rotateToSample(rotation);
         axonSlider.setPower(0);
@@ -794,10 +793,11 @@ public class Intake {
             teamUtil.log("Required Extender Position Outside of Range");
             moving.set(false);
             extender.setPositionPIDFCoefficients(EXTENDER_DEFAULT_P_COEFFICIENT);
-
             return false;
         }
-        if(last){flipper.setPosition(FLIPPER_PRE_GRAB);}
+        if(last){ // If we are going to move and this is the last jump before we grab the sample then move the flipper down to get ready
+            flipper.setPosition(FLIPPER_PRE_GRAB);
+        }
         extender.setVelocity(EXTENDER_JUMP_VELOCITY);
 
         if (details) {
@@ -920,11 +920,6 @@ public class Intake {
         extender.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
         teamUtil.theBlinkin.setSignal(Blinkin.Signals.NORMAL_WHITE); // signal that we are now jumping
         while (teamUtil.keepGoing(timeoutTime)) {
-            //old data setting
-            //boolean foundOne = sampleDetector.foundOne.get();
-            //int rectCenterXOffset = sampleDetector.rectCenterXOffset.get();
-            //int rectCenterYOffset = sampleDetector.rectCenterYOffset.get();
-            //int rectAngle = sampleDetector.rectAngle.get();
             if(frame==null){
                 teamUtil.log("Failed to Detect Sample During Jumps");
                 moving.set(false);
@@ -937,6 +932,7 @@ public class Intake {
             boolean lastJumpStartedInGrabZone = inGrabZone(frame.adjRectCenterXOffset, frame.adjRectCenterYOffset);
             if (lastJumpStartedInGrabZone) {
                 teamUtil.log("Starting Jump IN Grab Zone; Setting Flipper Down To Pre Grab");
+                // flipper is moved to pre-grab inside of jumpToSampleV5()!
                 setToPreGrabTime=System.currentTimeMillis();
             } else {
                 teamUtil.log("Starting Jump OUTSIDE Grab Zone");
@@ -1099,13 +1095,6 @@ public class Intake {
         return (Math.sqrt(xOffset*xOffset+yOffset*yOffset)<OpenCVSampleDetectorV2.GOLDILOCKS_ZONE_RADIUS);
 
     }
-
-
-
-
-
-
-
 
 
     // Go to ready position with wrist level
@@ -1281,6 +1270,39 @@ public class Intake {
 
     }
 
+    public static int SAFE_UNLOAD_FROM_SEEK_PAUSE = 350;
+    public static int SAFE_UNLOAD_RELEASE_PAUSE = 500;
+
+    public void safeUnload(){
+        teamUtil.log("safeUnload has started");
+        flipperGoToUnload(1500);
+        teamUtil.pause(SAFE_UNLOAD_FROM_SEEK_PAUSE); // let flipper settle down before releasing
+        sweeper.setPosition(SWEEPER_RELEASE);
+        grabber.setPosition(GRABBER_RELEASE);
+        teamUtil.pause(SAFE_UNLOAD_RELEASE_PAUSE); // let sweeper get out of the way
+        extender.setTargetPosition(EXTENDER_UNLOAD_POST); // move grabber back to avoid hitting it when bucket flips
+        extender.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
+        extender.setVelocity(EXTENDER_MAX_VELOCITY);
+        teamUtil.log("safeUnload has finished");
+    }
+
+    public void safeUnloadNoWait() {
+        if (moving.get()) { // Intake is already moving in another thread
+            teamUtil.log("WARNING: Attempt to safeUnload while intake is moving--ignored");
+            return;
+        } else {
+            moving.set(true);
+            teamUtil.log("Launching Thread to safeUnload");
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    safeUnload();
+                    moving.set(false);
+                }
+            });
+            thread.start();
+        }
+    }
 
 
     public void unloadV2NoWait(boolean fromSeek) {
@@ -1442,55 +1464,56 @@ public class Intake {
             teamUtil.log("WARNING: Attempt to move extender while intake system is moving--ignored");
         } else {
             extender.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
-
-            if(Math.abs(joystickValue) < 0.85){
-
+            if(Math.abs(joystickValue) < 0.85){ // slow mode
                 if(joystickValue<0){
-                    if(flipperPotentiometer.getVoltage()<FLIPPER_SEEK_POT_VOLTAGE){
+                    //if(flipperPotentiometer.getVoltage()<FLIPPER_SEEK_POT_VOLTAGE){ // Do this no matter what since we might have been in manualYNoSeek
                         goToSeekNoExtenders();
-
-                    }
+                    //}
                     if(details)teamUtil.log("Extender Manual: " + (EXTENDER_CRAWL_INCREMENT));
                     extender.setVelocity(EXTENDER_MAX_VELOCITY);
-
                     extender.setTargetPosition((int) (clamp(extender.getCurrentPosition() + EXTENDER_CRAWL_INCREMENT, EXTENDER_MIN, EXTENDER_MAX)));
                     if(details)teamUtil.log("Clamped Val: " + (clamp(extender.getCurrentPosition() + EXTENDER_CRAWL_INCREMENT, EXTENDER_MIN, EXTENDER_MAX)));
 
                 }else{
-
-                    if(details)teamUtil.log("Elev Manual: " + (-EXTENDER_CRAWL_INCREMENT));
+                    if(details)teamUtil.log("Extender Manual: " + (-EXTENDER_CRAWL_INCREMENT));
                     extender.setVelocity(EXTENDER_MAX_VELOCITY);
-
                     extender.setTargetPosition((int) (clamp(extender.getCurrentPosition() - EXTENDER_CRAWL_INCREMENT, EXTENDER_MIN, EXTENDER_MAX)));
                     if(details)teamUtil.log("Clamped Val: " + (clamp(extender.getCurrentPosition() - EXTENDER_CRAWL_INCREMENT, EXTENDER_MIN, EXTENDER_MAX)));
-
                 }
             }
-            else{
-
+            else{ // fast mode
                 if(joystickValue<0){
-
-                    if(flipperPotentiometer.getVoltage()<FLIPPER_SEEK_POT_VOLTAGE){
+                    //if(flipperPotentiometer.getVoltage()<FLIPPER_SEEK_POT_VOLTAGE){ // Do this no matter what since we might have been in manualYNoSeek
                         goToSeekNoExtenders();
-                    }
-                    if(details)teamUtil.log("Elev Manual: " + (EXTENDER_FAST_INCREMENT));
+                    //}
+                    if(details)teamUtil.log("Extender Manual: " + (EXTENDER_FAST_INCREMENT));
                     extender.setVelocity(EXTENDER_MAX_VELOCITY);
-
                     extender.setTargetPosition((int) (clamp(extender.getCurrentPosition() + EXTENDER_FAST_INCREMENT, EXTENDER_MIN, EXTENDER_MAX)));
                     if(details)teamUtil.log("Clamped Val: " + (clamp(extender.getCurrentPosition() + EXTENDER_FAST_INCREMENT, EXTENDER_MIN, EXTENDER_MAX)));
-
                 }else{
-                    if(details)teamUtil.log("Elev Manual: " + (-EXTENDER_FAST_INCREMENT));
+                    if(details)teamUtil.log("Extender Manual: " + (-EXTENDER_FAST_INCREMENT));
                     extender.setVelocity(EXTENDER_MAX_VELOCITY);
-
                     extender.setTargetPosition((int) (clamp(extender.getCurrentPosition() - EXTENDER_FAST_INCREMENT, EXTENDER_MIN, EXTENDER_MAX)));
                     if(details)teamUtil.log("Clamped Val: " + (clamp(extender.getCurrentPosition() - EXTENDER_FAST_INCREMENT, EXTENDER_MIN, EXTENDER_MAX)));
 
                 }
             }
-
         }
     }
+
+    public static int EXTENDER_NO_SEEK_INCREMENT = 350;
+    public void manualYNoSeek(double joystickValue){
+        // Doesn't check to see if another thread is moving the intake system!
+        // This might interrupt a retract (OK) or mess up a seek (bad)
+        extender.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
+        extender.setVelocity(EXTENDER_MAX_VELOCITY);
+        if (joystickValue < 0) {
+            extender.setTargetPosition((int) (clamp(extender.getCurrentPosition() + EXTENDER_NO_SEEK_INCREMENT, EXTENDER_MIN, EXTENDER_MAX)));
+        } else {
+            extender.setTargetPosition((int) (clamp(extender.getCurrentPosition() - EXTENDER_NO_SEEK_INCREMENT, EXTENDER_MIN, EXTENDER_MAX)));
+        }
+    }
+
 
     public void manualX(double joystick){
         if(!moving.get()){

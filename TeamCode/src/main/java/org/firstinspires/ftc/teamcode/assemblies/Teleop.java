@@ -7,6 +7,7 @@ import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 import org.firstinspires.ftc.teamcode.libs.Blinkin;
 import org.firstinspires.ftc.teamcode.libs.OpenCVSampleDetectorV2;
@@ -28,6 +29,7 @@ public class Teleop extends LinearOpMode {
     int optionsPresses = 0;
     boolean hangManualControl= false;
     public static boolean initCV= false;
+    boolean outtakeUp = true;
 
 
 
@@ -121,10 +123,12 @@ public class Teleop extends LinearOpMode {
         //TODO: FIX ALL STATE MANAGEMENT
         waitForStart();
 
+        // Lock extender in its current position
         robot.intake.extender.setTargetPosition(robot.intake.extender.getCurrentPosition());
+        robot.intake.extender.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
         robot.intake.extender.setVelocity(EXTENDER_HOLD_RETRACT_VELOCITY);
+        
         robot.intake.setTargetColor(OpenCVSampleDetectorV2.TargetColor.YELLOW);
-        boolean liftDropped = false;
 
         while (opModeIsActive()){
             driverGamepad.loop();
@@ -137,13 +141,17 @@ public class Teleop extends LinearOpMode {
                 robot.drive.setHeading(0);
             }
 
-
-
             if(driverGamepad.wasYPressed()){
                 robot.drive.setHeldHeading(0);
             }
-            if(driverGamepad.wasAPressed()){
+            if(driverGamepad.wasOptionsPressed()){
                 robot.drive.setHeldHeading(315);
+            }if(driverGamepad.wasAPressed()) {
+                if (OpenCVSampleDetectorV2.targetColor == OpenCVSampleDetectorV2.TargetColor.YELLOW) {
+                    robot.drive.setHeldHeading(315);
+                } else {
+                    robot.drive.setHeldHeading(180);
+                }
             }
             if(driverGamepad.wasXPressed()){
                 robot.drive.setHeldHeading(90);
@@ -152,12 +160,18 @@ public class Teleop extends LinearOpMode {
                 robot.drive.setHeldHeading(270);
             }
 
-
             //ARMS GAMEPAD
             //Outake
-            if(armsGamepad.wasUpPressed()){
-               robot.outtake.deployArm();
+            if(driverGamepad.wasLeftBumperPressed()){
+                if(outtakeUp){
+                    robot.outtake.outtakeGrab();
+                    outtakeUp = false;
+                }else{
+                    robot.outtake.deployArmNoWait(2000);
+                    outtakeUp = true;
+                }
             }
+            /*
             if(armsGamepad.wasDownPressed()){
                 robot.dropSampleOutBackAndArmGrabNoWait(3000);
             }
@@ -169,37 +183,42 @@ public class Teleop extends LinearOpMode {
                 robot.outtake.outakewrist.setPosition(Outtake.WRIST_GRAB);
             }
 
+             */
 
 
-            if (armsGamepad.wasAPressed()&&!robot.intake.autoSeeking.get()) {
+
+            if (armsGamepad.wasAPressed() && !robot.intake.autoSeeking.get()) {
                 if(robot.intake.extender.getCurrentPosition()<Intake.EXTENDER_GO_TO_SEEK_THRESHOLD){
-                    robot.intake.unloadV2NoWait(true);
+                    //robot.intake.unloadV2NoWait(true); (fast unload)
+                    robot.intake.safeUnloadNoWait();
                 }
                 else{
                     robot.intake.extenderSafeRetractNoWait(4000);
                 }
             }
 
-
-
-
-
-            if ((Math.abs(armsGamepad.gamepad.left_stick_y) > EXTENDER_Y_DEADBAND)&&!robot.intake.autoSeeking.get()) {
+            if(!robot.intake.autoSeeking.get()) {
+                robot.intake.manualX(armsGamepad.gamepad.left_stick_x);
+            }
+            if ((Math.abs(armsGamepad.gamepad.left_stick_y) > EXTENDER_Y_DEADBAND) && !robot.intake.autoSeeking.get()) {
                 robot.intake.manualY(armsGamepad.gamepad.left_stick_y);
             }
-            if(!robot.intake.autoSeeking.get()) robot.intake.manualX(armsGamepad.gamepad.left_stick_x);
+            if (Math.abs(armsGamepad.gamepad.right_stick_y) > EXTENDER_Y_DEADBAND) {
+                robot.intake.manualYNoSeek(armsGamepad.gamepad.right_stick_y);
+            }
+
+            if (armsGamepad.gamepad.right_stick_button) {
+                robot.intake.grabberReady();
+            }
 
 
             if ((armsGamepad.wasBPressed()&&teamUtil.alliance == teamUtil.Alliance.RED)&&!robot.intake.autoSeeking.get()) { //Grab Red
                 robot.intake.setTargetColor(OpenCVSampleDetectorV2.TargetColor.RED);
                 if((robot.drive.getHeadingODO()>45&&robot.drive.getHeadingODO()<135)||(robot.drive.getHeadingODO()>225&&robot.drive.getHeadingODO()<315)){
-                    robot.intake.goToSampleAndGrabNoWaitV3(true);
+                    robot.intake.goToSampleAndGrabNoWaitV3(false); // TODO was true for auto unload--switched to false to try intake-only collection
                 }else{
                     robot.intake.goToSampleAndGrabNoWaitV3(false);
                 }
-
-                  //TODO Tune timeout
-
             }
             if ((armsGamepad.wasYPressed())&&!robot.intake.autoSeeking.get()) { //Grab Yellow
                 robot.intake.setTargetColor(OpenCVSampleDetectorV2.TargetColor.YELLOW);
@@ -212,7 +231,7 @@ public class Teleop extends LinearOpMode {
             if ((armsGamepad.wasXPressed()&&teamUtil.alliance == teamUtil.Alliance.BLUE)&&!robot.intake.autoSeeking.get()) { //Grab Blue
                 robot.intake.setTargetColor(OpenCVSampleDetectorV2.TargetColor.BLUE);
                 if((robot.drive.getHeadingODO()>45&&robot.drive.getHeadingODO()<135)||(robot.drive.getHeadingODO()>225&&robot.drive.getHeadingODO()<315)){
-                    robot.intake.goToSampleAndGrabNoWaitV3(true);
+                    robot.intake.goToSampleAndGrabNoWaitV3(false); // TODO was true for auto unload--switched to false to try intake-only collection
                 }else{
                     robot.intake.goToSampleAndGrabNoWaitV3(false);
                 }
@@ -245,9 +264,7 @@ public class Teleop extends LinearOpMode {
 
             //HANG
 
-            if (driverGamepad.wasUpPressed()) {
-                robot.hang.extendHang();
-            }
+
             if(armsGamepad.wasOptionsPressed()){
                 optionsPresses+=1;
                 if(optionsPresses==1){
@@ -281,10 +298,6 @@ public class Teleop extends LinearOpMode {
                         driverGamepad.gamepad.right_trigger > .5,driverGamepad.gamepad.left_trigger > .5,
                         robot.drive.getHeading());
             }
-
-
-
-
 
 
             robot.outputTelemetry();
