@@ -489,7 +489,7 @@ public class Robot {
     }
 
     static public int[] F33_6_CYCLE_Y_PLACEMENTS = {100, 80, 60, 40, 20};
-    static public int[] F33_5_CYCLE_Y_PLACEMENTS = {0, 47, 94, 140};
+    static public int[] F33_5_CYCLE_Y_PLACEMENTS = {50, 68, 112, 145};
 
     public void fiveSpecimenCycle() {
         specimenCycleV3(1, F33_5_CYCLE_Y_PLACEMENTS[0],false, true, true);
@@ -808,6 +808,7 @@ public class Robot {
 
     public void pickUpHooks(){
         intake.flipper.setPosition(Intake.FLIPPER_SAFE);
+        intake.grab();
         outtake.outakearm.setPosition(Outtake.ARM_ENGAGE);
         output.lift.setVelocity(Output.LIFT_MAX_VELOCITY);
         hang.extendHang();
@@ -1115,7 +1116,7 @@ public class Robot {
     public boolean specimenCycle(int cycles){
         outtake.outakearm.setPosition(Outtake.ARM_UP);
 
-        BasicDrive.MIN_STRAFE_START_VELOCITY = 2000;
+        BasicDrive.MIN_STRAsFE_START_VELOCITY = 2000;
         BasicDrive.MIN_START_VELOCITY = 1000;
         //Moves robot from the observation zone to the middle of the field
         drive.strafeHoldingStraightEncoder(BasicDrive.MAX_VELOCITY,D01_WALL_TO_MIDFIELD_Y,D00_WALL_TO_MIDFIELD_X,0,D02_TRANSITION_VELOCITY_FAST,

@@ -147,7 +147,7 @@ public class Intake {
 
     /* Values without potentiometer */
     static public float GRABBER_READY = 0.25f; //No Pot .25f
-    static public float GRABBER_GRAB = 0.64f; // No Pot .64f
+    static public float GRABBER_GRAB = 0.655f; // No Pot .64f
     static public float GRABBER_RELEASE = .17f; // No Pot .63f TODO: Is this really the right value? Almost the same as grab?
     static public long GRABBER_UNLOAD_PAUSE = 0; // No Pot .63f TODO: Is this really the right value? Almost the same as grab?
 

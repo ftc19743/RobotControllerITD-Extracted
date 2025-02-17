@@ -86,13 +86,12 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
     public static double AREA_THRESHOLD = 10000;
     public static double EXTERNAL_THRESHOLD = 10;
     public static double SEGMENT_THRESHOLD = 15;
-    public static double STRAIGHT_THRESHOLD = 10f; // degrees
-    public static double RIGHT_ANGLE_TOLERANCE = 5f;// degrees
+    public static double STRAIGHT_THRESHOLD = 15f; // degrees
+    public static double RIGHT_ANGLE_TOLERANCE = 10f;// degrees
     public static double LONG_LENGTH_TARGET = 192;
     public static double LONG_LENGTH_THRESHOLD = 15;
     public static double SHORT_LENGTH_TARGET = 73;
     public static double SHORT_LENGTH_THRESHOLD = 8;
-
     public static double adjYCoefficient = 0.284;
 
 
@@ -150,7 +149,7 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
     static public int yellowLowH = 10, yellowLowS = 100, yellowLowV = 170;
     static public int yellowHighH = 35, yellowHighS = 255, yellowHighV = 255;
     static public int yellowErosionFactor = 5;
-    static public int blueLowH = 90, blueLowS = 80, blueLowV = 90; // lowv was 70 meet #2 build
+    static public int blueLowH = 90, blueLowS = 110, blueLowV = 90; // lowv was 70 meet #2 build
     static public int blueHighH = 130, blueHighS = 255, blueHighV = 255;
     static public int blueErosionFactor = 5;
     static public int rbyLowH = -1, rbyLowS = 150, rbyLowV = 125;
