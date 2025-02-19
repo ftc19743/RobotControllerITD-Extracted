@@ -171,13 +171,16 @@ public class Teleop extends LinearOpMode {
                     outtakeUp = true;
                 }
             }
+
+            if(armsGamepad.wasLeftPressed()){
+                robot.outtake.outtakeRest();
+            }
+
             /*
             if(armsGamepad.wasDownPressed()){
                 robot.dropSampleOutBackAndArmGrabNoWait(3000);
             }
-            if(armsGamepad.wasLeftPressed()){
-                robot.outtake.outtakeRest();
-            }
+
             if(armsGamepad.wasRightPressed()){
                 robot.outtake.outakearm.setPosition(Outtake.ARM_DOWN);
                 robot.outtake.outakewrist.setPosition(Outtake.WRIST_GRAB);
@@ -190,7 +193,7 @@ public class Teleop extends LinearOpMode {
             if (armsGamepad.wasAPressed() && !robot.intake.autoSeeking.get()) {
                 if(robot.intake.extender.getCurrentPosition()<Intake.EXTENDER_GO_TO_SEEK_THRESHOLD){
                     //robot.intake.unloadV2NoWait(true); (fast unload)
-                    robot.intake.safeUnloadNoWait();
+                    robot.intake.unloadToChuteNoWait();
                 }
                 else{
                     robot.intake.extenderSafeRetractNoWait(4000);
@@ -222,6 +225,7 @@ public class Teleop extends LinearOpMode {
             }
             if ((armsGamepad.wasYPressed())&&!robot.intake.autoSeeking.get()) { //Grab Yellow
                 robot.intake.setTargetColor(OpenCVSampleDetectorV2.TargetColor.YELLOW);
+                robot.output.bucket.setPosition(Output.BUCKET_RELOAD);
                 if((robot.drive.getHeadingODO()>45&&robot.drive.getHeadingODO()<135)||(robot.drive.getHeadingODO()>225&&robot.drive.getHeadingODO()<315)){
                     robot.goToSampleAndGrabAndLiftToBucketNoWait(true);
                 }else{

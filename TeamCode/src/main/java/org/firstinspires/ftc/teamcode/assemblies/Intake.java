@@ -98,7 +98,10 @@ public class Intake {
     static public long FLIPPER_GO_TO_SEEK_TIMEOUT = 2000;
     public static double FLIPPER_GOTOUNLOAD_THRESHOLD = 0.488;
     public static double FLIPPER_UNLOAD_SWEEPER_THRESHOLD = 0.9;
+    public static double FLIPPER_CHUTE_SWEEPER_THRESHOLD = 0.9;
     public static double FLIPPER_UNLOAD_GRABBER_THRESHOLD = 0.4;
+    public static double FLIPPER_CHUTE_GRABBER_THRESHOLD = 0.4;
+    public static long FLIPPER_CHUTE_LOOP_TIME = 3;
     public static long FLIPPER_UNLOAD_LOOP_TIME = 3;
     public static long UNLOAD_V2_PRE_UNLOAD_PAUSE = 350;
     public static double FLIPPER_UNLOAD_SWEEPER_THRESHOLD_FROM_SEEK = 0.9;
@@ -1262,9 +1265,13 @@ public class Intake {
         }
         grabber.setPosition(GRABBER_RELEASE);
         teamUtil.pause(GRABBER_UNLOAD_PAUSE);
-        extender.setTargetPosition(EXTENDER_UNLOAD_POST);
-        extender.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
-        extender.setVelocity(EXTENDER_MAX_VELOCITY);
+
+
+            extender.setTargetPosition(EXTENDER_UNLOAD_POST);
+            extender.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
+            extender.setVelocity(EXTENDER_MAX_VELOCITY);
+
+
         if(details)teamUtil.log("GRABBER Set to RELEASE");
         teamUtil.log("unloadV2 has finished");
 
@@ -1304,8 +1311,52 @@ public class Intake {
         }
     }
 
+    public void unloadToChute(){
+        boolean details = false;
+        teamUtil.log("unloadToChute has started");
+        flipper.setPosition(FLIPPER_UNLOAD);
+        wrist.setPosition(WRIST_UNLOAD);
+        long timeOutTime = 2000+System.currentTimeMillis();
 
-    public void unloadV2NoWait(boolean fromSeek) {
+        while(flipperPotentiometer.getVoltage()> FLIPPER_CHUTE_SWEEPER_THRESHOLD&&teamUtil.keepGoing(timeOutTime)){
+            if(details)teamUtil.log("Flipper Potentiometer Voltage" + flipperPotentiometer.getVoltage());
+            teamUtil.pause(FLIPPER_CHUTE_LOOP_TIME);
+        }
+
+        if(details)teamUtil.log("SWEEPER Set to RELEASE");
+        sweeper.setPosition(SWEEPER_RELEASE);
+        long timeOutTime2 = 2000+System.currentTimeMillis();
+        while(flipperPotentiometer.getVoltage()>FLIPPER_CHUTE_GRABBER_THRESHOLD&&teamUtil.keepGoing(timeOutTime2)){
+            if(details)teamUtil.log("Flipper Potentiometer Voltage" + flipperPotentiometer.getVoltage());
+            teamUtil.pause(FLIPPER_CHUTE_LOOP_TIME);
+        }
+        grabber.setPosition(GRABBER_RELEASE);
+
+        if(details)teamUtil.log("GRABBER Set to RELEASE");
+        teamUtil.log("unloadToChute has finished");
+    }
+
+    public void unloadToChuteNoWait() {
+        if (moving.get()) { // Intake is already moving in another thread
+            teamUtil.log("WARNING: Attempt to safeUnload while intake is moving--ignored");
+            return;
+        } else {
+            moving.set(true);
+            teamUtil.log("Launching Thread to unloadToChute");
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    unloadToChute();
+                    moving.set(false);
+                }
+            });
+            thread.start();
+        }
+    }
+
+
+
+    public void unloadV2NoWait(boolean fromSeek, boolean toChute) {
         if (moving.get()) { // Intake is already moving in another thread
             teamUtil.log("WARNING: Attempt to goToUnloadV2 while intake is moving--ignored");
             return;

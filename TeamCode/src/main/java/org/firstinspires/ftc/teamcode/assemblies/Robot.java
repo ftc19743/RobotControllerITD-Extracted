@@ -150,10 +150,9 @@ public class Robot {
 
     public void calibrate() {
         hang.calibrate();
-
         outtake.firstCalibrate();
-        output.calibrate();
         intake.calibrate();
+        output.calibrate();
         outtake.secondCalibrate();
     }
 

@@ -47,7 +47,8 @@ public class CalibrateArms extends LinearOpMode {
         Intake_Fine_Manual_Operation,
         Intake_Seek_Testing,
         Test_Axon_Slider,
-        Jump_To_Test
+        Jump_To_Test,
+        Unload_Test
         };
     public static Ops AA_Operation = Ops.Intake_Manual_Operation;
     public static boolean useCV = true;
@@ -93,6 +94,7 @@ public class CalibrateArms extends LinearOpMode {
             case Intake_Seek_Testing: intakeSeekTesting();break;
             case Test_Axon_Slider: testAxonSlider();break;
             case Jump_To_Test: testJumpTo();break;
+            case Unload_Test: testUnloads();break;
 
         }
     }
@@ -183,6 +185,9 @@ public class CalibrateArms extends LinearOpMode {
                 testAxonSlider();
             }else if (AA_Operation==Ops.Jump_To_Test){
                 testJumpTo();
+            }
+            else if(AA_Operation==Ops.Unload_Test){
+                testUnloads();
             }
 
             // Drawing stuff on the field
@@ -668,5 +673,35 @@ public class CalibrateArms extends LinearOpMode {
         output.dropSampleOutBack();
         outtake.outtakeGrab();
         return true;
+    }
+
+    public void testUnloads(){
+        if(gp1.wasRightTriggerPressed()){
+            outtake.outtakeRest();
+            teamUtil.pause(1000);
+            output.calibrate();
+        }
+        if(gp1.wasAPressed()){
+            intake.unloadToChute();
+        }
+        if(gp1.wasYPressed()){
+            intake.unloadV2(true);
+        }
+        if(gp1.wasLeftTriggerPressed()){
+            output.bucket.setPosition(Output.BUCKET_IDLE);
+        }
+        if(gp1.wasXPressed()){
+            intake.flipperGoToSeek(2000);
+            intake.release();
+        }
+        if(gp1.wasBPressed()){
+            intake.grab();
+        }
+        if(gp1.wasUpPressed()){
+            outtake.outtakeRest();
+        }
+        if(gp1.wasDownPressed()){
+            outtake.outtakeGrab();
+        }
     }
 }
