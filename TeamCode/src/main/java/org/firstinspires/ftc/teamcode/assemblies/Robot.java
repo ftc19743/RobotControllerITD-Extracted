@@ -26,7 +26,7 @@ public class Robot {
     public Hang hang;
     public Blinkin blinkin;
 
-
+    public static boolean details = false;
 
     public static boolean AUTO_INTAKE_SAMPLE = true;
 
@@ -391,7 +391,48 @@ public class Robot {
         teamUtil.pause(F17_PICKUP_1_PAUSE);
     }
 
+    public static int TEST_PAUSE_1 = 150;
+    public static float TEST_POW_1 = .4f;
+    public void testDriveToWall () {
+        drive.straightHoldingStrafePower(1,F24_CYCLE_BACKUP_X,F02_PLACE_SPECIMEN_Y,0, null,0,4000);
+        outtake.outtakeGrab();
 
+        //moves robot into position to drive forward to grab next specimen
+        drive.strafeHoldingStraightPower(1,F25_CYCLE_PICKUP_Y+F0a_SLOW_STRAFE_ADJUST,F26_CYCLE_PREPARE_FOR_PICKUP_X,0,null,0,4000);
+        drive.stopMotors();
+        teamUtil.pause(TEST_PAUSE_1);
+        //moves robot to wall for grab
+        drive.straightHoldingStrafePower(TEST_POW_1,F26a_CYCLE_PICKUP_X,F25_CYCLE_PICKUP_Y,0, null,0,4000);
+        teamUtil.pause(F28_CYCLE_PICKUP_PAUSE);
+    }
+
+    public void testPlaceSpecimen (int cycle, int cycleYTarget) {
+        float strafeMaxDeclination = drive.STRAFE_MAX_DECLINATION;
+        BasicDrive.STRAFE_MAX_DECLINATION = F18b_ADJUSTED_MAX_DECLINATION;
+        drive.strafeHoldingStraightEncoder(BasicDrive.MAX_VELOCITY, cycleYTarget - F0a_FAST_STRAFE_ADJUST, F19_CYCLE_MIDFIELD_X, 0, F08_TRANSITION_VELOCITY_FAST,
+                new BasicDrive.ActionCallback() {
+                    @Override
+                    public void action() {
+                        outtake.outakewrist.setPosition(Outtake.WRIST_RELEASE);
+                    }
+                }, cycle == 1? F22b_CYCLE1_WRIST_CALLBACK:F22_CYCLE_WRIST_CALLBACK, 5000);
+        BasicDrive.STRAFE_MAX_DECLINATION = strafeMaxDeclination;
+        outtake.deployArm();
+
+        if(cycle>=2){
+            drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY, F21b_CYCLE_PLACE_SAMPLE_X, cycleYTarget, 0, BasicDrive.MAX_VELOCITY, false, null, 0, 4000);
+
+            drive.driveMotorsHeadingsFR(180,0,BasicDrive.MAX_VELOCITY);
+            teamUtil.pause(F23b_CYCLE_REVERSE_PLACE_SPECIMEN_PAUSE); // give it time to decelerate
+        }
+        else{
+            drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY, F21_CYCLE_PLACE_SAMPLE_X, cycleYTarget, 0, BasicDrive.MAX_VELOCITY, false, null, 0, 4000);
+
+            drive.stopMotors(); // TODO: Reconsider this, maybe reverse
+            teamUtil.pause(F23_CYCLE_PLACE_SPECIMEN_PAUSE); // give it time to decelerate and coast to submersable
+        }
+
+    }
     public boolean specimenCycleV3(int cycle, int cycleYTarget, boolean grabSample, boolean chillPickup, boolean getNextSpecimen){
         long startTime = System.currentTimeMillis();
         outtake.outakearm.setPosition(Outtake.ARM_UP);
@@ -402,7 +443,6 @@ public class Robot {
 
         //Moves robot from the observation zone to the middle of the field in front of place position account for some strafe drift
         if (grabSample) {
-
             // Take a wider path if we are extending intake, turn motors on to hold robot against submersible
         } else {
             float strafeMaxDeclination = drive.STRAFE_MAX_DECLINATION;
@@ -628,85 +668,7 @@ public class Robot {
 
     }
 
-    public void hangPhase2(){
-        hang.hang_Left.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        hang.hang_Right.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-        hang.engageHang();
-
-        /*  No real need to pull in slack at this point if strings are in the right spot
-        teamUtil.pause(Hang.HANG_PHASE_2_SLACK_PAUSE);
-        hang.hang_Left.setTargetPosition(Hang.SLACK_LEVEL);
-        hang.hang_Right.setTargetPosition(Hang.SLACK_LEVEL);
-        hang.hang_Left.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        hang.hang_Right.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        hang.hang_Left.setVelocity(Hang.HANG_VELOCITY);
-        hang.hang_Right.setVelocity(Hang.HANG_VELOCITY);
-*/
-        teamUtil.pause(Hang.HANG_PHASE_2_ENGAGE_PAUSE); // don't put hooks on bar until we are off of ground
-        output.lift.setVelocity(Robot.PLACE_HOOKS_VELOCITY);
-        output.lift.setTargetPosition(Output.LIFT_AT_BAR);
-        teamUtil.pause(Hang.HANG_PHASE_2_PLACE_PAUSE); // currently zero...there is enough slack now to where we can place the hooks and start pulling string at the same time
-        hang.hang_Left.setTargetPosition(Hang.AUTO_LIFT_LEVEL);
-        hang.hang_Right.setTargetPosition(Hang.AUTO_LIFT_LEVEL);
-        hang.hang_Left.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        hang.hang_Right.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        hang.hang_Left.setVelocity(Hang.HANG_VELOCITY);
-        hang.hang_Right.setVelocity(Hang.HANG_VELOCITY);
-        teamUtil.log("Both Joystick Drive Booleans HANGINGL and HANGINGR set true in hang Phase 2");
-        hang.hangingL = true; hang.hangingR = true;// fake out control code to let it go up automatically until someone touches the joystick
-    }
-
-    public void hangPhase2V2(){
-        long timeOutTime = System.currentTimeMillis() + 8000;
-        hang.hang_Left.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        hang.hang_Right.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
-        hang.engageHang();
-        teamUtil.pause(Hang.HANG_PHASE_2_ENGAGE_PAUSE); // don't put hooks on bar until we are off of ground
-        output.lift.setVelocity(Robot.PLACE_HOOKS_VELOCITY);
-        output.lift.setTargetPosition(Output.LIFT_AT_BAR);
-        hang.hang_Left.setTargetPosition(Hang.AUTO_LIFT_LEVEL);
-        hang.hang_Right.setTargetPosition(Hang.AUTO_LIFT_LEVEL);
-        hang.hang_Left.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        hang.hang_Right.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        hang.hang_Left.setVelocity(Hang.HANG_VELOCITY);
-        hang.hang_Right.setVelocity(Hang.HANG_VELOCITY);
-
-        teamUtil.pause(Hang.HANG_STARTUP_SPINDLE_PAUSE);
-        int lastLeft = hang.hang_Left.getCurrentPosition();
-        int lastRight = hang.hang_Right.getCurrentPosition();
-        boolean leftTensioned = false;
-        boolean rightTensioned = false;
-        while ((!leftTensioned || !rightTensioned) && teamUtil.keepGoing(timeOutTime)) {
-            dropLiftWhenNeeded();
-            teamUtil.log("Hangleft: " + hang.hang_Left.getCurrentPosition()+ " Hangright: "+ hang.hang_Right.getCurrentPosition());
-            teamUtil.pause(100);
-            if (!leftTensioned && hang.hang_Left.getCurrentPosition() - lastLeft < Hang.HANG_TENSION_THRESHOLD) {
-                leftTensioned = true;
-                hang.hang_Left.setTargetPosition(hang.hang_Left.getCurrentPosition());
-                teamUtil.log("Left String Tensioned ");
-            }
-            if (!rightTensioned && hang.hang_Right.getCurrentPosition() - lastRight < Hang.HANG_TENSION_THRESHOLD) {
-                rightTensioned = true;
-                hang.hang_Right.setTargetPosition(hang.hang_Right.getCurrentPosition());
-                teamUtil.log("Right String Tensioned ");
-            }
-            lastLeft = hang.hang_Left.getCurrentPosition();
-            lastRight = hang.hang_Right.getCurrentPosition();
-        }
-        if (System.currentTimeMillis() > timeOutTime) {
-            teamUtil.log("Hang Phase 2 V2 Timed Out!");
-            return;
-        }
-        hang.hang_Right.setTargetPosition(hang.hang_Right.getCurrentPosition()+Hang.HANG_LEVEL_3);
-        teamUtil.pause(Hang.HANG_PAUSE_FOR_LEFT);
-        hang.hang_Left.setTargetPosition(hang.hang_Left.getCurrentPosition()+Hang.HANG_LEVEL_3);
-
-
-        teamUtil.log("Both Joystick Drive Booleans HANGINGL and HANGINGR set true in hang Phase 2");
-        hang.hangingL = true; hang.hangingR = true;// fake out control code to let it go up automatically until someone touches the joystick
-    }
     public void hangPhase2V3(){
         long timeOutTime = System.currentTimeMillis() + 8000;
         hang.hang_Left.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER); // Assumes 33" of string out
@@ -730,7 +692,7 @@ public class Robot {
                 (Hang.HANG_TENSION_L - hang.hang_Left.getCurrentPosition() > 50 ||
                  Hang.HANG_TENSION_R - hang.hang_Right.getCurrentPosition() > 50 ))  {
             dropLiftWhenNeeded();
-            teamUtil.log("Hangleft: " + hang.hang_Left.getCurrentPosition()+ " HangRight: "+ hang.hang_Right.getCurrentPosition());
+            if (details) {teamUtil.log("Hangleft: " + hang.hang_Left.getCurrentPosition()+ " HangRight: "+ hang.hang_Right.getCurrentPosition());}
             teamUtil.pause(50);
         }
         if (System.currentTimeMillis() > timeOutTime) {
@@ -748,18 +710,6 @@ public class Robot {
     }
 
 
-    public void hangPhase2NoWait(){
-
-        teamUtil.log("hangPhase1NoWait");
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                hangPhase2();
-            }
-        });
-        thread.start();
-
-    }
 
     public void dropLift() {
         hang.hook_grabber.setPosition(Hang.HOOKGRABBER_PRE_RELEASE);
@@ -893,6 +843,98 @@ public class Robot {
 
 /* OLD Code
 
+    public void hangPhase2NoWait(){
+
+        teamUtil.log("hangPhase1NoWait");
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                hangPhase2();
+            }
+        });
+        thread.start();
+
+    }
+
+    public void hangPhase2(){
+        hang.hang_Left.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        hang.hang_Right.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        hang.engageHang();
+
+       //  No real need to pull in slack at this point if strings are in the right spot
+        teamUtil.pause(Hang.HANG_PHASE_2_SLACK_PAUSE);
+        hang.hang_Left.setTargetPosition(Hang.SLACK_LEVEL);
+        hang.hang_Right.setTargetPosition(Hang.SLACK_LEVEL);
+        hang.hang_Left.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        hang.hang_Right.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        hang.hang_Left.setVelocity(Hang.HANG_VELOCITY);
+        hang.hang_Right.setVelocity(Hang.HANG_VELOCITY);
+
+        teamUtil.pause(Hang.HANG_PHASE_2_ENGAGE_PAUSE); // don't put hooks on bar until we are off of ground
+        output.lift.setVelocity(Robot.PLACE_HOOKS_VELOCITY);
+        output.lift.setTargetPosition(Output.LIFT_AT_BAR);
+        teamUtil.pause(Hang.HANG_PHASE_2_PLACE_PAUSE); // currently zero...there is enough slack now to where we can place the hooks and start pulling string at the same time
+        hang.hang_Left.setTargetPosition(Hang.AUTO_LIFT_LEVEL);
+        hang.hang_Right.setTargetPosition(Hang.AUTO_LIFT_LEVEL);
+        hang.hang_Left.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        hang.hang_Right.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        hang.hang_Left.setVelocity(Hang.HANG_VELOCITY);
+        hang.hang_Right.setVelocity(Hang.HANG_VELOCITY);
+        teamUtil.log("Both Joystick Drive Booleans HANGINGL and HANGINGR set true in hang Phase 2");
+    hang.hangingL = true; hang.hangingR = true;// fake out control code to let it go up automatically until someone touches the joystick
+}
+
+public void hangPhase2V2(){
+    long timeOutTime = System.currentTimeMillis() + 8000;
+    hang.hang_Left.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+    hang.hang_Right.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+    hang.engageHang();
+    teamUtil.pause(Hang.HANG_PHASE_2_ENGAGE_PAUSE); // don't put hooks on bar until we are off of ground
+    output.lift.setVelocity(Robot.PLACE_HOOKS_VELOCITY);
+    output.lift.setTargetPosition(Output.LIFT_AT_BAR);
+    hang.hang_Left.setTargetPosition(Hang.AUTO_LIFT_LEVEL);
+    hang.hang_Right.setTargetPosition(Hang.AUTO_LIFT_LEVEL);
+    hang.hang_Left.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+    hang.hang_Right.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+    hang.hang_Left.setVelocity(Hang.HANG_VELOCITY);
+    hang.hang_Right.setVelocity(Hang.HANG_VELOCITY);
+
+    teamUtil.pause(Hang.HANG_STARTUP_SPINDLE_PAUSE);
+    int lastLeft = hang.hang_Left.getCurrentPosition();
+    int lastRight = hang.hang_Right.getCurrentPosition();
+    boolean leftTensioned = false;
+    boolean rightTensioned = false;
+    while ((!leftTensioned || !rightTensioned) && teamUtil.keepGoing(timeOutTime)) {
+        dropLiftWhenNeeded();
+        //teamUtil.log("Hangleft: " + hang.hang_Left.getCurrentPosition()+ " Hangright: "+ hang.hang_Right.getCurrentPosition());
+        teamUtil.pause(100);
+        if (!leftTensioned && hang.hang_Left.getCurrentPosition() - lastLeft < Hang.HANG_TENSION_THRESHOLD) {
+            leftTensioned = true;
+            hang.hang_Left.setTargetPosition(hang.hang_Left.getCurrentPosition());
+            teamUtil.log("Left String Tensioned ");
+        }
+        if (!rightTensioned && hang.hang_Right.getCurrentPosition() - lastRight < Hang.HANG_TENSION_THRESHOLD) {
+            rightTensioned = true;
+            hang.hang_Right.setTargetPosition(hang.hang_Right.getCurrentPosition());
+            teamUtil.log("Right String Tensioned ");
+        }
+        lastLeft = hang.hang_Left.getCurrentPosition();
+        lastRight = hang.hang_Right.getCurrentPosition();
+    }
+    if (System.currentTimeMillis() > timeOutTime) {
+        teamUtil.log("Hang Phase 2 V2 Timed Out!");
+        return;
+    }
+    hang.hang_Right.setTargetPosition(hang.hang_Right.getCurrentPosition()+Hang.HANG_LEVEL_3);
+    teamUtil.pause(Hang.HANG_PAUSE_FOR_LEFT);
+    hang.hang_Left.setTargetPosition(hang.hang_Left.getCurrentPosition()+Hang.HANG_LEVEL_3);
+
+
+    teamUtil.log("Both Joystick Drive Booleans HANGINGL and HANGINGR set true in hang Phase 2");
+    hang.hangingL = true; hang.hangingR = true;// fake out control code to let it go up automatically until someone touches the joystick
+}
     static public int A01_PLACE_SPECIMEN_X = 732;
     public static int A02_PLACE_SPECIMEN_Y = -50;
     static public int A03_MOVE_TO_SAMPLE_Y = 873;

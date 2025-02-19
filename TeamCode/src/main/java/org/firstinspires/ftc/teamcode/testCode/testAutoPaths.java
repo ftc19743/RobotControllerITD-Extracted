@@ -144,12 +144,23 @@ public class testAutoPaths extends LinearOpMode {
             }
 
             ////////////////////////////////////////////////////////////////////////////
+            // Trying to find heading/rotation bug
+            if(armsGamepad.wasUpPressed()) {
+                robot.testDriveToWall();
+                robot.drive.stopMotors();
+            }
+            if(armsGamepad.wasDownPressed()) {
+                robot.testPlaceSpecimen(2,70);
+                robot.drive.stopMotors();
+            }
+
+                ////////////////////////////////////////////////////////////////////////////
             // TESTING HANG
             if(armsGamepad.wasAPressed()) {
                 robot.hangPhase1();
             }
             if(armsGamepad.wasBPressed()) {
-                robot.hangPhase2();
+                //
             }
             if(armsGamepad.wasYPressed()) {
                 robot.hangPhase2V3();
@@ -165,22 +176,6 @@ public class testAutoPaths extends LinearOpMode {
             //teamUtil.log("Hangleft: " + robot.hang.hang_Left.getCurrentPosition()+ " Hangright: "+ robot.hang.hang_Right.getCurrentPosition());
             telemetry.addLine("Hangleft: " + robot.hang.hang_Left.getCurrentPosition()+ " Hangright: "+ robot.hang.hang_Right.getCurrentPosition());
 
-
-            /*
-            if(driverGamepad.wasOptionsPressed()){
-                robot.intake.setTargetColor(OpenCVSampleDetector.TargetColor.RED);
-                robot.drive.setRobotPosition(robot.B07_GO_TO_SAMPLE_X,robot.B08_GO_TO_SAMPLE_Y,0);
-
-                if(!robot.intake.goToSampleAndGrab(5000)){
-                    teamUtil.log("FAILED to intake sample.  Giving up");
-                    break;
-                }
-                robot.intake.goToUnloadNoWait(5000);
-                robot.drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY, robot.B11_WALL_SPECIMEN_X, robot.B12_WALL_SPECIMEN_Y,0,200,null,0,4000);
-                robot.output.dropSampleOutBackNoWait();
-            }
-
-             */
 
             if(driverGamepad.wasStartPressed()){
                 //robot.intake.putFlickerDown();
