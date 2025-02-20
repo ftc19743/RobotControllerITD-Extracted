@@ -262,13 +262,13 @@ public class CalibrateArms extends LinearOpMode {
         if (gp1.wasUpPressed()) {
             intake.lightsOnandOff(WHITE_NEOPIXEL,Intake.RED_NEOPIXEL,Intake.GREEN_NEOPIXEL,Intake.BLUE_NEOPIXEL,true);
 
-            intake.goToSampleV5(5000);
+            intake.goToSampleV5(5000,true);
             intake.restartCVPipeline();
             //intake.goToSampleAndGrabV2(5000);
         } if (gp1.wasRightBumperPressed()) {
             intake.lightsOnandOff(WHITE_NEOPIXEL,Intake.RED_NEOPIXEL,Intake.GREEN_NEOPIXEL,Intake.BLUE_NEOPIXEL,true);
 
-            intake.goToSampleAndGrabV3(false, true);
+            intake.goToSampleAndGrabV3(false, true,true);
             //intake.goToSampleAndGrabV2(5000);
         } if(gp1.wasLeftPressed()){
             intake.flipper.setPosition(Intake.FLIPPER_SEEK);
@@ -298,11 +298,11 @@ public class CalibrateArms extends LinearOpMode {
 
     public void intakeManualOperation() {
         if (gp1.wasUpPressed()) {
-            intake.goToSampleAndGrabV3(true, true);
+            intake.goToSampleAndGrabV3(true, true,true);
             //intake.flipperGoToSeek(2000);
         }
         if (gp1.wasLeftTriggerPressed()) {
-            intake.goToSampleAndGrabNoWaitV3(true);
+            intake.goToSampleAndGrabNoWaitV3(true,true);
             //intake.flipperGoToSeek(2000);
         }
 
@@ -371,7 +371,6 @@ public class CalibrateArms extends LinearOpMode {
             intake.extender.setVelocity(0);
         }
 
-        intake.axonSlider.loop();
         if (gp1.gamepad.left_stick_x < -.25) {
             intake.axonSlider.setAdjustedPower(Intake.SLIDER_MAX_VELOCITY);
         } else if (gp1.gamepad.left_stick_x > .25) {
@@ -577,10 +576,10 @@ public class CalibrateArms extends LinearOpMode {
             intake.startCVPipeline();
         }
         if (gp1.wasDownPressed()){
-            intake.goToSampleV5(5000);
+            intake.goToSampleV5(5000,true);
         }
         if (gp1.wasUpPressed()){
-            intake.goToSampleAndGrabV3(false, true);
+            intake.goToSampleAndGrabV3(false, true,true);
         }
         if(gp1.wasLeftPressed()){
             intake.flipper.setPosition(Intake.FLIPPER_GRAB);

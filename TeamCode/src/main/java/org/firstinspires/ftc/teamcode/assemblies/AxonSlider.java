@@ -13,7 +13,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Config
 public class AxonSlider {
     public CRServo axon;
-    AnalogInput axonPotentiometer;
     public OctoQuad octoquad;
     public final int ODO_SLIDER  = 0; // Intake Slider octoquad port
 
@@ -58,12 +57,12 @@ public class AxonSlider {
     public static int axonRotations = 0; // The number of full rotations postive or negative the servo has traveled from its center range
     private double lastDegrees360; // the rotational angle of the servo in degrees last time we checked
 
-    public void init(HardwareMap hardwareMap, String servoName, String sensorName){
+    public void init(HardwareMap hardwareMap, String servoName){
         teamUtil.log("Init AxonSlider");
         axon = hardwareMap.crservo.get(servoName);
         octoquad = hardwareMap.get(OctoQuad.class, "octoquad");
         octoquad.setSingleEncoderDirection(ODO_SLIDER,  OctoQuad.EncoderDirection.FORWARD); // RIGHT IS POSITIVE, LEFT IS NEGATIVE
-        axonPotentiometer = hardwareMap.analogInput.get(sensorName);
+        //axonPotentiometer = hardwareMap.analogInput.get(sensorName); Not USED ANYMORE
         lastDegrees360 = getDegrees360();
         axonRotations=0; // presumes we are in the middle rotation.  Run Calibrate to be sure.
     }
@@ -347,7 +346,6 @@ public class AxonSlider {
     public void manualSliderControlWithEncoder(double joystick) {
         if(Math.abs(joystick)>SLIDER_X_DEADBAND){
             double power = Math.abs(joystick)-SLIDER_X_DEADBAND; //TODO MAke linear   (Coach: Isn't this linear already?  There might be something wierd here if the Deadband is less than .5?!)
-            loop();
 
             if(joystick<0){
                 if (Math.abs(getPositionEncoder()-LEFT_LIMIT)<OUTSIDE_AVOIDANCE_THRESHOLD) { // TODO: What is this magic number?! Recalibrate for Encoder?
@@ -375,6 +373,7 @@ public class AxonSlider {
     // IMPORTANT:  This method must be called frequently whenever the servo is being moved.
     // It keep track of the servo position and notices when it wraps around between 0 and 360
     // So that the overall position can be calculated
+    /*
     public void loop(){
         //teamUtil.log("LOOP CALLED");
         double degrees = getDegrees360();
@@ -390,9 +389,11 @@ public class AxonSlider {
         lastDegrees360 = degrees;
     }
 
-    // Convert from potentiometer reading to degrees
+     */
+
+    // Convert from potentiometer reading to degrees NOT USED ANYMORE
     public double getDegrees360(){
-        return (axonPotentiometer.getVoltage()*360)/(3.274);
+        return (0);
     }
 
 }

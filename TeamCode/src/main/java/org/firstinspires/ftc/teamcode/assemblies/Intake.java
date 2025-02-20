@@ -246,7 +246,7 @@ public class Intake {
         wrist = hardwareMap.get(Servo.class,"wrist");
         sweeper = hardwareMap.get(Servo.class,"sweeper");
         grabber = hardwareMap.get(Servo.class,"grabber");
-        axonSlider.init(hardwareMap,"slider","sliderPotentiometer");
+        axonSlider.init(hardwareMap,"slider");
         flipperPotentiometer = hardwareMap.analogInput.get("flipperPotentiometer");
         grabberPotentiometer = hardwareMap.analogInput.get("grabberPotentiometer");
         sweeperPotentiometer = hardwareMap.analogInput.get("sweeperPotentiometer");
@@ -558,6 +558,7 @@ public class Intake {
     }
     public void goToSeekNoExtenders(){
         teamUtil.log("goToSeek");
+        arduPortal.setProcessorEnabled(sampleDetector, true );
         flipper.setPosition(FLIPPER_SEEK);
         wrist.setPosition(WRIST_MIDDLE);
         lightsOnandOff(WHITE_NEOPIXEL,RED_NEOPIXEL,GREEN_NEOPIXEL,BLUE_NEOPIXEL,true);
@@ -590,12 +591,12 @@ public class Intake {
 
 
 
-    public boolean goToSampleAndGrabV3(boolean unload,boolean retract){
+    public boolean goToSampleAndGrabV3(boolean unload,boolean retract,boolean phase1){
         autoSeeking.set(true);
         teamUtil.log("Launched GoToSample and Grab" );
         timedOut.set(false);
         long timeOutTime = System.currentTimeMillis() + 1000;
-        if(goToSampleV5(3000) && !timedOut.get()) {
+        if(goToSampleV5(3000,phase1) && !timedOut.get()) {
             long loopStartTime = System.currentTimeMillis();
             //TODO: This looks like a bug...setToPreGrabTime
             while( System.currentTimeMillis()-setToPreGrabTime <FLIPPER_SEEK_TO_PRE_GRAB_TIME && teamUtil.keepGoing(timeOutTime)){
@@ -711,7 +712,7 @@ public class Intake {
             teamUtil.theBlinkin.setSignal(Blinkin.Signals.RED);
         }
         else{
-            teamUtil.theBlinkin.setSignal((Blinkin.Signals.YELLOW));
+            teamUtil.theBlinkin.setSignal((Blinkin.Signals.GOLD));
         }
     }
 
@@ -858,8 +859,9 @@ public class Intake {
         }
     }
 
-    public boolean goToSampleV5(long timeOut){
+    public boolean goToSampleV5(long timeOut, boolean phase1){
         teamUtil.log("GoToSampleV5 has started");
+        teamUtil.log("Processor State" + arduPortal.getProcessorEnabled(sampleDetector));
         long timeoutTime = System.currentTimeMillis() + timeOut;
         long startTime = System.currentTimeMillis();
         boolean details = true;
@@ -880,7 +882,7 @@ public class Intake {
         // leave processor running in case we need to do a phase 1 seek
         frame = sampleDetector.processNextFrame(false, false, false, timeOut);
 
-        if(frame==null){ // did not see anything so move forward to try and find one (Phase 1)
+        if(frame==null&&phase1){ // did not see anything so move forward to try and find one (Phase 1)
             teamUtil.log("GoToSampleV5--No initial detection--moving forward");
             // Move extender out until we see a target
             extender.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
@@ -1776,7 +1778,7 @@ public class Intake {
     }
 
 */
-    public void goToSampleAndGrabNoWaitV3(boolean unload) {
+    public void goToSampleAndGrabNoWaitV3(boolean unload,boolean phase1) {
         if (autoSeeking.get()) { // Intake is already moving in another thread
             teamUtil.log("WARNING: Attempt to goToSampleAndGrab while intake is moving--ignored");
             return;
@@ -1787,7 +1789,7 @@ public class Intake {
             Thread thread = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    goToSampleAndGrabV3(unload, true);
+                    goToSampleAndGrabV3(unload, true,phase1);
                 }
             });
             thread.start();

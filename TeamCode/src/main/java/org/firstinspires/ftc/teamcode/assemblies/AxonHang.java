@@ -134,7 +134,7 @@ public class AxonHang {
         if (Math.abs(power-0) < .001f) {
             axon.setPower(0); // don't adjust 0 to non-zero
         } else {
-            axon.setPower(power+POWER_ADJUSTEMENT);
+            //axon.setPower(power+POWER_ADJUSTEMENT);
         }
     }
 

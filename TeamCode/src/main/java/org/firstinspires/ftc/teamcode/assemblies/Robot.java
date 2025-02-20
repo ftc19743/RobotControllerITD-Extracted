@@ -199,8 +199,10 @@ public class Robot {
         }
     }
 
+
+    //ONLY FOR TELEOP
     public void goToSampleAndGrabAndLiftToBucket(boolean HighBucket){
-        if(!intake.goToSampleAndGrabV3(true, true)){
+        if(!intake.goToSampleAndGrabV3(true, true,false)){
             return;
         }
         if(HighBucket){
@@ -478,7 +480,7 @@ public class Robot {
             else{
                 intake.setTargetColor(OpenCVSampleDetectorV2.TargetColor.BLUE);
             }
-            grabbedSample=intake.goToSampleAndGrabV3(false, false);
+            grabbedSample=intake.goToSampleAndGrabV3(false, false,true);
             autoRetractAndUnloadNoWait(grabbedSample);
             intake.lightsOff();
         }
@@ -580,7 +582,7 @@ public class Robot {
             else{
                 intake.setTargetColor(OpenCVSampleDetectorV2.TargetColor.BLUE);
             }
-            grabbedSample=intake.goToSampleAndGrabV3(false, false);
+            grabbedSample=intake.goToSampleAndGrabV3(false, false,true);
             autoRetractAndUnloadNoWait(grabbedSample);
             intake.lightsOff();
         }
