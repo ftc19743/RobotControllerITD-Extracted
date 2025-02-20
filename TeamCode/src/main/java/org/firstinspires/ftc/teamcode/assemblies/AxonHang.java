@@ -11,309 +11,193 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @Config
 public class AxonHang {
-    public CRServo axon;
-    AnalogInput axonPotentiometer;
+    public CRServo lServo, rServo;
+    AnalogInput lPotentiometer, rPotentiometer;
 
 
     AtomicBoolean moving = new AtomicBoolean(false);
     public AtomicBoolean timedOut = new AtomicBoolean(false);
     public static boolean details = false;
 
-    public static int OUTSIDE_AVOIDANCE_THRESHOLD = 40; // for manual control
-    public int HANG_STOW = 0; //set during calibration
-    public int HANG_EXTEND = 0; //set during calibration
-    public int HANG_ENGAGE = 0; //set during calibration
-
+    public int HANG_L_STOW = 0; //set during calibration
+    public int HANG_L_EXTEND = 0; //set during calibration
+    public int HANG_L_ENGAGE = 0; //set during calibration
+    public int HANG_R_STOW = 0; //set during calibration
+    public int HANG_R_EXTEND = 0; //set during calibration
+    public int HANG_R_ENGAGE = 0; //set during calibration
     public static float RTP_MAX_VELOCITY = .5f;
-    public static int RTP_LEFT_DEADBAND_DEGREES = 490; // TODO Recalibrate
-    public static int RTP_RIGHT_DEADBAND_DEGREES = 545; // TODO Recalibrate
-    public static int RTP_SLOW_THRESHOLD = 1500; // TODO Recalibrate
-    public static float RTP_SLOW_VELOCITY = .07f; // TODO Recalibrate
-    public static int RTP_LEFT_DEADBAND_SLOW_DEGREES = 58; // TODO Recalibrate
-    public static int RTP_RIGHT_DEADBAND_SLOW_DEGREES = 85; // TODO Recalibrate
-    public static float MANUAL_SLIDER_INCREMENT;
-    double SLIDER_X_DEADBAND = 0.5;
     public boolean CALIBRATED = false;
 
-    //292 slider degrees to 10 cm
-    // 1 mm = 51.2727 tics
-    //LEFT IS NEGATIVE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    public int lAxonRotations = 0, rAxonRotations = 0; // The number of full rotations positive or negative the servo has traveled from its center range
+    private double lLastDegrees360, rLastDegrees360; // the rotational angle of the servo in degrees last time we checked
 
-
-
-    public static int axonRotations = 0; // The number of full rotations postive or negative the servo has traveled from its center range
-    private double lastDegrees360; // the rotational angle of the servo in degrees last time we checked
-
-    public void init(HardwareMap hardwareMap, String servoName, String sensorName){
-        teamUtil.log("Init AxonSlider");
-        axon = hardwareMap.crservo.get(servoName);
-        axonPotentiometer = hardwareMap.analogInput.get(sensorName);
-        lastDegrees360 = getDegrees360();
-        axonRotations=0; // presumes we are in the middle rotation.  Run Calibrate to be sure.
+    public void init(HardwareMap hardwareMap){
+        teamUtil.log("Init AxonHang");
+        lServo = hardwareMap.crservo.get("pulleyleft");
+        rServo = hardwareMap.crservo.get("pulleyright");
+        lPotentiometer = hardwareMap.analogInput.get("liftServoLPotentiometer");
+        rPotentiometer = hardwareMap.analogInput.get("liftServoRPotentiometer");
+        lLastDegrees360 = getDegrees360(lPotentiometer);
+        rLastDegrees360 = getDegrees360(rPotentiometer);
+        lAxonRotations=0;
+        rAxonRotations=0;
     }
 
-    public void calibrateEncoder(float power) {
-        // TODO: make it work for hang guys
+
+    public static double HANG_SERVO_STALL_THRESHOLD = .05;
+    public static int HANG_ENGAGE_OFFSET = 200;
+    public static int HANG_LEFT_ENGAGE_ADJUST = 30;
+    public static int HANG_STOW_OFFSET = 10;
+    public static int HANG_EXTEND_OFFSET = 600;
+    public static int CALIBRATION_PAUSE = 100;
+    public void calibrate(float power) {
         CALIBRATED = false;
         teamUtil.log("Calibrating Stage 1 Hang");
-        axon.setPower(power);
-        double lastPosition = getPositionPotentiometer();
+
+        double lastPositionL = lPotentiometer.getVoltage();
+        double lastPositionR = rPotentiometer.getVoltage();
+
+        lServo.setPower(power);
+        rServo.setPower(power);
         teamUtil.pause(250);
-        while ((int) getPositionPotentiometer() != lastPosition) {
-            lastPosition = getPositionPotentiometer();
-            if (details) teamUtil.log("Calibrate Hang Stage 1: " + getPositionPotentiometer());
-            teamUtil.pause(50);
+        double newPositionL = lPotentiometer.getVoltage();
+        double newPositionR = rPotentiometer.getVoltage();
+
+        while (Math.abs(newPositionL - lastPositionL) > HANG_SERVO_STALL_THRESHOLD || Math.abs(newPositionR - lastPositionR) > HANG_SERVO_STALL_THRESHOLD) {
+            if (details) teamUtil.log("Calibrating Hang Servos: " + lastPositionL + ", " + lastPositionR );
+            if (Math.abs(newPositionL - lastPositionL) <= HANG_SERVO_STALL_THRESHOLD) {
+                lServo.setPower(0);
+            }
+            if (Math.abs(newPositionR - lastPositionR) <= HANG_SERVO_STALL_THRESHOLD) {
+                rServo.setPower(0);
+            }
+            lastPositionL = newPositionL;
+            lastPositionR = newPositionR;
+            teamUtil.pause(CALIBRATION_PAUSE);
+            newPositionL = lPotentiometer.getVoltage();
+            newPositionR = rPotentiometer.getVoltage();
         }
-        axon.setPower(0);
-        teamUtil.log("Calibrate Hang Stage 1 Done");
+        lServo.setPower(0);
+        rServo.setPower(0);
 
-        teamUtil.log("Calibrate POS: " + getPositionPotentiometer());
+        if (details) teamUtil.log("Exited calibration loop: " + lastPositionL + "--" + newPositionL + ", " + lastPositionR + "--" + newPositionR);
         teamUtil.pause(250);
 
+        lastPositionL = lPotentiometer.getVoltage();
+        lastPositionR = rPotentiometer.getVoltage();
+        lAxonRotations = 0;
+        rAxonRotations = 0;
+        lLastDegrees360 = getDegrees360(lPotentiometer);
+        rLastDegrees360 = getDegrees360(rPotentiometer);
 
-
-
-        teamUtil.log("Hang Extend: " + HANG_EXTEND);
-        teamUtil.log("Hang Stow: " + HANG_STOW);
-        teamUtil.log("Hang Engage: " + HANG_ENGAGE);
-
-
+        HANG_L_ENGAGE = getLPosition() + HANG_ENGAGE_OFFSET-HANG_LEFT_ENGAGE_ADJUST;
+        HANG_R_ENGAGE = getRPosition() + HANG_ENGAGE_OFFSET;
+        HANG_L_STOW = getLPosition() + HANG_STOW_OFFSET;
+        HANG_R_STOW = getRPosition() + HANG_STOW_OFFSET;
+        HANG_L_EXTEND = getLPosition() + HANG_EXTEND_OFFSET;
+        HANG_R_EXTEND = getRPosition() + HANG_EXTEND_OFFSET;
         CALIBRATED = true;
-
-    }
-    /*
-    // Flipper must be in a safe position for travel to the far right side
-    // Leaves the slider on the far left
-    public void calibrate (float power, int rotations) {
-        CALIBRATED = false;
-        teamUtil.log("Calibrating Intake Slider");
-        axon.setPower(power);
-        int lastPosition = getPosition();
-        teamUtil.pause(250);
-        while ((int)getPosition() != lastPosition) {
-            lastPosition = getPosition();
-            if (details) teamUtil.log("Calibrate Intake: Slider: " + getPosition());
-            teamUtil.pause(50);
-        }
-        axon.setPower(0);
-        teamUtil.log("Calibrate Intake Slider Done");
-
-        axonRotations = rotations;
-        teamUtil.log("Calibrate POS: " + getPosition());
-        teamUtil.pause(250);
-        lastDegrees360 = getDegrees360();
-
-        RIGHT_LIMIT = getPosition();
-        LEFT_LIMIT = getPosition()+ LEFT_LIMIT_OFFSET;
-        SLIDER_READY = getPosition()+ SLIDER_READY_OFFSET;
-        SLIDER_UNLOAD = getPosition()+ SLIDER_UNLOAD_OFFSET;
-        teamUtil.log("RIGHT LIMIT: " + RIGHT_LIMIT);
-        teamUtil.log("LEFT LIMIT: " + LEFT_LIMIT);
-        teamUtil.log("SLIDER READY: " + SLIDER_READY);
-        teamUtil.log("SLIDER UNLOAD: " + SLIDER_UNLOAD);
-
-        CALIBRATED = true;
+        teamUtil.log("Calibrate Hang Stage 1 Done at: "+ lastPositionL + ", " + lastPositionR);
+        teamUtil.log("ENGAGE: "+ HANG_L_ENGAGE + ", " + HANG_R_ENGAGE);
+        teamUtil.log("STOW: "+ HANG_L_STOW + ", " + HANG_R_STOW);
+        teamUtil.log("EXTEND: "+ HANG_L_EXTEND + ", " + HANG_R_EXTEND);
     }
 
-     */
 
-
-    public double getPositionPotentiometer() {
-        return axonPotentiometer.getVoltage();
+    public void stopServos() {
+        lServo.setPower(0);
+        rServo.setPower(0);
     }
 
     // Return the computed absolute position of the servo by using the number
     // of full rotations plus the current angle of the servo
-    public int getPosition(){
-        return (int) getDegrees360() + axonRotations*360;
+    public int getLPosition(){
+        return (int) (360-getDegrees360(lPotentiometer) + lAxonRotations*360); // left side potentiometer is reversed
+    }
+    public int getRPosition(){
+        return (int) getDegrees360(rPotentiometer) + rAxonRotations*360;
     }
 
-    // The servo is a bit stronger in one direction than the other.  This is evident at very low speeds
-    // Call this method to adjust for this
-    public void setAdjustedPower(float power){
-        if (Math.abs(power-0) < .001f) {
-            axon.setPower(0); // don't adjust 0 to non-zero
-        } else {
-            //axon.setPower(power+POWER_ADJUSTEMENT);
-        }
-    }
+    public static int HANG_SERVO_TARGET_THRESHOLD = 10;
+    public static float HOLD_POWER = .1f;
 
-    public void setPower(double power){ //-.5 to .5
-        axon.setPower(power);
-    }
-
-
-    private void runToTargetEncoder (double target, float sliderVelocity, int leftDeadband, int rightDeadband, long timeOut) {
-        // TODO: Create a new version of runToTarget that uses the octoquad encoder instead of the potentiometer (getPositionEncoder())
-        // TODO: Then modify run to position to use runToTargetEncoder
+    public void runToTarget (int lTarget, int rTarget, boolean hold, long timeOut) {
         moving.set(true);
-        teamUtil.log("Slider runToTargetEncoder: " + (int)target + " at power: "+ sliderVelocity);
-        long timeoutTime = System.currentTimeMillis()+timeOut;
-
-        double ticsFromTarget = target- getPositionPotentiometer();
-        double lastTicsFromTarget = ticsFromTarget;
-        double initialTicsFromTarget = ticsFromTarget;
-        setAdjustedPower(ticsFromTarget > 0 ? sliderVelocity * -1 : sliderVelocity); // start moving
-        while (teamUtil.keepGoing(timeoutTime) &&
-                initialTicsFromTarget < 0 ? // while we haven't yet reached the drift threshold
-                ticsFromTarget < -leftDeadband :
-                ticsFromTarget > rightDeadband) {
-
-            if (details)
-                teamUtil.log("Tics from Target: " + ticsFromTarget + " Power: " + sliderVelocity);
-            lastTicsFromTarget = ticsFromTarget;
-            // teamutil.pause(10);
-            ticsFromTarget = target - getPositionPotentiometer();
-
-        }
-        axon.setPower(0);
-        moving.set(false);
-        if (System.currentTimeMillis() > timeoutTime) {
-            timedOut.set(true);
-            teamUtil.log("Slider runToTarget TIMED OUT: " + (int) getPositionPotentiometer());
-        } else {
-            teamUtil.log("Slider runToTarget Finished at : " + (int) getPositionPotentiometer());
-        }
-    }
-
-    /*
-    // Run the servo to the specified position as quickly as possible
-    // This method returns when the servo is in the new position
-    private void runToTarget (double target, float sliderVelocity, int leftDeadband, int rightDeadband, long timeOut) {
-        moving.set(true);
-        teamUtil.log("Slider runToTarget: " + (int)target + " at power: "+ sliderVelocity);
-        long timeoutTime = System.currentTimeMillis()+timeOut;
-        if (target > RIGHT_LIMIT || target < LEFT_LIMIT) {
-            teamUtil.log("ERROR: SLIDER TARGET OUTSIDE OF RANGE! -- Not Moving");
-            moving.set(false);
-            return;
-        }
         loop();
-        double degreesFromTarget = target-getPosition();
-        double lastdegreesFromTarget = degreesFromTarget;
-        double initialDegreesFromTarget = degreesFromTarget;
-        setAdjustedPower(degreesFromTarget > 0 ? sliderVelocity * -1 : sliderVelocity); // start moving
-        while (teamUtil.keepGoing(timeoutTime) &&
-                initialDegreesFromTarget < 0 ? // while we haven't yet reached the drift threshold
-                    degreesFromTarget < -leftDeadband :
-                    degreesFromTarget > rightDeadband) {
+        teamUtil.log("Axon Hang runToTarget: " + lTarget + ", "+ rTarget);
+        long timeoutTime = System.currentTimeMillis()+timeOut;
+
+        double ticsFromTargetL = lTarget- getLPosition();
+        double ticsFromTargetR = rTarget- getRPosition();
+
+        boolean movingUpL = ticsFromTargetL > 0;
+        boolean movingUpR = ticsFromTargetR > 0;
+        boolean leftDone = movingUpL ? ticsFromTargetL <= 0 : ticsFromTargetL >= 0;
+        boolean rightDone = movingUpR ? ticsFromTargetR <= 0 : ticsFromTargetR >= 0;
+
+        lServo.setPower(movingUpL  ? RTP_MAX_VELOCITY * -1 : RTP_MAX_VELOCITY); // start moving
+        rServo.setPower(movingUpR ? RTP_MAX_VELOCITY * -1 : RTP_MAX_VELOCITY);
+        while (teamUtil.keepGoing(timeoutTime) && (!leftDone || !rightDone)) {
             loop();
             if (details)
-                teamUtil.log("Degrees from Target: " + degreesFromTarget + " Power: " + sliderVelocity);
-            lastdegreesFromTarget = degreesFromTarget;
-            // teamutil.pause(10);
-            degreesFromTarget = target - getPosition();
-            while (teamUtil.keepGoing(timeoutTime) && Math.abs(degreesFromTarget - lastdegreesFromTarget) > DEGREE_NOISE_THRESHOLD) {
-                if (details) teamUtil.log("Ignoring Noise from Servo Potentiometer. Degrees: " + degreesFromTarget + "Last degrees: " + lastdegreesFromTarget);
-                //lastdegreesFromTarget = degreesFromTarget;
-                teamUtil.pause(10); // wait for a better reading
-                loop();
-                degreesFromTarget = target - getPosition();
+                teamUtil.log("Tics from Target: " + ticsFromTargetL + ", " + ticsFromTargetR + " Positions: "+ getLPosition()+ ", " + getRPosition());
+            if (leftDone) {
+                lServo.setPower(hold ? HOLD_POWER : 0);
             }
+            if (rightDone) {
+                rServo.setPower(hold ? HOLD_POWER : 0);
+            }
+            ticsFromTargetL = lTarget- getLPosition();
+            ticsFromTargetR = rTarget- getRPosition();
+            leftDone = movingUpL ? ticsFromTargetL <=0 : ticsFromTargetL >= 0;
+            rightDone = movingUpR ? ticsFromTargetR <=0 : ticsFromTargetR >= 0;
+            teamUtil.pause(30);
         }
-        axon.setPower(0);
+        lServo.setPower(hold ? HOLD_POWER : 0);
+        rServo.setPower(hold ? HOLD_POWER : 0);
         moving.set(false);
         if (System.currentTimeMillis() > timeoutTime) {
             timedOut.set(true);
-            teamUtil.log("Slider runToTarget TIMED OUT: " + (int)getPosition());
+            teamUtil.log("Slider runToTarget TIMED OUT: " + getLPosition() + ", " + getRPosition());
         } else {
-            teamUtil.log("Slider runToTarget Finished at : " + (int)getPosition());
-        }
-    }
-
-     */
-
-
-/*
-    // Run the servo to the specified position as quickly as possible
-    // This method returns when the servo is in the new position
-    public void runToPosition (double target, long timeOut) {
-        timedOut.set(false);
-        moving.set(true);
-        loop(); // update position in case it hasn't happened recently
-        teamUtil.log("Slider Run to Position Target: " + (int)target);
-        if(Math.abs(target-getPosition())<RTP_SLOW_THRESHOLD){
-            runToTarget(target, RTP_SLOW_VELOCITY, RTP_LEFT_DEADBAND_SLOW_DEGREES, RTP_RIGHT_DEADBAND_SLOW_DEGREES, timeOut);
-        } else {
-            runToTarget(target, RTP_MAX_VELOCITY, RTP_LEFT_DEADBAND_DEGREES, RTP_RIGHT_DEADBAND_DEGREES, timeOut);
-        }
-        teamUtil.log("Slider Run to Position Finished at : " + (int)getPosition());
-    }
-
- */
-
-    // Run the servo to the specified position as quickly as possible
-    // This method returns when the servo is in the new position
-    public void runToEncoderPosition (double target, boolean forceMaxSpeed, long timeOut) {
-        timedOut.set(false);
-        moving.set(true);
-        teamUtil.log("Slider Run to Position Target Encoder : " + (int)target);
-        if(Math.abs(target- getPositionPotentiometer())<RTP_SLOW_THRESHOLD && !forceMaxSpeed){
-            runToTargetEncoder(target, RTP_SLOW_VELOCITY, RTP_LEFT_DEADBAND_SLOW_DEGREES, RTP_RIGHT_DEADBAND_SLOW_DEGREES, timeOut);
-        } else {
-            runToTargetEncoder(target, RTP_MAX_VELOCITY, RTP_LEFT_DEADBAND_DEGREES, RTP_RIGHT_DEADBAND_DEGREES, timeOut);
-        }
-        teamUtil.log("Slider Run to Position Target Encoder Finished at : " + (int) getPositionPotentiometer());
-    }
-/*
-    public void runToPositionNoWait(double target, long timeOutTime) {
-        if (moving.get()) { // Slider is already running in another thread
-            teamUtil.log("WARNING: Attempt to AxonSlider.RunToPosition while slider is moving--ignored");
-            return;
-        } else {
-            moving.set(true);
-            teamUtil.log("Launching Thread to AxonSlider.RunToPosition");
-            Thread thread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    runToPosition(target, timeOutTime);
-                }
-            });
-            thread.start();
-        }
-    }
-
- */
-
-    public void runToEncoderPositionNoWait(double target, boolean forceMaxSpeed, long timeOutTime) {
-        if (moving.get()) { // Slider is already running in another thread
-            teamUtil.log("WARNING: Attempt to AxonSlider.RunToPosition while slider is moving--ignored");
-            return;
-        } else {
-            moving.set(true);
-            teamUtil.log("Launching Thread to AxonSlider.RunToPosition");
-            Thread thread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    runToEncoderPosition(target, forceMaxSpeed, timeOutTime);
-                }
-            });
-            thread.start();
+            teamUtil.log("Slider runToTarget Finished at : " + getLPosition() + ", " + getRPosition());
         }
     }
 
 
     // IMPORTANT:  This method must be called frequently whenever the servo is being moved.
-    // It keep track of the servo position and notices when it wraps around between 0 and 360
+    // It keep track of the servo positions and notices when it wraps around between 0 and 360
     // So that the overall position can be calculated
     public void loop(){
         //teamUtil.log("LOOP CALLED");
-        double degrees = getDegrees360();
-        if(Math.abs(lastDegrees360-degrees)>180){
-            if(degrees<180){
-                axonRotations++;
-                if (details) teamUtil.log("Axon Rotations Went UP.  Voltage: " + axonPotentiometer.getVoltage()+ "AXON Position: " + getPosition());
+        double degrees = getDegrees360(lPotentiometer);
+        if(Math.abs(lLastDegrees360-degrees)>180){
+            if(degrees>180){ // left potentiometer is reversed!
+                lAxonRotations++;
+                if (details) teamUtil.log("L Hang Axon rotations Went UP.  Voltage: " + lPotentiometer.getVoltage()+ "AXON Position: " + getLPosition());
             }else{
-                axonRotations--;
-                if (details)teamUtil.log("Axon Rotations Went DOWN: Voltage: " + axonPotentiometer.getVoltage()+ "AXON Position: " + getPosition());
+                lAxonRotations--;
+                if (details)teamUtil.log("L Hang Axon Rotations Went DOWN: Voltage: " + lPotentiometer.getVoltage()+ "AXON Position: " + getLPosition());
             }
         }
-        lastDegrees360 = degrees;
+        lLastDegrees360 = degrees;
+
+        degrees = getDegrees360(rPotentiometer);
+        if(Math.abs(rLastDegrees360-degrees)>180){
+            if(degrees<180){
+                rAxonRotations++;
+                if (details) teamUtil.log("R Hang Axon rotations Went UP.  Voltage: " + rPotentiometer.getVoltage()+ "AXON Position: " + getRPosition());
+            }else{
+                rAxonRotations--;
+                if (details)teamUtil.log("R Hang Axon Rotations Went DOWN: Voltage: " + rPotentiometer.getVoltage()+ "AXON Position: " + getRPosition());
+            }
+        }
+        rLastDegrees360 = degrees;
     }
 
     // Convert from potentiometer reading to degrees
-    public double getDegrees360(){
-        return (axonPotentiometer.getVoltage()*360)/(3.274);
+    public double getDegrees360(AnalogInput potentiometer){
+        return (potentiometer.getVoltage()*360)/(3.274);
     }
 
 }

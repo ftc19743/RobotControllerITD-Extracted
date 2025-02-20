@@ -35,8 +35,8 @@
             <Servo name="grabber" port="1" />
             <Servo name="wrist" port="2" />
             <Servo name="bucket" port="3" />
-            <Servo name = "pulleyleft" port = "4" />
-            <Servo name = "pulleyright" port = "5" />
+            <ContinuousRotationServo name = "pulleyright" port = "4" />
+            <ContinuousRotationServo name = "pulleyleft" port = "5" />
             <!---<Servo name="bucket" port="" /> -->
 
             <goBILDA5202SeriesMotor name="frm" port="0" />

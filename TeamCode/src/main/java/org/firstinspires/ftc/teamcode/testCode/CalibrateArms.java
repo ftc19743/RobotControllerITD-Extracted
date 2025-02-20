@@ -471,17 +471,17 @@ public class CalibrateArms extends LinearOpMode {
             hang.calibrate();
             hangCalibrated = true;
         }
-        if(gp1.wasYPressed()){
-            hang.extendHang();
+        if(gp1.wasUpPressed()){
+            hang.extendHangNoWait();
         }
-        if(gp1.wasBPressed()){
-            hang.engageHang();
+        if(gp1.wasLeftPressed()){
+            hang.engageHangNoWait();
         }
-        if(gp1.wasAPressed()){
-            hang.stowHang();
+        if(gp1.wasDownPressed()){
+            hang.stowHangNoWait();
         }
 
-        if(gp1.wasUpPressed()){
+        if(gp1.wasYPressed()){
             hang.deployHookGrabber();
         }
         if(gp1.wasDownPressed()){
