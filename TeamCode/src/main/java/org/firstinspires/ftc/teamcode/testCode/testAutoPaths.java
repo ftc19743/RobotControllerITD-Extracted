@@ -29,7 +29,7 @@ public class testAutoPaths extends LinearOpMode {
     public static int END_CYCLES = 0;
     public static int START_CYCLE = 1;
     public static boolean GRAB_SAMPLE = false;
-    public static boolean useCV = true;
+    public static boolean useCV = false;
 
     public static boolean ASCENT = true;
 
@@ -109,7 +109,10 @@ public class testAutoPaths extends LinearOpMode {
                //elapsedTime = System.currentTimeMillis()-startTime;
             }
             if(driverGamepad.wasDownPressed()) {
-                robot.specimenCollectBlocksV2();
+                long startTime = System.currentTimeMillis();
+                robot.specimenCollectBlocksV3(false);
+                robot.drive.stopMotors();
+                elapsedTime = System.currentTimeMillis()-startTime;
             }
             if(driverGamepad.wasRightTriggerPressed()) {
                 robot.drive.setRobotPosition(0,0,0);
@@ -138,7 +141,9 @@ public class testAutoPaths extends LinearOpMode {
             }
             if(driverGamepad.wasBPressed()){
                 long startTime = System.currentTimeMillis();
-                robot.placeFirstSpecimen();
+                robot.placeFirstSpecimenV2(false);
+                robot.drive.driveMotorsHeadingsFRPower(180, 0, 1);
+                teamUtil.pause(250);
                 robot.drive.stopMotors();
                 elapsedTime = System.currentTimeMillis()-startTime;
             }

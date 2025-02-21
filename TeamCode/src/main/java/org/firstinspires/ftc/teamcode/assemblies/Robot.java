@@ -80,6 +80,36 @@ public class Robot {
     static public long DROP_SAMPLE_OUT_BACK_WITH_FLIPPER_RESET_1 = 500;
     static public long DROP_SAMPLE_OUT_BACK_WITH_FLIPPER_RESET_2 = 300;
 
+    public static float G00_MAX_POWER = 1f;
+    public static int G0a_FAST_STRAFE_ADJUST = 300;
+    public static int G0a_FAST_STRAIGHT_ADJUST1 = 200;
+    public static int G0a_FAST_REVERSE_ADJUST = 0;
+    public static int G0a_SLOW_STRAFE_ADJUST = 50;
+
+
+    static public int G18_CYCLE_PLACE_SPECIMEN_1_Y = -70; // was 140
+    static public int G18a_CYCLE_PLACE_SPECIMEN_Y = -40; //was 140
+    static public float G18b_ADJUSTED_MAX_DECLINATION = 35;
+    static public int G19_CYCLE_MIDFIELD_X = 500; // was 550 when we were trying for 6
+
+    static public int G20_CYCLE_SPECIMEN_Y_ADJUSTMENT = 25;
+    static public int G21_CYCLE_PLACE_SAMPLE_X = 700;
+    static public int G21b_CYCLE_PLACE_SAMPLE_X = 690;
+    static public int G22_CYCLE_WRIST_CALLBACK = -600;
+    static public int G22b_CYCLE1_WRIST_CALLBACK = -800;
+    static public int G23_CYCLE_PLACE_SPECIMEN_PAUSE = 200;
+    static public int G23b_CYCLE_REVERSE_PLACE_SPECIMEN_PAUSE = 200;
+
+    static public int G24_CYCLE_BACKUP_X = 700;
+    static public int G25_CYCLE_PICKUP_Y = -690; //was 550
+    static public int G26_CYCLE_PREPARE_FOR_PICKUP_X = 300;
+    static public int G26a_CYCLE_PICKUP_X = 75;
+    static public int G27_CYCLE_PICKUP_VELOCITY = 500;
+    static public int G28_CYCLE_PICKUP_PAUSE = 200;
+    static public long G29_AUTO_MOMENTUM_PAUSE = 200;
+    static public long G32_CYCLE_PICKUP_Y_SPECIAL = -790; //was -650
+
+
     public AtomicBoolean autoUnloadNoWaitDone = new AtomicBoolean(false);
 
 
@@ -158,10 +188,11 @@ public class Robot {
 
     public void resetRobot(){
         outtake.outtakeRest();
-        teamUtil.pause(2000);
+        teamUtil.pause(1000);
         intake.goToSafe();
         teamUtil.pause(2000);
         output.outputLoad(4000);
+        teamUtil.pause(500);
         outtake.secondCalibrate();
         intake.extendersToPositionMaxVelo(Intake.EXTENDER_UNLOAD,4000);
     }
@@ -323,12 +354,97 @@ public class Robot {
     public int nextSliderPos = (int) AxonSlider.SLIDER_READY; // default value for a grab
     public int nextExtenderPos = Intake.EXTENDER_AUTO_START_SEEK; // default value for a grab
 
+    static public int G01_PLACE_SPECIMEN1_X = 590;
+    static public int G01_PLACE_SPECIMEN1_Y = 0;
+    static public int G01_SPECIMEN1_PAUSE1 = 200;
+    static public int G01_SPECIMEN1_PAUSE2 = 0;
+    static public float G01_SPECIMEN1_END_POWER = .3f;
+    public void placeFirstSpecimenV2(boolean grab) {
+        teamUtil.log("Place First Specimen V2");
+        outtake.deployArm();
+        if (grab) {
+            teamUtil.log("Place First and grab not implemented yet");
+        } else {
+            drive.straightHoldingStrafePower(G00_MAX_POWER, G01_PLACE_SPECIMEN1_X, G01_PLACE_SPECIMEN1_Y, 0);
+            drive.driveMotorsHeadingsFRPower(180, 0, G00_MAX_POWER);
+            teamUtil.pause(G01_SPECIMEN1_PAUSE1); // give it time to decelerate
+            drive.driveMotorsHeadingsFRPower(0, 0, G01_SPECIMEN1_END_POWER);
+            teamUtil.pause(G01_SPECIMEN1_PAUSE2); // give it time to click in (can be zero)
+        }
+        teamUtil.log("Finished Place First Specimen V2");
+    }
+
+    public static int G02_PLACE_SPECIMEN_Y = 0; // was 130
+    static public int G06_CLEAR_SUB_X = 600;
+    static public int G07_CLEAR_SUB_Y = -800; // was -660
+    static public int G09_CLEAR_SAMPLE_X = 1100;
+    static public int G10_SAMPLE_1_Y = -1000; // was -840
+    static public int G10_SAMPLE_Y_ADJUST = 50;
+    static public int G11_DROP_SAMPLE1_X = 580;
+    public static int G12_REVERSE_BRAKING_PAUSE1 = 200;
+    public static int G12_REVERSE_BRAKING_PAUSE2 = 150;
+    static public int G13_SAMPLE_2_Y = -1240; // was -1080
+    static public int G13a_DROP_SAMPLE2_X = 500;
+    static public int G14_SAMPLE_3_Y = -1470; // was -1280 // also adjusted 50 For better wall contact
+    static public int G14a_SAMPLE3_Y_ADJUST = 100; // adjusted 50 for better wall contact
+    static public int G14a_DROP_SAMPLE3_X = 600;
+    static public int G15_PICKUP_1_X = 150;
+    static public int G15_PICKUP_1_Y = -1350; // was -1150
+    static public float G16_PICKUP_1_POWER = .3f;
+    static public int G17_PICKUP_1_PAUSE = 400;
+    public static int G0a_GRAB_SAMPLE_STRAIGHT_ADJUST2 = 380;
+
+    //Collects all blocks using robot to push them
+    public void specimenCollectBlocksV3(boolean grab) {
+        drive.setRobotPosition(0,0,0);
+        drive.setMotorsBrake();
+        long startTime = System.currentTimeMillis();
+
+        placeFirstSpecimenV2(grab);
+        teamUtil.log("First Specimen Dropped: "+ (System.currentTimeMillis()-startTime));
+
+        // Back up to clear sub
+        drive.straightHoldingStrafePower(G00_MAX_POWER, G06_CLEAR_SUB_X, G02_PLACE_SPECIMEN_Y,0);
+        outtake.outtakeGrab();
+        // strafe over to clear sub on other side
+        drive.strafeHoldingStraightPower(G00_MAX_POWER, G07_CLEAR_SUB_Y+G0a_FAST_STRAFE_ADJUST, G06_CLEAR_SUB_X, 0);
+
+        // drive past samples
+        drive.straightHoldingStrafePower(G00_MAX_POWER, G09_CLEAR_SAMPLE_X- G0a_FAST_STRAIGHT_ADJUST1, G07_CLEAR_SUB_Y,0);
+
+        // strafe to sample 1
+        drive.strafeHoldingStraightPower(G00_MAX_POWER, G10_SAMPLE_1_Y+G10_SAMPLE_Y_ADJUST, G09_CLEAR_SAMPLE_X, 0);
+
+        // push first sample to observation zone
+        drive.straightHoldingStrafePower(G00_MAX_POWER, G11_DROP_SAMPLE1_X +G0a_FAST_REVERSE_ADJUST, G10_SAMPLE_1_Y,0);
+
+        // head back out to get 2nd sample
+        drive.straightHoldingStrafePower(G00_MAX_POWER, G09_CLEAR_SAMPLE_X- G0a_GRAB_SAMPLE_STRAIGHT_ADJUST2, G10_SAMPLE_1_Y,0);
+        drive.strafeHoldingStraightPower(G00_MAX_POWER, G13_SAMPLE_2_Y+G10_SAMPLE_Y_ADJUST, G09_CLEAR_SAMPLE_X, 0);
+
+        // push second sample to observation zone
+        drive.straightHoldingStrafePower(G00_MAX_POWER, G13a_DROP_SAMPLE2_X +G0a_FAST_REVERSE_ADJUST, G13_SAMPLE_2_Y,0);
+
+        // head back out for 3rd sample
+        drive.straightHoldingStrafePower(G00_MAX_POWER, G09_CLEAR_SAMPLE_X- G0a_GRAB_SAMPLE_STRAIGHT_ADJUST2, G13_SAMPLE_2_Y,0);
+        drive.strafeHoldingStraightPower(G00_MAX_POWER, G14_SAMPLE_3_Y+G14a_SAMPLE3_Y_ADJUST, G09_CLEAR_SAMPLE_X, 0);
+
+        // push 3rd sample to observation zone and grab 2nd specimen
+        drive.straightHoldingStrafePower(G00_MAX_POWER, G14a_DROP_SAMPLE3_X + G0a_FAST_REVERSE_ADJUST, G14_SAMPLE_3_Y,0);
+        drive.driveMotorsHeadingsFRPower(0, 0, G00_MAX_POWER); // reverse motors for fast deceleration
+        teamUtil.pause(G12_REVERSE_BRAKING_PAUSE1); // wait a little bit for decel
+        // Move over a bit to ensure 3rd Sample doesn't block us on wall
+        drive.strafeHoldingStraightPower(G00_MAX_POWER,G15_PICKUP_1_Y-G10_SAMPLE_Y_ADJUST, G14a_DROP_SAMPLE3_X,0);
+        drive.straightHoldingStrafePower(G16_PICKUP_1_POWER,G15_PICKUP_1_X,G15_PICKUP_1_Y,0);
+        teamUtil.pause(G17_PICKUP_1_PAUSE);
+    }
+
+
     static public int F01_PLACE_SPECIMEN1_X = 580;
     static public int F01_PLACE_SPECIMEN1_Y = 0;
     static public int F01_SPECIMEN1_PAUSE1 = 200;
     static public int F01_SPECIMEN1_PAUSE2 = 200;
     static public int F01_SPECIMEN1_END_VELOCITY = 600;
-
     public void placeFirstSpecimen() {
         //Drive to the submersible while moving a bit to the left
         outtake.deployArm();
@@ -339,6 +455,7 @@ public class Robot {
         drive.driveMotorsHeadingsFR(0,0,F01_SPECIMEN1_END_VELOCITY);
         teamUtil.pause(F01_SPECIMEN1_PAUSE2); // give it time to click in
     }
+
 
     //Collects all blocks using arms
     public void specimenCollectBlocksV2() {

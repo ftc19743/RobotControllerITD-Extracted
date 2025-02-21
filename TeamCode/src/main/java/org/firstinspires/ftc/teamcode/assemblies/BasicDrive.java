@@ -1412,6 +1412,9 @@ public class BasicDrive {
 
     // Drive straight forward or backward while attempting to hold the strafe encoder at a specific value
     // Robot heading should be 0,90,180, or 270.  Drive Heading will be determined by the target
+    public boolean straightHoldingStrafePower(float power, double straightTarget, double strafeTarget, int robotHeading) {
+        return straightHoldingStrafePower(power, straightTarget, strafeTarget, robotHeading,null, 0, 4000);
+    }
     public boolean straightHoldingStrafePower(float power, double straightTarget, double strafeTarget, int robotHeading, ActionCallback action, double actionTarget, long timeout) {
         if(robotHeading != 90 && robotHeading != 270 && robotHeading != 0 && robotHeading != 180){
             teamUtil.log("straightHoldingStrafePower - ERROR INCOMPATIBLE ROBOT HEADING");
@@ -1465,6 +1468,9 @@ public class BasicDrive {
 
     // Strafe straight left or right while attempting to hold the forward encoder at a specific value
     // Robot heading should be 0,90,180, or 270.  Drive Heading will be determined by the target
+    public boolean strafeHoldingStraightPower(float power, double strafeTarget, double straightTarget, int robotHeading) {
+        return strafeHoldingStraightPower(power, strafeTarget, straightTarget, robotHeading,null, 0, 4000);
+    }
     public boolean strafeHoldingStraightPower(float power, double strafeTarget, double straightTarget, int robotHeading, ActionCallback action, double actionTarget, long timeout) {
         if(robotHeading!=90&&robotHeading!=270&&robotHeading!=0&&robotHeading!=180){
             teamUtil.log("strafeHoldingStraightPower - ERROR INCOMPATIBLE ROBOT HEADING");
