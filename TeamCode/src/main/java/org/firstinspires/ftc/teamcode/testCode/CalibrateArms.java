@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.testCode;
 
+import static org.firstinspires.ftc.teamcode.assemblies.Intake.FLIPPER_PRE_GRAB;
 import static org.firstinspires.ftc.teamcode.assemblies.Intake.WHITE_NEOPIXEL;
 
 import com.acmerobotics.dashboard.FtcDashboard;
@@ -298,12 +299,13 @@ public class CalibrateArms extends LinearOpMode {
 
     public void intakeManualOperation() {
         if (gp1.wasUpPressed()) {
-            intake.goToSampleAndGrabV3(true, true,true);
-            //intake.flipperGoToSeek(2000);
+            //intake.goToSampleAndGrabV3(true, true,true);
+            intake.flipperGoToSeek(2000);
         }
-        if (gp1.wasLeftTriggerPressed()) {
-            intake.goToSampleAndGrabNoWaitV3(true,true);
+        if (gp1.wasLeftPressed ()) {
+            //intake.goToSampleAndGrabNoWaitV3(true,true);
             //intake.flipperGoToSeek(2000);
+            intake.flipper.setPosition(FLIPPER_PRE_GRAB);
         }
 
         if (gp1.wasDownPressed()) {
@@ -311,7 +313,7 @@ public class CalibrateArms extends LinearOpMode {
             intake.flipperGoToGrab(2000);
 
         }
-        if (gp1.wasLeftPressed()) {
+        if (gp1.wasLeftTriggerPressed()) {
             //intake.goToUnload(2000);
             //intake.flipperGoToUnload(2000);
             intake.unloadV2(false);

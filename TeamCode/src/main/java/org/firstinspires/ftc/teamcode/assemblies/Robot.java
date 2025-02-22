@@ -329,6 +329,7 @@ public class Robot {
     static public int G01_PLACE_SPECIMEN1_X = 590;
     static public int G01_PLACE_AND_GRAB_SPECIMEN1_X = 500;
     static public int G01_PLACE_SPECIMEN1_Y = 0;
+    static public float G01_PLACE_AND_GRAB_REVERSE_POWER = .1f;
     static public int G01_SPECIMEN1_PAUSE1 = 200;
     static public int G01_SPECIMEN1_PAUSE2 = 0;
     static public int G01_SPECIMEN1_PAUSE3 = 200;
@@ -347,14 +348,14 @@ public class Robot {
 
             // Drive to submersible and snuggle up against it for the grab
             drive.straightHoldingStrafePower(G00_MAX_POWER, G01_PLACE_AND_GRAB_SPECIMEN1_X, G01_PLACE_SPECIMEN1_Y, 0);
-            drive.driveMotorsHeadingsFRPower(180, 0, G00_MAX_POWER); // reverse motors to decelerate quickly
+            drive.driveMotorsHeadingsFRPower(180, 0, G01_PLACE_AND_GRAB_REVERSE_POWER); // reverse motors to decelerate quickly
             teamUtil.pause(G01_SPECIMEN1_PAUSE3); // give it time to decelerate
             drive.driveMotorsHeadingsFRPower(0, 0, G01_SPECIMEN1_GRAB_POWER);
             outtake.outakearm.setPosition(outtake.ARM_SOFT_ENGAGE);
             teamUtil.pause(G01_SPECIMEN1_PAUSE4); // give it time to click in and settle down before we use the CV
 
             // retract set to true so we wait here until fully retracted (could be sped up but we need to be careful not to clip the sub with the intake while leaving!
-            boolean grabbedSample=intake.goToSampleAndGrabV3(false, true,true); // TODO: <- Specify phase 1 timeout?
+            boolean grabbedSample=intake.autoGoToSampleAndGrabV3(false, true,true); // TODO: <- Specify phase 1 timeout?
             intake.lightsOff();
             teamUtil.log("Finished Place First Specimen V2");
             return grabbedSample;
@@ -542,6 +543,31 @@ public class Robot {
     static public long G29_AUTO_MOMENTUM_PAUSE = 200;
     static public long G32_CYCLE_PICKUP_Y_SPECIAL = -790; //was -650
 
+    public boolean specimenCyclePlace(int cycle, int cycleYTarget) {
+        float strafeMaxDeclination = BasicDrive.STRAFE_MAX_DECLINATION; // save for later
+        BasicDrive.STRAFE_MAX_DECLINATION = G18b_ADJUSTED_MAX_DECLINATION;
+        drive.strafeHoldingStraightPower(G00_MAX_POWER, cycleYTarget - G0a_FAST_STRAFE_ADJUST, G19_CYCLE_MIDFIELD_X, 0,
+                new BasicDrive.ActionCallback() {
+                    @Override
+                    public void action() {
+                        outtake.outakewrist.setPosition(Outtake.WRIST_RELEASE);
+                    }
+                }, cycle == 1? G22b_CYCLE1_WRIST_CALLBACK:G22_CYCLE_WRIST_CALLBACK, 5000);
+        BasicDrive.STRAFE_MAX_DECLINATION = strafeMaxDeclination;
+        outtake.deployArm();
+
+        if(cycle>=2){ // TODO: If we stick with grabbing a sample on first place, this should be ">3" as cycle 2 will be the one from deep in the observation zone
+            drive.straightHoldingStrafePower(G00_MAX_POWER, G21b_CYCLE_PLACE_SAMPLE_X, cycleYTarget, 0);
+            drive.driveMotorsHeadingsFR(180,0,BasicDrive.MAX_VELOCITY);
+            teamUtil.pause(G23b_CYCLE_REVERSE_PLACE_SPECIMEN_PAUSE); // give it time to decelerate
+        } else{
+            drive.straightHoldingStrafePower(G00_MAX_POWER, G21_CYCLE_PLACE_SAMPLE_X, cycleYTarget, 0);
+            drive.driveMotorsHeadingsFR(180,0,BasicDrive.MAX_VELOCITY);
+            teamUtil.pause(G23b_CYCLE_REVERSE_PLACE_SPECIMEN_PAUSE); // give it time to decelerate and coast to submersible
+        }
+        return true;
+    }
+
     public boolean specimenCycleV4(int cycle, int cycleYTarget, boolean grabSample, boolean getNextSpecimen){
         long startTime = System.currentTimeMillis();
         outtake.outakearm.setPosition(Outtake.ARM_UP);
@@ -549,27 +575,7 @@ public class Robot {
         if (grabSample) {
             // Take a wider path if we are extending intake, turn motors on to hold robot against submersible
         } else {
-            float strafeMaxDeclination = drive.STRAFE_MAX_DECLINATION; // save for later
-            BasicDrive.STRAFE_MAX_DECLINATION = G18b_ADJUSTED_MAX_DECLINATION;
-            drive.strafeHoldingStraightPower(G00_MAX_POWER, cycleYTarget - G0a_FAST_STRAFE_ADJUST, G19_CYCLE_MIDFIELD_X, 0,
-                    new BasicDrive.ActionCallback() {
-                        @Override
-                        public void action() {
-                            outtake.outakewrist.setPosition(Outtake.WRIST_RELEASE);
-                        }
-                    }, cycle == 1? G22b_CYCLE1_WRIST_CALLBACK:G22_CYCLE_WRIST_CALLBACK, 5000);
-            BasicDrive.STRAFE_MAX_DECLINATION = strafeMaxDeclination;
-            outtake.deployArm();
-
-            if(cycle>=2){
-                drive.straightHoldingStrafePower(G00_MAX_POWER, G21b_CYCLE_PLACE_SAMPLE_X, cycleYTarget, 0);
-                drive.driveMotorsHeadingsFR(180,0,BasicDrive.MAX_VELOCITY);
-                teamUtil.pause(G23b_CYCLE_REVERSE_PLACE_SPECIMEN_PAUSE); // give it time to decelerate
-            } else{
-                drive.straightHoldingStrafePower(G00_MAX_POWER, G21_CYCLE_PLACE_SAMPLE_X, cycleYTarget, 0);
-                drive.driveMotorsHeadingsFR(180,0,BasicDrive.MAX_VELOCITY);
-                teamUtil.pause(F23_CYCLE_PLACE_SPECIMEN_PAUSE); // give it time to decelerate and coast to submersible
-            }
+            specimenCyclePlace(cycle, cycleYTarget);
         }
 
         boolean grabbedSample = false;
@@ -1018,7 +1024,80 @@ public class Robot {
     }
 
 
+//////////////////////////////////////////////////////////////////////////////////////
+/////////////////  SAMPLE AUTO
 
+    public static int A00_MAX_SPEED_NEAR_BUCKET = 2500;
+    public static int A00_TRANSITION_SPEED = 750;
+    public static int A00_END_SPEED = 400;
+
+    public static int A01_SAMPLE_1_SLIDER = (int)AxonSlider.SLIDER_READY;
+    public static int A01_SAMPLE_1_EXTENDER = 1000;
+    public static int A02_SAMPLE_2_SLIDER = (int)AxonSlider.SLIDER_READY;
+    public static int A02_SAMPLE_2_EXTENDER = 1000;
+    public static int A03_SAMPLE_3_SLIDER = (int)AxonSlider.SLIDER_READY;
+    public static int A03_SAMPLE_3_EXTENDER = 1000;
+
+    public void sampleAutoV3 () {
+        drive.setRobotPosition(0,0,0);
+        intake.setTargetColor(OpenCVSampleDetectorV2.TargetColor.YELLOW);
+        outtake.outtakeRest();
+        teamUtil.pause(500); // give outtake a little time to get out of the way of the lift
+
+        // Move intake out for first grab
+        output.outputHighBucketNoWait(2000); // send bucket to top
+        AutoReadyToSeekNoWait(A01_SAMPLE_1_SLIDER, A01_SAMPLE_1_EXTENDER); // move intake out for the grab
+
+        // Move to first drop
+        drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,120,120,0,A00_TRANSITION_SPEED,null,0, false,5000);
+        drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,510,80,315,A00_END_SPEED,null,0, false, 5000);
+        drive.setMotorsActiveBrake();
+        output.dropSampleOutBack(); // Drop It.
+        output.outputLoadNoWait(2000);//
+
+        // Move to pickup 1st sample
+        drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,390,260,347,A00_END_SPEED,null,0, true, 5000);
+        drive.setMotorsActiveBrake();
+
+        drive.stopMotors(); if (true) return;
+
+        // Grab and unload (counting on bucket to be at the bottom by the time we get there!
+        boolean grabbedSample=intake.goToSampleAndGrabV3(true, true,true);
+
+        output.outputHighBucketNoWait(2000); // send bucket to top
+        AutoReadyToSeekNoWait(A02_SAMPLE_2_SLIDER, A02_SAMPLE_2_EXTENDER); // move intake out for the next grab
+        drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,510,80,315,A00_END_SPEED,null,0, true, 5000);
+        drive.setMotorsActiveBrake();
+        output.dropSampleOutBack(); // Drop It.
+        output.outputLoadNoWait(2000);//
+
+        // Move to pickup 2nd sample
+        drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,490,275,0,A00_END_SPEED,null,0, true, 5000);
+        drive.setMotorsActiveBrake();
+        // Grab and unload (counting on bucket to be at the bottom by the time we get there!
+        grabbedSample=intake.goToSampleAndGrabV3(true, true,true);
+
+        output.outputHighBucketNoWait(2000); // send bucket to top
+        AutoReadyToSeekNoWait(A03_SAMPLE_3_SLIDER, A03_SAMPLE_3_EXTENDER); // move intake out for the next grab
+        drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,510,80,315,A00_END_SPEED,null,0, true, 5000);
+        drive.setMotorsActiveBrake();
+        output.dropSampleOutBack(); // Drop It.
+        output.outputLoadNoWait(2000);//
+
+        // Move to pickup 3rd sample
+        drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,605,310,0,A00_END_SPEED,null,0, true, 5000);
+        drive.setMotorsActiveBrake();
+        // Grab and unload (counting on bucket to be at the bottom by the time we get there!
+        grabbedSample=intake.goToSampleAndGrabV3(true, true,true);
+
+        output.outputHighBucketNoWait(2000); // send bucket to top
+        drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,510,240,315,A00_TRANSITION_SPEED,null,0, true, 5000);
+        drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,510,80,315,A00_END_SPEED,null,0, true, 5000);
+        drive.setMotorsActiveBrake();
+        output.dropSampleOutBack(); // Drop It.
+        output.outputLoadNoWait(2000);//
+
+    }
 
 /* OLD Code
 
@@ -1320,152 +1399,6 @@ public void hangPhase2V2(){
 
         return true;
 }
-    public boolean placeSpecimen(long timeout) {
-        teamUtil.log("Place Specimen");
-        long timeoutTime = System.currentTimeMillis()+timeout;
-        outtake.outakearm.setPosition(OUTAKE_ARM_ENGAGE_VAL);
-        while(outtake.outakePotentiometer.getVoltage()<Outtake.POTENTIOMETER_ATTACH && teamUtil.keepGoing(timeoutTime)){
-        }
-        if (System.currentTimeMillis() >= timeoutTime) {
-            teamUtil.log("Place Specimen -- TIMED OUT");
-            return false;
-        }
-        teamUtil.log("Place Specimen -- Finished");
-        return true;
-    }
-
-    public boolean specimenCycle(int cycles){
-        outtake.outakearm.setPosition(Outtake.ARM_UP);
-
-        BasicDrive.MIN_STRAsFE_START_VELOCITY = 2000;
-        BasicDrive.MIN_START_VELOCITY = 1000;
-        //Moves robot from the observation zone to the middle of the field
-        drive.strafeHoldingStraightEncoder(BasicDrive.MAX_VELOCITY,D01_WALL_TO_MIDFIELD_Y,D00_WALL_TO_MIDFIELD_X,0,D02_TRANSITION_VELOCITY_FAST,
-                new BasicDrive.ActionCallback() {
-                    @Override
-                    public void action() {
-                        outtake.outakewrist.setPosition(Outtake.WRIST_RELEASE);
-                    }
-                },D16_WRIST_CALLBACK,5000);
-        outtake.deployArm();
-
-        //moves robot from the middle of the field to scoring the specimen
-        drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY,D03_MIDFIELD_TO_CHAMBER_X,D04_MIDFIELD_TO_CHAMBER_Y+(D15_CYCLE_SPECIMEN_ADJUSTMENT*(cycles-1)),0,C04_END_VELOCITY_SPECIMEN,false,null,0,4000);
-        teamUtil.pause(D07_SPECIMEN_PAUSE);
-
-        //moves robot out of the way of the submersible
-        drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY,D05_CHAMBER_TO_MIDFIELD_X,D06_CHAMBER_TO_MIDFIELD_Y,0,D02_TRANSITION_VELOCITY_FAST,false,null,0,4000);
-        outtake.outtakeGrab();
-
-        //moves robot into postion to drive forward to grab next specimen
-        drive.strafeHoldingStraightEncoder(BasicDrive.MAX_VELOCITY,D09_PREPARE_FOR_PICKUP_Y,D08_PREPARE_FOR_PICKUP_X,0, D10_TRANSITION_VELOCITY_SLOW,null,0,4000);
-
-        //moves robot to wall for grab
-        drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY,D12_PICKUP_X,D11_PICKUP_Y,0,D13_GRAB_SPECIMEN_END_VELOCITY,false,null,0,4000);
-        teamUtil.pause(D14_SPECIMEN_GRAB_TIME);
-        BasicDrive.MIN_STRAFE_START_VELOCITY = 500;
-        BasicDrive.MIN_START_VELOCITY = 300;
-        return true;
-    }
-
-    public void specimenCollectBlocks() {
-        drive.setRobotPosition(0,0,0);
-        long startTime = System.currentTimeMillis();
-        //Drive to the submersible while moving a bit to the left
-        outtake.deployArm();
-        drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY, C01_PLACE_SPECIMEN_X, C02_PLACE_SPECIMEN_Y,0,C04_END_VELOCITY_SPECIMEN, false, null,0,4000);
-        teamUtil.pause(C05_SPECIMEN_PAUSE); // give it time to click in
-        teamUtil.log("First Specimen Dropped: "+ (System.currentTimeMillis()-startTime));
-
-        // Back up to clear sub
-        drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY, C06_CLEAR_SUB_X, C02_PLACE_SPECIMEN_Y,0,C03_TRANSITION_VELOCITY_CHILL, false, null,0,4000);
-        outtake.outtakeGrab();
-        // strafe over to clear sub on other side
-        drive.strafeHoldingStraightEncoder(BasicDrive.MAX_VELOCITY, C07_CLEAR_SUB_Y+C0a_FAST_STRAFE_ADJUST, C06_CLEAR_SUB_X, 0, C08_TRANSITION_VELOCITY_FAST,null, 0, 2000);
-
-        // drive past samples
-        drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY, C09_CLEAR_SAMPLE_X- C0a_FAST_STRAIGHT_ADJUST1, C07_CLEAR_SUB_Y,0,C08_TRANSITION_VELOCITY_FAST, false, null,0,4000);
-
-        // strafe to sample 1
-        drive.strafeHoldingStraightEncoder(BasicDrive.MAX_VELOCITY, C10_SAMPLE_1_Y+C10_SAMPLE_Y_ADJUST, C09_CLEAR_SAMPLE_X, 0, C08_TRANSITION_VELOCITY_FAST,null, 0, 2000);
-
-        // push first sample to observation zone
-        drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY, C11_DROP_SAMPLE_X+C0a_FAST_REVERSE_ADJUST, C10_SAMPLE_1_Y,0,C12_TRANSITION_VELOCITY_REVERSE, false, null,0,4000);
-
-        // head back out to get second sample
-        drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY, C09_CLEAR_SAMPLE_X- C0a_FAST_STRAIGHT_ADJUST2, C10_SAMPLE_1_Y,0,C08_TRANSITION_VELOCITY_FAST, false, null,0,4000);
-        drive.strafeToTarget(270,0,C08_TRANSITION_VELOCITY_FAST, C13_SAMPLE_2_Y+C10_SAMPLE_Y_ADJUST,2000);
-
-        // push second sample to observation zone
-        drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY, C11_DROP_SAMPLE_X+C0a_FAST_REVERSE_ADJUST, C13_SAMPLE_2_Y,0,C12_TRANSITION_VELOCITY_REVERSE, false, null,0,4000);
-
-        drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY, C15_BACK_OUT_OBSERVATION_ZONE, C13_SAMPLE_2_Y,0,C08_TRANSITION_VELOCITY_FAST, false, null,0,4000);
-
-        drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY, D12_PICKUP_X,C13_SAMPLE_2_Y,0,D13_GRAB_SPECIMEN_END_VELOCITY, false, null,0,4000);
-        teamUtil.pause(D14_SPECIMEN_GRAB_TIME);
-        // head back out for 3rd sample
-        drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY, C09_CLEAR_SAMPLE_X- C0a_FAST_STRAIGHT_ADJUST2, C13_SAMPLE_2_Y,0,C08_TRANSITION_VELOCITY_FAST,null,0,4000);
-        drive.strafeToTarget(270,0,C08_TRANSITION_VELOCITY_FAST, C14_SAMPLE_3_Y+C10_SAMPLE_Y_ADJUST,2000);
-
-        // push 3rd sample to observation zone
-        drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY, C11_DROP_SAMPLE_X+C0a_FAST_REVERSE_ADJUST, C14_SAMPLE_3_Y,0,C12_TRANSITION_VELOCITY_REVERSE,null,0,4000);
-        drive.stopMotors(); // temp
-
-    }
-
-    public boolean autoV1Specimen(int blocks,boolean ascent){
-        teamUtil.log("Running Auto.  Alliance: " + (teamUtil.alliance == RED ? "RED" : "BLUE"));
-
-        drive.setRobotPosition(0,0,0);
-        long startTime = System.currentTimeMillis();
-
-        outtake.deployArm();
-
-        //First move to gets robot over to side in order get to submersible fast enough
-        //drive.moveTo(BasicDrive.MAX_VELOCITY,B02_PLACE_SPECIMEN_Y,B02_PLACE_SPECIMEN_Y,0,B10_END_VELOCITY_SPECIMEN,null,0,5000);
-        drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY, B01_PLACE_SPECIMEN_X, B02_PLACE_SPECIMEN_Y, 0, B03_END_VELOCITY_SPECIMEN, false, null, 0,3000);
-        drive.setMotorPower(B04_SPECIMEN_MOTOR_POWER);
-        teamUtil.pause(B05_SPECIMEN_PAUSE);
-        drive.stopMotors();
-
-        drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY, A04_MOVE_TO_SAMPLE_X, B02_PLACE_SPECIMEN_Y,0,500, false, null,0,4000);
-        outtake.outtakeGrab();
-        drive.moveTo(BasicDrive.MAX_VELOCITY,B08_GO_TO_SAMPLE_Y,B07_GO_TO_SAMPLE_X,0,B09_END_VELOCITY_SEEK_AFTER_BACKUP,null,0,5000);
-
-        //intake.goToSeekNoWait(5000);
-
-        if(teamUtil.alliance == RED) intake.setTargetColor(OpenCVSampleDetector.TargetColor.RED);
-        else intake.setTargetColor(OpenCVSampleDetector.TargetColor.BLUE);
-        //if(!intake.goToSampleAndGrab(5000)){
-        //    teamUtil.log("FAILED to intake sample.  Giving up");
-        //    return false;
-        //}
-
-        intake.goToUnload(5000);
-        drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY, B11_WALL_SPECIMEN_X, B12_WALL_SPECIMEN_Y,0,200, false, null,0,4000);
-        output.dropSampleOutBackNoWait();
-
-        drive.setMotorPower(-B13_SPECIMENDROP_MOTOR_POWER);
-        teamUtil.pause(1000);
-        drive.stopMotors();
-
-
-
-
-        return true;
-    }
-
-    public boolean autoV2Specimen(int cycles){
-        teamUtil.log("Running Auto.  Alliance: " + (teamUtil.alliance == RED ? "RED" : "BLUE"));
-        drive.setRobotPosition(0,0,0);
-        specimenCollectBlocks();
-        for(int i = 1; i<=cycles;i++){
-            teamUtil.log("Auto V2 Specimen Cycle Number: " + i);
-            specimenCycle(i);
-        }
-        drive.stopMotors();
-        return true;
-    }
 
     public boolean specimenArmsWORKINPROGRESS(){
         drive.setRobotPosition(0,0,0);

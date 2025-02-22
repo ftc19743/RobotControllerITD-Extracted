@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class Intake {
     HardwareMap hardwareMap;
     Telemetry telemetry;
+    static public boolean details = false;
 
     Blinkin blinkin;
 
@@ -307,7 +308,6 @@ public class Intake {
 
     // Calibrate slider and extender.
     public void calibrate() {
-        boolean details = false;
         teamUtil.log("Calibrating Intake");
 
         // Get Grabber into safe position
@@ -420,7 +420,6 @@ public class Intake {
     public boolean flipperGoToSeek(long timeout){
         teamUtil.log("flipperGoToSeek has Started. Starting Potentiometer Value: " + flipperPotentiometer.getVoltage()+ "Distance: " + Math.abs(flipperPotentiometer.getVoltage()-FLIPPER_SEEK_POT_VOLTAGE));
         long timeoutTime = System.currentTimeMillis() + timeout;
-        boolean details = false;
         flipper.setPosition(FLIPPER_SEEK);
         while(Math.abs(flipperPotentiometer.getVoltage()-FLIPPER_SEEK_POT_VOLTAGE)>FLIPPER_SEEK_POT_THRESHOLD&&teamUtil.keepGoing(timeoutTime)){
             if(details)teamUtil.log("Voltage: " + flipperPotentiometer.getVoltage() + "Target Voltage: " + FLIPPER_SEEK_POT_VOLTAGE);
@@ -472,11 +471,22 @@ public class Intake {
         return true;
 
     }
+
+    public boolean flipperGoToGrabNoPot(long timeout) {
+        teamUtil.log("flipperGoToGrabNoPot has Started");
+        flipper.setPosition(FLIPPER_GRAB_STEP_1);
+        teamUtil.pause(FLIPPER_GRAB_STEP_1_PAUSE);
+        flipper.setPosition(FLIPPER_GRAB_STEP_2);
+        teamUtil.pause(FLIPPER_GRAB_STEP_2_PAUSE);
+        flipper.setPosition(FLIPPER_GRAB);
+        teamUtil.pause(FLIPPER_GRAB_STEP_2_PAUSE);
+        teamUtil.log("flipperGoToGrabNoPot has Finished");
+        return true;
+    }
+
     public boolean flipperGoToGrab(long timeout){
         teamUtil.log("flipperGoToGrab has Started. Starting Potentiometer Value: " + flipperPotentiometer.getVoltage()+ "Distance: " + Math.abs(flipperPotentiometer.getVoltage()-FLIPPER_GRAB_POT_VOLTAGE));
         long timeoutTime = System.currentTimeMillis() + timeout;
-        boolean details = false;
-
 
         flipper.setPosition(FLIPPER_GRAB_STEP_1);
         teamUtil.pause(FLIPPER_GRAB_STEP_1_PAUSE);
@@ -502,7 +512,6 @@ public class Intake {
     public boolean flipperGoToUnload(long timeout){
         teamUtil.log("flipperGoToUnload has Started. Starting Potentiometer Value: " + flipperPotentiometer.getVoltage() + "Distance: " + Math.abs(flipperPotentiometer.getVoltage()-FLIPPER_UNLOAD_POT_VOLTAGE));
         long timeoutTime = System.currentTimeMillis() + timeout;
-        boolean details = true;
         flipper.setPosition(FLIPPER_UNLOAD);
         while(Math.abs(flipperPotentiometer.getVoltage()-FLIPPER_UNLOAD_POT_VOLTAGE)>FLIPPER_UNLOAD_POT_THRESHOLD&&teamUtil.keepGoing(timeoutTime)){
             if(details)teamUtil.log("Voltage: " + flipperPotentiometer.getVoltage() + "Target Voltage: " + FLIPPER_UNLOAD_POT_VOLTAGE);
@@ -606,20 +615,11 @@ public class Intake {
             flipToSampleAndGrab(1500);
 
             if (!timedOut.get()) {
-//                goToSafeRetract(2500);
-//                extender.setTargetPositionTolerance(EXTENDER_TOLERANCE_RETRACT);
-//                //TODO: delete
-//                extendersToPositionMaxVelo(EXTENDER_UNLOAD,3000);
-//                if(unload){
-//                    unload();
-//                }
                 if(retract) retractAll(unload,4000);
-
                 autoSeeking.set(false);
                 moving.set(false);
                 return true;
             }
-
         }
         moving.set(false);
         teamUtil.theBlinkin.setSignal(Blinkin.Signals.VIOLET);
@@ -628,6 +628,35 @@ public class Intake {
         return false;
     }
 
+    // This uses a different version of flipToSampleAndGrab to avoid interference on the potentiometer while the drive motors are energized
+    public boolean autoGoToSampleAndGrabV3(boolean unload,boolean retract,boolean phase1){
+        autoSeeking.set(true);
+        teamUtil.log("Launched Auto GoToSample and Grab" );
+        timedOut.set(false);
+        long timeOutTime = System.currentTimeMillis() + 1000;
+        if(goToSampleV5(3000,phase1) && !timedOut.get()) {
+            long loopStartTime = System.currentTimeMillis();
+            //TODO: This looks like a bug...setToPreGrabTime
+            while( System.currentTimeMillis()-setToPreGrabTime <FLIPPER_SEEK_TO_PRE_GRAB_TIME && teamUtil.keepGoing(timeOutTime)){
+            }
+            long loopTime = System.currentTimeMillis()-loopStartTime;
+            if (details) teamUtil.log("Time Taken In Order to make sure that Pre Grab Is Achieved: " + loopTime);
+            flipperGoToGrabNoPot(1000);
+            grab();
+
+            if (!timedOut.get()) {
+                if(retract) retractAll(unload,4000);
+                autoSeeking.set(false);
+                moving.set(false);
+                return true;
+            }
+        }
+        moving.set(false);
+        teamUtil.theBlinkin.setSignal(Blinkin.Signals.VIOLET);
+        teamUtil.log("Failed to locate and grab sample" );
+        autoSeeking.set(false);
+        return false;
+    }
 
 /*
     public boolean goToSampleAndGrabV4(boolean unload){
@@ -719,7 +748,6 @@ public class Intake {
     // jump/rotate directly to the given coordinates
     public boolean jumpToSampleV4(double blockX, double blockY, int rotation, long timeOut) {
         long timeoutTime = System.currentTimeMillis() + timeOut;
-        boolean details = true;
         extender.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
 
         teamUtil.log("Starting jumpToSampleV4");
@@ -771,7 +799,6 @@ public class Intake {
 
     public boolean jumpToSampleV5(double blockX, double blockY, int rotation, long timeOut, boolean last) {
         long timeoutTime = System.currentTimeMillis() + timeOut;
-        boolean details = true;
         extender.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
         extender.setTargetPositionTolerance(EXTENDER_TOLERANCE_SEEK);
         extender.setPositionPIDFCoefficients(EXTENDER_SEEK_P_COEFFICIENT);
@@ -864,7 +891,6 @@ public class Intake {
         teamUtil.log("Processor State" + arduPortal.getProcessorEnabled(sampleDetector));
         long timeoutTime = System.currentTimeMillis() + timeOut;
         long startTime = System.currentTimeMillis();
-        boolean details = true;
         OpenCVSampleDetectorV2.FrameData frame = null;
 
         lightsOnandOff(WHITE_NEOPIXEL,RED_NEOPIXEL,GREEN_NEOPIXEL,BLUE_NEOPIXEL,true);
@@ -972,7 +998,6 @@ public class Intake {
         teamUtil.log("GoToSample V5 has started");
         long timeoutTime = System.currentTimeMillis() + timeOut;
         long startTime = System.currentTimeMillis();
-        boolean details = true;
 
         sampleDetector.reset();
         startCVPipeline();
@@ -1088,7 +1113,7 @@ public class Intake {
 
 
     public boolean inGrabZone(double xOffset, double yOffset){
-        boolean details = false;
+
         yOffset *= -1;
         yOffset += OpenCVSampleDetectorV2.CAMERA_OFFSET_Y;
         xOffset += OpenCVSampleDetectorV2.CAMERA_OFFSET_X;
@@ -1244,7 +1269,6 @@ public class Intake {
     }
 
     public void unloadV2(boolean fromSeek){
-        boolean details = false;
         teamUtil.log("unloadV2 has started");
         if(fromSeek){
             flipper.setPosition(FLIPPER_PRE_UNLOAD);
@@ -1314,7 +1338,6 @@ public class Intake {
     }
 
     public void unloadToChute(){
-        boolean details = false;
         teamUtil.log("unloadToChute has started");
         flipper.setPosition(FLIPPER_UNLOAD);
         wrist.setPosition(WRIST_UNLOAD);
@@ -1466,7 +1489,6 @@ public class Intake {
     }
 
     public void rotateToSample(int rotation){
-        boolean details = false;
         if (details) teamUtil.log("RotateToSample has started");
         double factor = 0.003722;
         if(rotation<0){
@@ -1512,7 +1534,6 @@ public class Intake {
     }
 
     public void manualY(double joystickValue){
-        boolean details = false;
         if (moving.get()) { // Output system is already moving in a long running operation
             teamUtil.log("WARNING: Attempt to move extender while intake system is moving--ignored");
         } else {
@@ -1593,7 +1614,6 @@ public class Intake {
     public boolean goToSampleV2(long timeOut){
         teamUtil.log("GoToSample V2 has started");
         long timeoutTime = System.currentTimeMillis() + timeOut;
-        boolean details = true;
 
         startCVPipeline();
         lightsOnandOff(WHITE_NEOPIXEL,RED_NEOPIXEL,GREEN_NEOPIXEL,BLUE_NEOPIXEL,true);

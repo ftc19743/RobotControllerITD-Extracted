@@ -67,6 +67,7 @@ public class BasicDrive {
 
     static public double MIN_START_VELOCITY = 300; //TODO (Current value works OK, but maybe could be more aggressive)
     static public double MIN_END_VELOCITY = 90; //TODO (Current value works OK, but maybe could be more aggressive)
+    static public float MIN_END_POWER = .1f;
     static public double MAX_ACCELERATION = 50;
     static public double MAX_DECELERATION = 1.65;
     static public double POWER_BRAKING_STRAIGHT_FACTOR = .25f; // MMs per velocity unit
@@ -94,6 +95,7 @@ public class BasicDrive {
     static public float STRAFE_MAX_DECLINATION = 27f; // don't veer off of straight more than this number of degrees
 
     static public double MOVE_TO_COEFFICIENT = 2;
+    static public float MOVE_TO_POWER_COEFFICIENT = .001f;
     static public double MOVE_TO_THRESHOLD = 10;
     static public double MOVE_TO_DECCEL_COEFFICIENT = 0.5;
 
@@ -1656,6 +1658,8 @@ public class BasicDrive {
         }
         double angle = 0;
         double driveHeading;
+        setMotorsWithEncoder();
+
         while(!withinThreshold&&teamUtil.keepGoing(timeoutTime)) {
             odo.update();
             double straightChange = straightTarget - odo.getPosX();
@@ -1729,6 +1733,84 @@ public class BasicDrive {
 
         teamUtil.log("MoveTo FINISHED");
     }
+
+    public void moveToPower(float maxPower, double strafeTarget, double straightTarget, double robotHeading, long timeout){
+        moveToPower(maxPower,strafeTarget,straightTarget,robotHeading,0,null,0,true,timeout);
+    }
+    public void moveToPower(float maxPower, double strafeTarget, double straightTarget, double robotHeading, boolean endInDeadband, long timeout){
+        moveToPower(maxPower,strafeTarget,straightTarget,robotHeading,0,null,0,endInDeadband,timeout);
+    }
+    public void moveToPower(float maxPower, double strafeTarget, double straightTarget, double robotHeading, float endPower,ActionCallback action, double actionTarget, long timeout){
+        moveToPower(maxPower,strafeTarget,straightTarget,robotHeading,endPower,action,actionTarget,true,timeout);
+    }
+
+    public double computeDriveHeading(double strafeChange, double straightChange) {
+        if(strafeChange==0){
+            return straightChange>0? 0:180;
+        } else if (straightChange==0) {
+            return strafeChange>0? 90:270;
+        }else {
+            double angle = Math.toDegrees(Math.atan(straightChange / strafeChange));
+            if (straightChange > 0) {
+                if (strafeChange > 0) {
+                    return 90-angle;
+                } else {
+                    return 270-angle;
+                }
+            } else {
+                if (strafeChange > 0) {
+                    return 90-angle;
+                } else {
+                    return 270-angle;
+                }
+            }
+        }
+    }
+
+    public void moveToPower(float maxPower, double strafeTarget, double straightTarget, double robotHeading, float  endPower,ActionCallback action, double actionTarget, boolean endInDeadband, long timeout){
+        teamUtil.log("moveToPower StrafeTarget: " + strafeTarget +  " Straight target: " + straightTarget + " robotH: " + robotHeading + " MaxV: " + maxPower + " EndV: " + endPower + " EndInDeadband: " + endInDeadband);
+        details = true;
+        odo.update();
+        long timeoutTime = System.currentTimeMillis()+timeout;
+        boolean withinThreshold = false;
+        boolean strafeTargetAchieved = false;
+        boolean straightTargetAchieved = false;
+        boolean strafeIncreasing = (strafeTarget - odo.getPosY() > 0);
+        boolean straightIncreasing = (straightTarget - odo.getPosX() > 0);
+        endPower = Math.max(endPower, MIN_END_POWER);
+        double driveHeading;
+        setMotorsRunWithoutEncoder();
+        while(!withinThreshold&&teamUtil.keepGoing(timeoutTime)) {
+            odo.update();
+            double straightChange = straightTarget - odo.getPosX();
+            double strafeChange = strafeTarget - odo.getPosY();
+
+            driveHeading = computeDriveHeading(strafeChange, straightChange);
+            double remainingDistance = Math.sqrt(straightChange * straightChange + strafeChange * strafeChange);
+            float power = Math.min(MOVE_TO_POWER_COEFFICIENT * (float) remainingDistance + endPower, maxPower);
+
+            if(endInDeadband){ // We must be at or near the target
+                if (remainingDistance <= MOVE_TO_THRESHOLD) {
+                    withinThreshold = true;
+                }
+            }else{ // We just need to exceed the targets in both dimensions once
+                strafeTargetAchieved = strafeTargetAchieved || strafeIncreasing ? odo.getPosY() > strafeTarget - MOVE_TO_THRESHOLD : odo.getPosY() < strafeTarget + MOVE_TO_THRESHOLD;
+                straightTargetAchieved = straightTargetAchieved || straightIncreasing ? odo.getPosX() > straightTarget - MOVE_TO_THRESHOLD : odo.getPosX() < straightTarget + MOVE_TO_THRESHOLD;
+                withinThreshold = strafeTargetAchieved && straightTargetAchieved;
+            }
+            driveMotorsHeadingsFRPower(driveHeading, robotHeading, power);
+
+            if (details) {
+                teamUtil.log(String.format("DH: %.1f RH: %.1f Power: %.2f Distance: %.0f X: %.0f Y %.0f", driveHeading, robotHeading, power, remainingDistance, strafeChange, straightChange));
+            }
+        }
+        if(endPower<=MIN_END_POWER){
+            stopMotors();
+            teamUtil.log("Stopping Motors");
+        }
+        teamUtil.log("MoveToPower FINISHED");
+    }
+
 
     // This was developed for CS April Tag Localization.  Might be some stuff here useful for the new "moveTo" odometry pod method
     public void backToPoint(double robotHeading, double x, double y, double endVelocity) { // assumes robot heading is 180
