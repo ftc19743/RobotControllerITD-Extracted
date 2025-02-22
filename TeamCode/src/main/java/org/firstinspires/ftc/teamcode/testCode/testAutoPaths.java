@@ -110,6 +110,8 @@ public class testAutoPaths extends LinearOpMode {
             }
             if(driverGamepad.wasDownPressed()) {
                 long startTime = System.currentTimeMillis();
+                robot.drive.setRobotPosition(0,0,0);
+                robot.drive.setMotorsBrake();
                 robot.specimenCollectBlocksV3(false);
                 robot.drive.stopMotors();
                 elapsedTime = System.currentTimeMillis()-startTime;
@@ -124,12 +126,14 @@ public class testAutoPaths extends LinearOpMode {
                 robot.nextExtenderPos = Intake.EXTENDER_AUTO_START_SEEK;
                 long startTime = System.currentTimeMillis();
                 for(int i = START_CYCLE; i<=END_CYCLES;i++){
-                    teamUtil.log("Auto V3 Specimen Cycle Number: " + i);
+                    teamUtil.log("Auto V4 Specimen Cycle Number: " + i);
                     switch (i) {
-                        case 1 : robot.specimenCycleV3(1, Robot.F33_5_CYCLE_Y_PLACEMENTS[0],false, true, true); break;
-                        case 2 : robot.specimenCycleV3(2, Robot.F33_5_CYCLE_Y_PLACEMENTS[1],false, true, true); break;
-                        case 3 : robot.specimenCycleV3(3, Robot.F33_5_CYCLE_Y_PLACEMENTS[2],false, true, true); break;
-                        case 4 : robot.specimenCycleV3(4, Robot.F33_5_CYCLE_Y_PLACEMENTS[3],false, true, true); break;          }
+                        case 1 : robot.specimenCycleV4(1, Robot.G33_6_CYCLE_Y_PLACEMENTS[0],false, true); break;
+                        case 2 : robot.specimenCycleV4(2, Robot.G33_6_CYCLE_Y_PLACEMENTS[1],false,  true); break;
+                        case 3 : robot.specimenCycleV4(3, Robot.G33_6_CYCLE_Y_PLACEMENTS[2],false,  true); break;
+                        case 4 : robot.specimenCycleV4(4, Robot.G33_6_CYCLE_Y_PLACEMENTS[3],false,  true); break;
+                        case 5 : robot.specimenCycleV4(5, Robot.G33_6_CYCLE_Y_PLACEMENTS[4],false,  true); break;
+                    }
                 }
                 robot.drive.stopMotors();
                 elapsedTime = System.currentTimeMillis()-startTime;
@@ -141,25 +145,21 @@ public class testAutoPaths extends LinearOpMode {
             }
             if(driverGamepad.wasBPressed()){
                 long startTime = System.currentTimeMillis();
-                robot.placeFirstSpecimenV2(false);
-                robot.drive.driveMotorsHeadingsFRPower(180, 0, 1);
-                teamUtil.pause(250);
-                robot.drive.stopMotors();
+                if (GRAB_SAMPLE) {
+                    robot.placeFirstSpecimenV2(true);
+                    //teamUtil.pause(1500);
+                    robot.deliverFirstSample();
+                    robot.drive.stopMotors();
+                } else {
+                    robot.placeFirstSpecimenV2(false);
+                    robot.drive.driveMotorsHeadingsFRPower(180, 0, 1);
+                    teamUtil.pause(250);
+                    robot.drive.stopMotors();
+                }
                 elapsedTime = System.currentTimeMillis()-startTime;
             }
 
             ////////////////////////////////////////////////////////////////////////////
-            // Trying to find heading/rotation bug
-            if(armsGamepad.wasUpPressed()) {
-                robot.testDriveToWall();
-                robot.drive.stopMotors();
-            }
-            if(armsGamepad.wasDownPressed()) {
-                robot.testPlaceSpecimen(2,70);
-                robot.drive.stopMotors();
-            }
-
-                ////////////////////////////////////////////////////////////////////////////
             // TESTING HANG
             if(armsGamepad.wasAPressed()) {
                 robot.hangPhase1();

@@ -475,7 +475,7 @@ public class Intake {
     public boolean flipperGoToGrab(long timeout){
         teamUtil.log("flipperGoToGrab has Started. Starting Potentiometer Value: " + flipperPotentiometer.getVoltage()+ "Distance: " + Math.abs(flipperPotentiometer.getVoltage()-FLIPPER_GRAB_POT_VOLTAGE));
         long timeoutTime = System.currentTimeMillis() + timeout;
-        boolean details = true;
+        boolean details = false;
 
 
         flipper.setPosition(FLIPPER_GRAB_STEP_1);

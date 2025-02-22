@@ -86,39 +86,10 @@ public class Robot {
     public static int G0a_FAST_REVERSE_ADJUST = 0;
     public static int G0a_SLOW_STRAFE_ADJUST = 50;
 
-
     static public int G18_CYCLE_PLACE_SPECIMEN_1_Y = -70; // was 140
     static public int G18a_CYCLE_PLACE_SPECIMEN_Y = -40; //was 140
-    static public float G18b_ADJUSTED_MAX_DECLINATION = 35;
-    static public int G19_CYCLE_MIDFIELD_X = 500; // was 550 when we were trying for 6
-
-    static public int G20_CYCLE_SPECIMEN_Y_ADJUSTMENT = 25;
-    static public int G21_CYCLE_PLACE_SAMPLE_X = 700;
-    static public int G21b_CYCLE_PLACE_SAMPLE_X = 690;
-    static public int G22_CYCLE_WRIST_CALLBACK = -600;
-    static public int G22b_CYCLE1_WRIST_CALLBACK = -800;
-    static public int G23_CYCLE_PLACE_SPECIMEN_PAUSE = 200;
-    static public int G23b_CYCLE_REVERSE_PLACE_SPECIMEN_PAUSE = 200;
-
-    static public int G24_CYCLE_BACKUP_X = 700;
-    static public int G25_CYCLE_PICKUP_Y = -690; //was 550
-    static public int G26_CYCLE_PREPARE_FOR_PICKUP_X = 300;
-    static public int G26a_CYCLE_PICKUP_X = 75;
-    static public int G27_CYCLE_PICKUP_VELOCITY = 500;
-    static public int G28_CYCLE_PICKUP_PAUSE = 200;
-    static public long G29_AUTO_MOMENTUM_PAUSE = 200;
-    static public long G32_CYCLE_PICKUP_Y_SPECIAL = -790; //was -650
-
 
     public AtomicBoolean autoUnloadNoWaitDone = new AtomicBoolean(false);
-
-
-
-
-
-
-
-
 
     static public boolean waitingForButtonPress = true;
     public static double OUTAKE_ARM_ENGAGE_VAL = 0;
@@ -351,27 +322,71 @@ public class Robot {
     }
 
 
+    // TODO: Adjust these manually in auto setup
     public int nextSliderPos = (int) AxonSlider.SLIDER_READY; // default value for a grab
     public int nextExtenderPos = Intake.EXTENDER_AUTO_START_SEEK; // default value for a grab
 
     static public int G01_PLACE_SPECIMEN1_X = 590;
+    static public int G01_PLACE_AND_GRAB_SPECIMEN1_X = 500;
     static public int G01_PLACE_SPECIMEN1_Y = 0;
     static public int G01_SPECIMEN1_PAUSE1 = 200;
     static public int G01_SPECIMEN1_PAUSE2 = 0;
+    static public int G01_SPECIMEN1_PAUSE3 = 200;
+    static public int G01_SPECIMEN1_PAUSE4 = 500;
     static public float G01_SPECIMEN1_END_POWER = .3f;
-    public void placeFirstSpecimenV2(boolean grab) {
+    static public float G01_SPECIMEN1_GRAB_POWER = .4f;
+
+    public boolean placeFirstSpecimenV2(boolean grab) {
         teamUtil.log("Place First Specimen V2");
         outtake.deployArm();
         if (grab) {
-            teamUtil.log("Place First and grab not implemented yet");
+            // Deploy intake to specified position
+            intake.setTargetColor(teamUtil.alliance == RED ? OpenCVSampleDetectorV2.TargetColor.RED : OpenCVSampleDetectorV2.TargetColor.BLUE);
+            outtake.outakewrist.setPosition(Outtake.WRIST_RELEASE);
+            AutoReadyToSeekNoWait(nextSliderPos, nextExtenderPos); // move intake out for the grab
+
+            // Drive to submersible and snuggle up against it for the grab
+            drive.straightHoldingStrafePower(G00_MAX_POWER, G01_PLACE_AND_GRAB_SPECIMEN1_X, G01_PLACE_SPECIMEN1_Y, 0);
+            drive.driveMotorsHeadingsFRPower(180, 0, G00_MAX_POWER); // reverse motors to decelerate quickly
+            teamUtil.pause(G01_SPECIMEN1_PAUSE3); // give it time to decelerate
+            drive.driveMotorsHeadingsFRPower(0, 0, G01_SPECIMEN1_GRAB_POWER);
+            outtake.outakearm.setPosition(outtake.ARM_SOFT_ENGAGE);
+            teamUtil.pause(G01_SPECIMEN1_PAUSE4); // give it time to click in and settle down before we use the CV
+
+            // retract set to true so we wait here until fully retracted (could be sped up but we need to be careful not to clip the sub with the intake while leaving!
+            boolean grabbedSample=intake.goToSampleAndGrabV3(false, true,true); // TODO: <- Specify phase 1 timeout?
+            intake.lightsOff();
+            teamUtil.log("Finished Place First Specimen V2");
+            return grabbedSample;
         } else {
             drive.straightHoldingStrafePower(G00_MAX_POWER, G01_PLACE_SPECIMEN1_X, G01_PLACE_SPECIMEN1_Y, 0);
             drive.driveMotorsHeadingsFRPower(180, 0, G00_MAX_POWER);
             teamUtil.pause(G01_SPECIMEN1_PAUSE1); // give it time to decelerate
             drive.driveMotorsHeadingsFRPower(0, 0, G01_SPECIMEN1_END_POWER);
             teamUtil.pause(G01_SPECIMEN1_PAUSE2); // give it time to click in (can be zero)
+            teamUtil.log("Finished Place First Specimen V2");
+            return true;
         }
-        teamUtil.log("Finished Place First Specimen V2");
+    }
+
+    static public int G30_DELIVER_AND_PICKUP_BACKUP_X = 700;
+    static public int G31_DELIVER_AND_PICKUP_Y = -840; //was 550
+    static public float G32_DELIVER_AND_PICKUP_POWER = .3f;
+    static public int G33_DELIVER_AND_PICKUP_PREPARE_FOR_PICKUP_X = 300;
+    static public int G34_DELIVER_AND_PICKUP_X = 75;
+    public void deliverFirstSample() {
+        // moves robot out of the way of the submersible
+        drive.straightHoldingStrafePower(G00_MAX_POWER,G30_DELIVER_AND_PICKUP_BACKUP_X,G02_PLACE_SPECIMEN_Y,0);
+        outtake.outtakeGrab();
+
+        //moves robot into position to drive forward to grab next specimen
+        drive.strafeHoldingStraightPower(G00_MAX_POWER,G31_DELIVER_AND_PICKUP_Y+G0a_FAST_STRAFE_ADJUST,G33_DELIVER_AND_PICKUP_PREPARE_FOR_PICKUP_X,0);
+        intake.unloadToChuteNoWait(); // drop the sample down the chute
+
+        //moves robot to wall for grab
+        drive.straightHoldingStrafePower(G32_DELIVER_AND_PICKUP_POWER,G34_DELIVER_AND_PICKUP_X,G31_DELIVER_AND_PICKUP_Y,0);
+        teamUtil.pause(G28_CYCLE_PICKUP_PAUSE);
+
     }
 
     public static int G02_PLACE_SPECIMEN_Y = 0; // was 130
@@ -396,8 +411,7 @@ public class Robot {
 
     //Collects all blocks using robot to push them
     public void specimenCollectBlocksV3(boolean grab) {
-        drive.setRobotPosition(0,0,0);
-        drive.setMotorsBrake();
+
         long startTime = System.currentTimeMillis();
 
         placeFirstSpecimenV2(grab);
@@ -509,48 +523,93 @@ public class Robot {
         teamUtil.pause(F17_PICKUP_1_PAUSE);
     }
 
-    public static int TEST_PAUSE_1 = 150;
-    public static float TEST_POW_1 = .4f;
-    public void testDriveToWall () {
-        drive.straightHoldingStrafePower(1,F24_CYCLE_BACKUP_X,F02_PLACE_SPECIMEN_Y,0, null,0,4000);
-        outtake.outtakeGrab();
 
-        //moves robot into position to drive forward to grab next specimen
-        drive.strafeHoldingStraightPower(1,F25_CYCLE_PICKUP_Y+F0a_SLOW_STRAFE_ADJUST,F26_CYCLE_PREPARE_FOR_PICKUP_X,0,null,0,4000);
-        drive.stopMotors();
-        teamUtil.pause(TEST_PAUSE_1);
-        //moves robot to wall for grab
-        drive.straightHoldingStrafePower(TEST_POW_1,F26a_CYCLE_PICKUP_X,F25_CYCLE_PICKUP_Y,0, null,0,4000);
-        teamUtil.pause(F28_CYCLE_PICKUP_PAUSE);
+    static public float G18b_ADJUSTED_MAX_DECLINATION = 35;
+    static public int G19_CYCLE_MIDFIELD_X = 500; // was 550 when we were trying for 6
+    static public int G20_CYCLE_SPECIMEN_Y_ADJUSTMENT = 25;
+    static public int G21_CYCLE_PLACE_SAMPLE_X = 700;
+    static public int G21b_CYCLE_PLACE_SAMPLE_X = 690;
+    static public int G22_CYCLE_WRIST_CALLBACK = -600;
+    static public int G22b_CYCLE1_WRIST_CALLBACK = -800;
+    static public int G23_CYCLE_PLACE_SPECIMEN_PAUSE = 200;
+    static public int G23b_CYCLE_REVERSE_PLACE_SPECIMEN_PAUSE = 200;
+    static public int G24_CYCLE_BACKUP_X = 700;
+    static public int G25_CYCLE_PICKUP_Y = -690; //was 550
+    static public float G25_CYCLE_PICKUP_POWER = .3f;
+    static public int G26_CYCLE_PREPARE_FOR_PICKUP_X = 300;
+    static public int G26a_CYCLE_PICKUP_X = 75;
+    static public int G28_CYCLE_PICKUP_PAUSE = 200;
+    static public long G29_AUTO_MOMENTUM_PAUSE = 200;
+    static public long G32_CYCLE_PICKUP_Y_SPECIAL = -790; //was -650
+
+    public boolean specimenCycleV4(int cycle, int cycleYTarget, boolean grabSample, boolean getNextSpecimen){
+        long startTime = System.currentTimeMillis();
+        outtake.outakearm.setPosition(Outtake.ARM_UP);
+
+        if (grabSample) {
+            // Take a wider path if we are extending intake, turn motors on to hold robot against submersible
+        } else {
+            float strafeMaxDeclination = drive.STRAFE_MAX_DECLINATION; // save for later
+            BasicDrive.STRAFE_MAX_DECLINATION = G18b_ADJUSTED_MAX_DECLINATION;
+            drive.strafeHoldingStraightPower(G00_MAX_POWER, cycleYTarget - G0a_FAST_STRAFE_ADJUST, G19_CYCLE_MIDFIELD_X, 0,
+                    new BasicDrive.ActionCallback() {
+                        @Override
+                        public void action() {
+                            outtake.outakewrist.setPosition(Outtake.WRIST_RELEASE);
+                        }
+                    }, cycle == 1? G22b_CYCLE1_WRIST_CALLBACK:G22_CYCLE_WRIST_CALLBACK, 5000);
+            BasicDrive.STRAFE_MAX_DECLINATION = strafeMaxDeclination;
+            outtake.deployArm();
+
+            if(cycle>=2){
+                drive.straightHoldingStrafePower(G00_MAX_POWER, G21b_CYCLE_PLACE_SAMPLE_X, cycleYTarget, 0);
+                drive.driveMotorsHeadingsFR(180,0,BasicDrive.MAX_VELOCITY);
+                teamUtil.pause(G23b_CYCLE_REVERSE_PLACE_SPECIMEN_PAUSE); // give it time to decelerate
+            } else{
+                drive.straightHoldingStrafePower(G00_MAX_POWER, G21_CYCLE_PLACE_SAMPLE_X, cycleYTarget, 0);
+                drive.driveMotorsHeadingsFR(180,0,BasicDrive.MAX_VELOCITY);
+                teamUtil.pause(F23_CYCLE_PLACE_SPECIMEN_PAUSE); // give it time to decelerate and coast to submersible
+            }
+        }
+
+        boolean grabbedSample = false;
+        if (grabSample) {
+            if(teamUtil.alliance == RED){
+                intake.setTargetColor(OpenCVSampleDetectorV2.TargetColor.RED);
+            }
+            else{
+                intake.setTargetColor(OpenCVSampleDetectorV2.TargetColor.BLUE);
+            }
+            grabbedSample=intake.goToSampleAndGrabV3(false, false,true);
+            autoRetractAndUnloadNoWait(grabbedSample);
+            intake.lightsOff();
+        }
+
+        if(getNextSpecimen) {
+            if (grabbedSample) {
+                // go to unload position for next grab
+            } else {
+                // moves robot out of the way of the submersible
+                drive.straightHoldingStrafePower(G00_MAX_POWER,G24_CYCLE_BACKUP_X,G02_PLACE_SPECIMEN_Y,0);
+                outtake.outtakeGrab();
+
+                //moves robot into position to drive forward to grab next specimen
+                drive.strafeHoldingStraightPower(G00_MAX_POWER,G25_CYCLE_PICKUP_Y+G0a_FAST_STRAFE_ADJUST,G26_CYCLE_PREPARE_FOR_PICKUP_X,0);
+
+                //moves robot to wall for grab
+                drive.straightHoldingStrafePower(G25_CYCLE_PICKUP_POWER,G26a_CYCLE_PICKUP_X,G25_CYCLE_PICKUP_Y,0);
+                teamUtil.pause(G28_CYCLE_PICKUP_PAUSE);
+            }
+        }
+        BasicDrive.MIN_STRAFE_START_VELOCITY = 500;
+        BasicDrive.MIN_START_VELOCITY = 300;
+
+        long elapsedTime = System.currentTimeMillis()-startTime;
+        teamUtil.log("Cycle Time: "+elapsedTime);
+        return true;
     }
 
-    public void testPlaceSpecimen (int cycle, int cycleYTarget) {
-        float strafeMaxDeclination = drive.STRAFE_MAX_DECLINATION;
-        BasicDrive.STRAFE_MAX_DECLINATION = F18b_ADJUSTED_MAX_DECLINATION;
-        drive.strafeHoldingStraightEncoder(BasicDrive.MAX_VELOCITY, cycleYTarget - F0a_FAST_STRAFE_ADJUST, F19_CYCLE_MIDFIELD_X, 0, F08_TRANSITION_VELOCITY_FAST,
-                new BasicDrive.ActionCallback() {
-                    @Override
-                    public void action() {
-                        outtake.outakewrist.setPosition(Outtake.WRIST_RELEASE);
-                    }
-                }, cycle == 1? F22b_CYCLE1_WRIST_CALLBACK:F22_CYCLE_WRIST_CALLBACK, 5000);
-        BasicDrive.STRAFE_MAX_DECLINATION = strafeMaxDeclination;
-        outtake.deployArm();
 
-        if(cycle>=2){
-            drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY, F21b_CYCLE_PLACE_SAMPLE_X, cycleYTarget, 0, BasicDrive.MAX_VELOCITY, false, null, 0, 4000);
-
-            drive.driveMotorsHeadingsFR(180,0,BasicDrive.MAX_VELOCITY);
-            teamUtil.pause(F23b_CYCLE_REVERSE_PLACE_SPECIMEN_PAUSE); // give it time to decelerate
-        }
-        else{
-            drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY, F21_CYCLE_PLACE_SAMPLE_X, cycleYTarget, 0, BasicDrive.MAX_VELOCITY, false, null, 0, 4000);
-
-            drive.stopMotors(); // TODO: Reconsider this, maybe reverse
-            teamUtil.pause(F23_CYCLE_PLACE_SPECIMEN_PAUSE); // give it time to decelerate and coast to submersable
-        }
-
-    }
     public boolean specimenCycleV3(int cycle, int cycleYTarget, boolean grabSample, boolean chillPickup, boolean getNextSpecimen){
         long startTime = System.currentTimeMillis();
         outtake.outakearm.setPosition(Outtake.ARM_UP);
@@ -646,8 +705,10 @@ public class Robot {
         return true;
     }
 
-    static public int[] F33_6_CYCLE_Y_PLACEMENTS = {100, 80, 60, 40, 20};
+    static public int[] F33_6_CYCLE_Y_PLACEMENTS = {0, 68, 112, 145, 178};
     static public int[] F33_5_CYCLE_Y_PLACEMENTS = {50, 68, 112, 145};
+    static public int[] G33_6_CYCLE_Y_PLACEMENTS = {0, 68, 112, 145, 178};
+    static public int[] G33_5_CYCLE_Y_PLACEMENTS = {50, 68, 112, 145};
 
     public void fiveSpecimenCycle() {
         specimenCycleV3(1, F33_5_CYCLE_Y_PLACEMENTS[0],false, true, true);
