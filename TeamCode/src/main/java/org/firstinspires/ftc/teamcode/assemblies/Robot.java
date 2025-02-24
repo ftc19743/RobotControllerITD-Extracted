@@ -975,26 +975,12 @@ public class Robot {
     public void readyToPlaceHooks(){
         hang.hook_grabber.setPosition(Hang.HOOKGRABBER_READY);
         teamUtil.pause(READY_TO_PLACE_HOOKS_PAUSE_1);
-        output.lift.setVelocity(READY_TO_PLACE_HOOKS_VELOCITY);
+        output.lift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         output.lift.setTargetPosition(Output.LIFT_ABOVE_BAR);
+        output.lift.setVelocity(READY_TO_PLACE_HOOKS_VELOCITY);
         hang.hook_grabber.setPosition(Hang.HOOKGRABBER_DEPLOY);
     }
 
-    public void placeHooks(){
-        output.lift.setVelocity(PLACE_HOOKS_VELOCITY);
-        output.lift.setTargetPosition(Output.LIFT_ONTO_BAR);
-        while (output.lift.getCurrentPosition() > Output.LIFT_ONTO_BAR+10) { // wait for hooks to be released
-            teamUtil.pause(50);
-        }
-        output.lift.setVelocity(Output.LIFT_MAX_VELOCITY); // Run to near bottom
-        output.lift.setTargetPosition(Output.LIFT_DOWN+30);
-        while (output.lift.getCurrentPosition() > Output.LIFT_DOWN+40) {
-            teamUtil.pause(50);
-        }
-        output.lift.setVelocity(0); // Turn off lift motor at bottom
-        output.bucket.setPosition(Output.BUCKET_DEPLOY_AT_BOTTOM); // rotate bucket to avoid string while tensioning
-
-    }
 
     public void getReadyToHang() {
         pickUpHooks();
@@ -1018,22 +1004,6 @@ public class Robot {
 
     }
 
-    public void placeHooksNoWait() {
-        if (hang.hangMoving.get()) { // Intake is already moving in another thread
-            teamUtil.log("WARNING: Attempt to placeHooks while hang is moving--ignored");
-            return;
-        } else {
-            teamUtil.log("Launching Thread to placeHooks");
-            Thread thread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    placeHooks();
-                }
-            });
-            thread.start();
-        }
-
-    }
 
 
 //////////////////////////////////////////////////////////////////////////////////////

@@ -473,6 +473,7 @@ public class CalibrateArms extends LinearOpMode {
             hang.calibrate();
             hangCalibrated = true;
         }
+
         if(gp1.wasUpPressed()){
             hang.extendHangNoWait();
         }
@@ -495,11 +496,26 @@ public class CalibrateArms extends LinearOpMode {
         if(gp1.wasRightPressed()){
             hang.grabHookGrabber();
         }
-        if(gp1.wasHomePressed()){
-            hang.releaseHookGrabber();
-        }
         hang.joystickDrive(gamepad1.left_stick_x, gamepad1.left_stick_y);
      }
+
+    public void hangManualOperationHookArm(){
+        if(gp1.wasYPressed()){
+            hang.deployHookGrabber();
+        }
+        if(gp1.wasDownPressed()){
+            hang.stowHookGrabber();
+        }
+        if(gp1.wasLeftPressed()){
+            hang.readyHookGrabber();
+        }
+        if(gp1.wasRightPressed()){
+            hang.grabHookGrabber();
+        }
+        if(gp1.wasYPressed()){
+            hang.preReleaseHookGrabber();
+        }
+    }
 
     public void hangManualOperation2(){
         if(gp1.wasAPressed()){
@@ -518,20 +534,10 @@ public class CalibrateArms extends LinearOpMode {
             output.bucket.setPosition(Output.BUCKET_RELOAD);
 
         }
-        if(gp2.wasYPressed()){
-            hang.extendHang();
-        }
-        if(gp2.wasBPressed()){
-            hang.engageHang();
-        }
-        if(gp2.wasAPressed()){
-            hang.stowHang();
-        }
         if(gp2.wasOptionsPressed()){
             output.lift.setVelocity(PLACE_HOOKS_VELOCITY);
             output.lift.setTargetPosition(Output.LIFT_AT_BAR);
         }
-
 
         if(gp1.wasUpPressed()){
             hang.deployHookGrabber();
@@ -544,9 +550,6 @@ public class CalibrateArms extends LinearOpMode {
         }
         if(gp1.wasRightPressed()){
             hang.grabHookGrabber();
-        }
-        if(gp1.wasHomePressed()){
-            hang.releaseHookGrabber();
         }
         hang.joystickDriveV2(gamepad1.left_stick_x, gamepad1.left_stick_y);
         if (hang.stringsTensioned) {

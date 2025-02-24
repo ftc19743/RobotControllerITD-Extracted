@@ -42,12 +42,12 @@ public class Hang {
     public static float PULLEYRIGHT_HANG = 0.67f;
     public static float PULLEYRIGHT_EXTEND = 0.35f;
 
-    public static float HOOKGRABBER_STOW = .025f;
-    public static float HOOKGRABBER_GRAB = 0.08f;
-    public static float HOOKGRABBER_READY = 0.2f;
-    public static float HOOKGRABBER_DEPLOY = 0.86f;
-    public static float HOOKGRABBER_RELEASE = 1f;
-    public static float HOOKGRABBER_PRE_RELEASE = 0.79f;
+
+    public static float HOOKGRABBER_STOW = .5f; // Torque was .025f
+    public static float HOOKGRABBER_GRAB = 0.47f; // Torque was 0.08f
+    public static float HOOKGRABBER_READY = 0.44f; // Torque was 0.2f
+    public static float HOOKGRABBER_DEPLOY = 0.221f; // Torque was 0.86f
+    public static float HOOKGRABBER_PRE_RELEASE = 0.25f; // Torque was 0.79f
     public static int HANG_STARTUP_SPINDLE_PAUSE = 250;
     public static int HOOKS_RELEASED= 2500;//was 2818
     public static int HANG_TENSION_THRESHOLD= 200;
@@ -140,10 +140,10 @@ public class Hang {
     public void deployHookGrabber(){
         hook_grabber.setPosition(HOOKGRABBER_DEPLOY);
     }
-
-    public void releaseHookGrabber(){
-        hook_grabber.setPosition(HOOKGRABBER_RELEASE);
+    public void preReleaseHookGrabber(){
+        hook_grabber.setPosition(HOOKGRABBER_PRE_RELEASE);
     }
+
 
     public void extendHang(){
         if (details) teamUtil.log("Extending Hang");
