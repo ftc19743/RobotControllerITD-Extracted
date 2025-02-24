@@ -39,9 +39,9 @@ public class AxonSlider {
     public static int RTP_LEFT_DEADBAND_DEGREES = 490; // TODO Recalibrate
     public static int RTP_RIGHT_DEADBAND_DEGREES = 545; // TODO Recalibrate
     public static int RTP_SLOW_THRESHOLD = 1500; // TODO Recalibrate
-    public static float RTP_SLOW_VELOCITY = .07f; // TODO Recalibrate
-    public static int RTP_LEFT_DEADBAND_SLOW_DEGREES = 58; // TODO Recalibrate
-    public static int RTP_RIGHT_DEADBAND_SLOW_DEGREES = 85; // TODO Recalibrate
+    public static float RTP_SLOW_VELOCITY = .14f; // TODO Recalibrate
+    public static int RTP_LEFT_DEADBAND_SLOW_DEGREES = 250; // TODO Recalibrate
+    public static int RTP_RIGHT_DEADBAND_SLOW_DEGREES = 200; // TODO Recalibrate
     //public static float RTP_P_COEFFICIENT = .005f;
     //public static float RTP_MIN_VELOCITY = .1f;
     public static float MANUAL_SLIDER_INCREMENT;
