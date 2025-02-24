@@ -249,13 +249,43 @@ public class BasicDrive {
     }
 
     public void stopMotors() {
-        boolean details = false;
         if (details) teamUtil.log("Stopping Motors");
         lastVelocity = 0;
         fl.setVelocity(0);
         fr.setVelocity(0);
         bl.setVelocity(0);
         br.setVelocity(0);
+    }
+
+    public static double VELO_THRESHOLD = 10;
+    public static double ANGLE_VELO_THRESHOLD = 0.5;
+
+    public void stopAndWaitForRobotToStop(long timeout){
+        stopMotors();
+        odo.update();
+        long timeOutTime = System.currentTimeMillis()+timeout;
+
+        //Get Velocities in mm/sec
+        double xVelo = odo.getVelX();
+        double yVelo = odo.getVelY();
+        double hVelo = odo.getHeadingVelocity();
+
+        while((xVelo>VELO_THRESHOLD||yVelo>VELO_THRESHOLD||hVelo>ANGLE_VELO_THRESHOLD)&&teamUtil.keepGoing(timeOutTime)){
+            teamUtil.pause(10);
+            if(details) teamUtil.log("xVelo: " + xVelo + "yVelo: " + yVelo + "hVelo: " + hVelo);
+            odo.update();
+            xVelo = odo.getVelX();
+            yVelo = odo.getVelY();
+            hVelo = odo.getHeadingVelocity();
+        }
+
+        if(System.currentTimeMillis()>timeOutTime){
+            teamUtil.log("StopAndWaitForRobotToStop has TIMEDOUT");
+            return;
+        }
+
+        teamUtil.log("stopAndWaitForRobotToStop has Finished");
+
     }
 
     public void setMotorVelocities(double flV, double frV, double blV, double brV) {
@@ -529,7 +559,7 @@ public class BasicDrive {
         // move based on a cruise, end, and max velocity, distance, and headings
         teamUtil.log("MoveCM cms:" + centimeters + " driveH:" + driveHeading + " robotH:" + robotHeading + " MaxV:" + maxVelocity + " EndV:" + endVelocity);
 
-        details = details;
+
         MotorData data = new MotorData();
         getDriveMotorData(data);
 
@@ -973,7 +1003,6 @@ public class BasicDrive {
         }
 
         teamUtil.log("straightHoldingStrafeEncoder target: " + straightTarget +  " Strafe target: " + strafeTarget + " robotH: " + robotHeading + " MaxV: " + maxVelocity + " EndV: " + endVelocity);
-        details = details; // default to class level details member instead of false
         long startTime = System.currentTimeMillis();
         long timeoutTime = startTime+timeout;
 
@@ -1246,7 +1275,7 @@ public class BasicDrive {
         }
 
         teamUtil.log("strafeHoldingStraightEncoder target: " + strafeTarget +  " Straight target: " + straightTarget + " robotH: " + robotHeading + " MaxV: " + maxVelocity + " EndV: " + endVelocity);
-        details = details;
+
         long startTime = System.currentTimeMillis();
         long timeoutTime = startTime+timeout;
         odo.update();
@@ -1423,7 +1452,6 @@ public class BasicDrive {
             stopMotors();
             return false;
         }
-        details = details; // default to class level details member instead of false
         long startTime = System.currentTimeMillis();
         long timeoutTime = startTime+timeout;
         odo.update();
@@ -1442,6 +1470,7 @@ public class BasicDrive {
         double totalTics = Math.abs(startEncoder-straightTarget);
         teamUtil.log("straightHoldingStrafePower target: " + straightTarget +  " Strafe target: " + strafeTarget + " robotH: " + robotHeading + " Power: " + power + " TotalMMss: " + totalTics + " Starting Forward Pos: "+ odo.getPosX() + " Starting Strafe Pos: "+ odo.getPosY() + " Starting Heading:" + getHeadingODO());
         double distanceRemaining = Math.abs(straightTarget - odo.getPosX());
+        setMotorsWithEncoder();
         boolean actionDone = false;
         double currentPos;
         double adjustedDriveHeading;
@@ -1452,7 +1481,7 @@ public class BasicDrive {
             currentPos = odo.getPosX();
             distanceRemaining = (!goingUp) ? currentPos-straightTarget : straightTarget - currentPos;
             adjustedDriveHeading = driveHeading + MathUtils.clamp((odo.getPosY() - strafeTarget)* STRAIGHT_HEADING_DECLINATION, -STRAIGHT_MAX_DECLINATION, STRAIGHT_MAX_DECLINATION) * headingFactor;
-            if (details) teamUtil.log("Cruising at Power: "+ power + " Adjusted Drive Heading: " + adjustedDriveHeading + " MMs Remaining: " + distanceRemaining);
+            if(details)teamUtil.log("Cruising at Power: "+ power + " Adjusted Drive Heading: " + adjustedDriveHeading + " MMs Remaining: " + distanceRemaining);
             driveMotorsHeadingsFRPower(adjustedDriveHeading, robotHeading, power);
             if(action!=null&&!actionDone&&((goingUp&&currentPos>=actionTarget)||(!goingUp&&currentPos<=actionTarget))){
                 action.action();
@@ -1499,6 +1528,7 @@ public class BasicDrive {
         teamUtil.log("strafeHoldingStraightPower target: " + strafeTarget +  " Straight target: " + straightTarget + " robotH: " + robotHeading + " Power: " + power + " TotalMMss: " + totalTics + " Starting Forward Pos: "+ odo.getPosX() + " Starting Strafe Pos: "+ odo.getPosY() + " Starting Heading:" + getHeadingODO());
         odo.update();
         double distanceRemaining = Math.abs(strafeTarget - odo.getPosY());
+        setMotorsWithEncoder();
         boolean actionDone = false;
         double currentPos;
         double adjustedDriveHeading;
@@ -1533,7 +1563,7 @@ public class BasicDrive {
         teamUtil.log("MoveTo StrafeTarget: " + strafeTarget +  " Straight target: " + straightTarget + " robotH: " + robotHeading + " MaxV: " + maxVelocity + " EndV: " + endVelocity + " EndInDeadband: " + endInDeadband);
 
         //TODO THIS CODE SHALL NOT BE USED UNTIL THE ANGLE PROBLEM IS FIXED
-        details = details;
+
         teamUtil.log("moveTo");
         odo.update();
         long timeoutTime = System.currentTimeMillis()+timeout;
@@ -1640,7 +1670,6 @@ public class BasicDrive {
         teamUtil.log("MoveTo StrafeTarget: " + strafeTarget +  " Straight target: " + straightTarget + " robotH: " + robotHeading + " MaxV: " + maxVelocity + " EndV: " + endVelocity + " EndInDeadband: " + endInDeadband);
 
         //TODO THIS CODE SHALL NOT BE USED UNTIL THE ANGLE PROBLEM IS FIXED
-        details = false;
         teamUtil.log("moveTo");
         odo.update();
         long timeoutTime = System.currentTimeMillis()+timeout;
@@ -1769,7 +1798,6 @@ public class BasicDrive {
 
     public void moveToPower(float maxPower, double strafeTarget, double straightTarget, double robotHeading, float  endPower,ActionCallback action, double actionTarget, boolean endInDeadband, long timeout){
         teamUtil.log("moveToPower StrafeTarget: " + strafeTarget +  " Straight target: " + straightTarget + " robotH: " + robotHeading + " MaxV: " + maxPower + " EndV: " + endPower + " EndInDeadband: " + endInDeadband);
-        details = true;
         odo.update();
         long timeoutTime = System.currentTimeMillis()+timeout;
         boolean withinThreshold = false;
@@ -1835,7 +1863,6 @@ public class BasicDrive {
     public boolean waitForStall(long timeout){
         // wait for the robot to slow down on the wall
         // expects setPower
-        details = details;
         teamUtil.log("Waiting For Stall");
         long timeoutTime = System.currentTimeMillis()+timeout;
         int lastEncoder = forwardEncoder.getCurrentPosition();
@@ -1949,7 +1976,7 @@ public class BasicDrive {
     // Attempts to hold the last heading that was commanded via a turn
     public void driveJoyStick(float leftJoyStickX, float leftJoyStickY, float rightJoyStickX, boolean isFast) {
         // returns values to drive to the main loop
-         details = details;
+
         //Old Declarations
         /*
         float DEADBAND = 0.1f;
@@ -2057,7 +2084,7 @@ public class BasicDrive {
     }
 
     public void driveJoyStickV2(float leftJoyStickX, float leftJoyStickY, float rightJoyStickX, boolean isFast, boolean isSlow) {
-        details = details;
+
 
         float SLOPE = 0.55f;
         float FASTSLOPE = 1f;

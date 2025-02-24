@@ -234,13 +234,8 @@ public class Output {
         outtake = teamUtil.robot.outtake;
         long timeOutTime = System.currentTimeMillis()+timeout;
 
-        if(intake.FlipperInUnload.get()||outtake.outakePotentiometer.getVoltage()<Outtake.POTENTIOMETER_OUTPUT_CLEAR){
-            if(intake.FlipperInUnload.get()){
-                teamUtil.log("Couldn't Put Output High Bucket Cause of Flipper");
-            }
-            else{
+        if(outtake.outakePotentiometer.getVoltage()<Outtake.POTENTIOMETER_OUTPUT_CLEAR){
                 teamUtil.log("Outtake Was in the Way Couldn't Go to High Bucket");
-            }
         }else{
             outputMoving.set(true);
             lift.setMode(DcMotor.RunMode.RUN_TO_POSITION);

@@ -832,7 +832,7 @@ public class Robot {
 
 
     public void hangPhase1(){
-        hang.extendHang();
+        hang.extendHangNoWait();
         output.bucket.setPosition(Output.BUCKET_HANG);
         pickUpHooks();
         readyToPlaceHooks();
@@ -859,7 +859,7 @@ public class Robot {
         hang.hang_Left.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER); // Assumes 33" of string out
         hang.hang_Right.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER); // Assumes 39" of string out
 
-        hang.engageHang();
+        hang.engageHangV2NoWait();
         teamUtil.pause(Hang.HANG_PHASE_2_ENGAGE_PAUSE); // don't put hooks on bar until we are off of ground
         output.lift.setVelocity(Robot.PLACE_HOOKS_VELOCITY);
         output.lift.setTargetPosition(Output.LIFT_AT_BAR);
@@ -922,14 +922,16 @@ public class Robot {
         }
     }
 
+
+
     boolean hangStowed = false;
     public void stowHangWhenNeeded() {
         if (hang.hang_Left.getCurrentPosition() > Hang.HANG_STOWED_ON_WAY_UP && !hangStowed) {
             hangStowed = true;
-            hang.stowHang();
+            hang.clearHangServosNoWait();
+            hookArmMoved = true;
+            hang.deployHookGrabber();
         }
-
-
     }
 
     boolean hookArmMoved = false;
@@ -941,20 +943,30 @@ public class Robot {
 
     }
 
+    public static float LIFT_PICKUP_HOOKS_POWER_1 = 0.5f;
+    public static float LIFT_PICKUP_HOOKS_POWER_2 = -0.5f;
+
     public void pickUpHooks(){
         intake.flipper.setPosition(Intake.FLIPPER_SAFE);
         intake.grab();
         outtake.outakearm.setPosition(Outtake.ARM_ENGAGE);
-        output.lift.setVelocity(Output.LIFT_MAX_VELOCITY);
-        hang.extendHang();
 
-        output.lift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        output.lift.setTargetPosition(Output.LIFT_SAFE_FOR_HOOK_HOLDER);
-        teamUtil.pause(PICK_UP_HOOKS_PAUSE_1);
+        output.lift.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        output.lift.setPower(LIFT_PICKUP_HOOKS_POWER_1);
+        while(output.lift.getCurrentPosition()<Output.LIFT_SAFE_FOR_HOOK_HOLDER){
+            teamUtil.pause(10);
+        }
+        output.lift.setPower(0);
+
         hang.hook_grabber.setPosition(Hang.HOOKGRABBER_READY);
         teamUtil.pause(PICK_UP_HOOKS_PAUSE_2);
-        output.lift.setTargetPosition(Output.LIFT_PICKUP_FOR_HOOK_HOLDER);
-        teamUtil.pause(PICK_UP_HOOKS_PAUSE_3);
+
+        output.lift.setPower(LIFT_PICKUP_HOOKS_POWER_2);
+        while(output.lift.getCurrentPosition()>Output.LIFT_PICKUP_FOR_HOOK_HOLDER){
+            teamUtil.pause(10);
+        }
+        output.lift.setPower(0);
+
         hang.hook_grabber.setPosition(Hang.HOOKGRABBER_GRAB);
         teamUtil.pause(PICK_UP_HOOKS_PAUSE_4);
 
@@ -1030,74 +1042,210 @@ public class Robot {
     public static int A00_MAX_SPEED_NEAR_BUCKET = 2500;
     public static int A00_TRANSITION_SPEED = 750;
     public static int A00_END_SPEED = 400;
-
     public static int A01_SAMPLE_1_SLIDER = (int)AxonSlider.SLIDER_READY;
-    public static int A01_SAMPLE_1_EXTENDER = 1000;
+    public static int A01_SAMPLE_1_EXTENDER = 500;
     public static int A02_SAMPLE_2_SLIDER = (int)AxonSlider.SLIDER_READY;
-    public static int A02_SAMPLE_2_EXTENDER = 1000;
-    public static int A03_SAMPLE_3_SLIDER = (int)AxonSlider.SLIDER_READY;
-    public static int A03_SAMPLE_3_EXTENDER = 1000;
+    public static int A02_SAMPLE_2_EXTENDER = 500;
+    public static int A03_SAMPLE_3_SLIDER = -17000;
+    public static int A03_SAMPLE_3_EXTENDER = 500;
+    public static int A03_DROP_TIME = 400;
+    public static int A04_READY_FOR_BUCKET_STRAIGHT = 120;
+    public static int A04_READY_FOR_BUCKET_STRAFE = 120;
+    public static int A05_1_BUCKET_STRAIGHT = 90;
+    public static int A05_1_BUCKET_STRAFE = 500;
+    public static int A05_1_BUCKET_HEADING = 315;
+    public static int A06_1_SAMPLE_PICKUP_STRAFE = 250; //390
+    public static int A06_1_SAMPLE_PICKUP_STRAIGHT = 385;//260
+    public static int A06_1_SAMPLE_PICKUP_HEADING = 0;//347
+    public static float A06_1_SAMPLE_PICKUP_POWER = 0.25f;//347
+
+    public static int A06_1_BRAKE_PAUSE = 500;
+    public static int A07_2_BUCKET_STRAIGHT = 90;
+    public static int A07_2_BUCKET_STRAFE = 500;
+    public static int A07_2_BUCKET_HEADING = 315;
+    public static int A08_2_SAMPLE_PICKUP_STRAFE = 475;
+    public static int A08_2_SAMPLE_PICKUP_STRAIGHT = 385;
+    public static int A08_2_SAMPLE_PICKUP_HEADING = 0;
+    public static int A08_2_BRAKE_PAUSE = 500;
+    public static float A08_2_SAMPLE_PICKUP_POWER = 0.25f;
+
+    public static int A09_3_BUCKET_STRAIGHT = 90;
+    public static int A09_3_BUCKET_STRAFE = 500;
+    public static int A09_3_BUCKET_HEADING = 315;
+    public static int A10_3_SAMPLE_PICKUP_STRAFE = 610;
+    public static int A10_3_SAMPLE_PICKUP_STRAIGHT = 385;
+    public static int A10_3_SAMPLE_PICKUP_HEADING = 0;
+    public static int A10_3_BRAKE_PAUSE = 500;
+    public static float A10_3_SAMPLE_PICKUP_POWER = 0.25f;//347
+
+    public static int A10_3_PRE_SAMPLE_PICKUP_STRAFE = 500;
+    public static int A10_3_PRE_SAMPLE_PICKUP_STRAIGHT = 200;
+    public static int A10_3_PRE_SAMPLE_PICKUP_HEADING = 0;
+    public static float A10_3_PRE_SAMPLE_PICKUP_POWER = 0.25f;//347
+
+    public static int A11_3_PRE_BUCKET_STRAIGHT = 240;
+    public static int A11_3_PRE_BUCKET_STRAFE = 490;
+    public static int A11_3_PRE_BUCKET_HEADING = 0;
+    public static int A12_3_BUCKET_STRAIGHT = 90;
+    public static int A12_3_BUCKET_STRAFE = 500;
+    public static int A12_3_BUCKET_HEADING = 315;
+
+
 
     public void sampleAutoV3 () {
         drive.setRobotPosition(0,0,0);
         intake.setTargetColor(OpenCVSampleDetectorV2.TargetColor.YELLOW);
-        outtake.outtakeRest();
-        teamUtil.pause(500); // give outtake a little time to get out of the way of the lift
 
-        // Move intake out for first grab
-        output.outputHighBucketNoWait(2000); // send bucket to top
+        outtakeUpandGoToHighBucketNoWait();
         AutoReadyToSeekNoWait(A01_SAMPLE_1_SLIDER, A01_SAMPLE_1_EXTENDER); // move intake out for the grab
 
         // Move to first drop
-        drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,120,120,0,A00_TRANSITION_SPEED,null,0, false,5000);
-        drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,510,80,315,A00_END_SPEED,null,0, false, 5000);
+        drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET, A04_READY_FOR_BUCKET_STRAFE,A04_READY_FOR_BUCKET_STRAIGHT,0,A00_TRANSITION_SPEED,null,0, false,5000);
+        drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET, A05_1_BUCKET_STRAFE, A05_1_BUCKET_STRAIGHT,A05_1_BUCKET_HEADING,A00_END_SPEED,null,0, false, 5000);
         drive.setMotorsActiveBrake();
-        output.dropSampleOutBack(); // Drop It.
-        output.outputLoadNoWait(2000);//
+
+        liftAtTop(2000);
+        output.bucket.setPosition(Output.BUCKET_DEPLOY_AT_TOP);
+        teamUtil.pause(A03_DROP_TIME);
+        autoGoToLoadNoWait(3000);
 
         // Move to pickup 1st sample
-        drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,390,260,347,A00_END_SPEED,null,0, true, 5000);
-        drive.setMotorsActiveBrake();
+        BasicDrive.ROTATION_ADJUST_FACTOR_POWER = BasicDrive.ROTATION_ADJUST_FACTOR_POWER/2;
+        BasicDrive.STRAIGHT_MAX_DECLINATION = BasicDrive.STRAIGHT_MAX_DECLINATION*2;
+        drive.straightHoldingStrafePower(A06_1_SAMPLE_PICKUP_POWER,A06_1_SAMPLE_PICKUP_STRAIGHT,A06_1_SAMPLE_PICKUP_STRAFE,A06_1_SAMPLE_PICKUP_HEADING);
+        drive.stopMotors();
+        teamUtil.pause(A06_1_BRAKE_PAUSE);
 
-        drive.stopMotors(); if (true) return;
 
         // Grab and unload (counting on bucket to be at the bottom by the time we get there!
-        boolean grabbedSample=intake.goToSampleAndGrabV3(true, true,true);
+        boolean grabbedSample=intake.autoGoToSampleAndGrabV3(false,false,true);
+        sampleAutoUnloadHighBucketNoWait();
 
-        output.outputHighBucketNoWait(2000); // send bucket to top
+        drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,A07_2_BUCKET_STRAFE,A07_2_BUCKET_STRAIGHT,A07_2_BUCKET_HEADING,A00_END_SPEED,null,0, false, 5000);
         AutoReadyToSeekNoWait(A02_SAMPLE_2_SLIDER, A02_SAMPLE_2_EXTENDER); // move intake out for the next grab
-        drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,510,80,315,A00_END_SPEED,null,0, true, 5000);
         drive.setMotorsActiveBrake();
-        output.dropSampleOutBack(); // Drop It.
-        output.outputLoadNoWait(2000);//
+
+        liftAtTop(2000);
+        output.bucket.setPosition(Output.BUCKET_DEPLOY_AT_TOP);
+        teamUtil.pause(A03_DROP_TIME);
+        autoGoToLoadNoWait(3000);
+
 
         // Move to pickup 2nd sample
-        drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,490,275,0,A00_END_SPEED,null,0, true, 5000);
-        drive.setMotorsActiveBrake();
+        drive.straightHoldingStrafePower(A08_2_SAMPLE_PICKUP_POWER,A08_2_SAMPLE_PICKUP_STRAIGHT,A08_2_SAMPLE_PICKUP_STRAFE,A08_2_SAMPLE_PICKUP_HEADING);
+        drive.stopMotors();
+        teamUtil.pause(A08_2_BRAKE_PAUSE);
         // Grab and unload (counting on bucket to be at the bottom by the time we get there!
-        grabbedSample=intake.goToSampleAndGrabV3(true, true,true);
+        grabbedSample=intake.goToSampleAndGrabV3(false, false,true);
+        sampleAutoUnloadHighBucketNoWait();
 
-        output.outputHighBucketNoWait(2000); // send bucket to top
+        drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,A09_3_BUCKET_STRAFE,A09_3_BUCKET_STRAIGHT,A09_3_BUCKET_HEADING,A00_END_SPEED,null,0, false, 5000);
         AutoReadyToSeekNoWait(A03_SAMPLE_3_SLIDER, A03_SAMPLE_3_EXTENDER); // move intake out for the next grab
-        drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,510,80,315,A00_END_SPEED,null,0, true, 5000);
         drive.setMotorsActiveBrake();
-        output.dropSampleOutBack(); // Drop It.
-        output.outputLoadNoWait(2000);//
+
+        liftAtTop(2000);
+        output.bucket.setPosition(Output.BUCKET_DEPLOY_AT_TOP);
+        teamUtil.pause(A03_DROP_TIME);
+
+        drive.straightHoldingStrafePower(A10_3_PRE_SAMPLE_PICKUP_POWER,A10_3_PRE_SAMPLE_PICKUP_STRAIGHT,A10_3_PRE_SAMPLE_PICKUP_STRAFE,A10_3_PRE_SAMPLE_PICKUP_HEADING);
+        autoGoToLoadNoWait(3000);
 
         // Move to pickup 3rd sample
-        drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,605,310,0,A00_END_SPEED,null,0, true, 5000);
-        drive.setMotorsActiveBrake();
+        drive.straightHoldingStrafePower(A10_3_SAMPLE_PICKUP_POWER,A10_3_SAMPLE_PICKUP_STRAIGHT,A10_3_SAMPLE_PICKUP_STRAFE,A10_3_SAMPLE_PICKUP_HEADING);
+        drive.stopMotors();
+        teamUtil.pause(A10_3_BRAKE_PAUSE);
         // Grab and unload (counting on bucket to be at the bottom by the time we get there!
-        grabbedSample=intake.goToSampleAndGrabV3(true, true,true);
 
-        output.outputHighBucketNoWait(2000); // send bucket to top
-        drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,510,240,315,A00_TRANSITION_SPEED,null,0, true, 5000);
-        drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,510,80,315,A00_END_SPEED,null,0, true, 5000);
+
+        grabbedSample=intake.goToSampleAndGrabV3(false, false,true);
+        sampleAutoUnloadHighBucketNoWait();
+
+        drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,A11_3_PRE_BUCKET_STRAFE,A11_3_PRE_BUCKET_STRAIGHT,A11_3_PRE_BUCKET_HEADING,A00_TRANSITION_SPEED,null,0, false, 5000);
+        drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,A12_3_BUCKET_STRAFE,A12_3_BUCKET_STRAIGHT,A12_3_BUCKET_HEADING,A00_END_SPEED,null,0, false, 5000);
         drive.setMotorsActiveBrake();
-        output.dropSampleOutBack(); // Drop It.
-        output.outputLoadNoWait(2000);//
+
+        liftAtTop(2000);
+        output.bucket.setPosition(Output.BUCKET_DEPLOY_AT_TOP);
+        teamUtil.pause(A03_DROP_TIME);
+        autoGoToLoadNoWait(3000);
+
+        BasicDrive.ROTATION_ADJUST_FACTOR_POWER = BasicDrive.ROTATION_ADJUST_FACTOR_POWER*2;
+        BasicDrive.STRAIGHT_MAX_DECLINATION = BasicDrive.STRAIGHT_MAX_DECLINATION/2;
+        drive.stopMotors();
+    }
+
+    public void sampleAutoUnloadHighBucket(){
+        intake.retractAll(true,4000);
+        output.outputHighBucket(3000);
+    }
+
+    public void sampleAutoUnloadHighBucketNoWait() {
+        teamUtil.log("Thread to sampleAutoUnloadHighBucket LAUNCHED");
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    sampleAutoUnloadHighBucket();
+                }
+            });
+            thread.start();
+    }
+
+
+    public static long A0a_RELOAD_TIME = 300;
+
+    public void autoGoToLoad(long timeout){
+        long timeOutTime = System.currentTimeMillis()+timeout;
+        output.bucket.setPosition(Output.BUCKET_RELOAD);
+        teamUtil.pause(A0a_RELOAD_TIME);
+        output.lift.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        output.lift.setPower(-1);
+        while(output.lift.getCurrentPosition()>Output.LIFT_DOWN&&teamUtil.keepGoing(timeOutTime)){
+            teamUtil.pause(10);
+        }
+        output.lift.setPower(0);
+    }
+
+    public void autoGoToLoadNoWait(long timeout) {
+        teamUtil.log("Thread to autoGoToLoadNoWait LAUNCHED");
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    autoGoToLoad(timeout);
+                }
+            });
+            thread.start();
 
     }
+
+    public void liftAtTop(long timeout){
+        teamUtil.log("Waiting for lift at top");
+        long timeOutTime = System.currentTimeMillis()+timeout;
+        while(output.lift.getCurrentPosition()<(Output.LIFT_TOP_BUCKET- 100)&&teamUtil.keepGoing(timeOutTime)){
+            teamUtil.pause(10);
+        }
+    }
+
+    public void outtakeUpAndGoToHighBucket(){
+        outtake.outtakeRest();
+        while(outtake.outakePotentiometer.getVoltage()<Outtake.POTENTIOMETER_OUTPUT_CLEAR){
+            teamUtil.pause(10);
+        }
+        output.outputHighBucket(3000);
+    }
+
+    public void outtakeUpandGoToHighBucketNoWait() {
+        teamUtil.log("Thread to outtakeUpandGoToHighBucket LAUNCHED");
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                outtakeUpAndGoToHighBucket();
+            }
+        });
+        thread.start();
+
+    }
+
+
 
 /* OLD Code
 

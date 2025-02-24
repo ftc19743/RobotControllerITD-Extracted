@@ -49,25 +49,27 @@ public class Hang {
     public static float HOOKGRABBER_RELEASE = 1f;
     public static float HOOKGRABBER_PRE_RELEASE = 0.79f;
     public static int HANG_STARTUP_SPINDLE_PAUSE = 250;
-    public static int HOOKS_RELEASED= 2067;
+    public static int HOOKS_RELEASED= 2500;//was 2818
     public static int HANG_TENSION_THRESHOLD= 200;
-    public static int HANG_STOWED_ON_WAY_UP= 2500;
-    public static int HOOK_ARM_MOVED_ON_WAY_UP = 4500;
+    public static int HANG_STOWED_ON_WAY_UP= 3410;
+    public static int HOOK_ARM_MOVED_ON_WAY_UP = 6136;
 
-    public static int HANG_TENSION_L = 2300;
-    public static int HANG_TENSION_R = 4200;
-    public static int HANG_LEVEL_3_L = 9400;
-    public static int HANG_LEVEL_3_R = 10500;
+    public static int HANG_TENSION_L = 2122;//was 1600
+    public static int HANG_TENSION_R = 3222;//was 2798
+    public static int HANG_LEVEL_3_L = 8024;//5884
+    public static int HANG_LEVEL_3_R = 9325;//6838
 
     public static int HANG_LEVEL_3 = 7000;
     public static int HANG_PAUSE_FOR_LEFT =250;
 
-    public static long HANG_PHASE_2_ENGAGE_PAUSE = 1500;
+    public static long HANG_PHASE_2_ENGAGE_PAUSE = 500;
     public static int HANG_PHASE_2_SLACK_PAUSE = 500;
     public static int SLACK_LEVEL = 1000;
     public static int HANG_PHASE_2_PLACE_PAUSE = 1;
     public static int AUTO_LIFT_LEVEL = 5000;
 
+    public static long ENGAGE_HANG_PAUSE_R = 1250;
+    public static long ENGAGE_HANG_PAUSE_L = 200;
 
     public static double HANG_HOLD_POWER = 0.1;
     public boolean hanging = false;
@@ -178,6 +180,33 @@ public class Hang {
         teamUtil.log("Hang Engaged");
         hangMoving.set(false);
     }
+    public void engageHangV2(){
+        hangServos.lServo.setPower(AxonHang.RTP_MAX_VELOCITY);
+        hangServos.rServo.setPower(AxonHang.RTP_MAX_VELOCITY);
+        teamUtil.pause(ENGAGE_HANG_PAUSE_R);
+        hangServos.rServo.setPower(AxonHang.HOLD_POWER);
+        teamUtil.pause(ENGAGE_HANG_PAUSE_L);
+        hangServos.lServo.setPower(AxonHang.HOLD_POWER);
+
+
+    }
+
+    public void engageHangV2NoWait() {
+        if (hangMoving.get()) {
+            teamUtil.log("WARNING: Attempt to extendHang while Hang is moving--ignored");
+            return;
+        } else {
+            hangMoving.set(true);
+            teamUtil.log("Launching Thread to extendHang");
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    engageHangV2();
+                }
+            });
+            thread.start();
+        }
+    }
     public void engageHangNoWait() {
         if (hangMoving.get()) {
             teamUtil.log("WARNING: Attempt to engageHang while Hang is moving--ignored");
@@ -215,6 +244,33 @@ public class Hang {
                 @Override
                 public void run() {
                     stowHang();
+                }
+            });
+            thread.start();
+        }
+    }
+
+    public static long HANG_SERVOS_CLEAR_PAUSE = 1000;
+    public static float HANG_SERVOS_CLEAR_POWER = .15f;
+    public void clearHangServos(){
+        hangServos.lServo.setPower(HANG_SERVOS_CLEAR_POWER);
+        hangServos.rServo.setPower(HANG_SERVOS_CLEAR_POWER);
+        teamUtil.pause(HANG_SERVOS_CLEAR_PAUSE);
+        hangServos.rServo.setPower(0);
+        hangServos.lServo.setPower(0);
+    }
+
+    public void clearHangServosNoWait() {
+        if (hangMoving.get()) {
+            teamUtil.log("WARNING: Attempt to stowHang while Hang is moving--ignored");
+            return;
+        } else {
+            hangMoving.set(true);
+            teamUtil.log("Launching Thread to stowHang");
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    clearHangServos();
                 }
             });
             thread.start();

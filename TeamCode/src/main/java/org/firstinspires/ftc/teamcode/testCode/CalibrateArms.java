@@ -633,6 +633,7 @@ public class CalibrateArms extends LinearOpMode {
     public void readyToPlaceHooks(){
         hang.hook_grabber.setPosition(Hang.HOOKGRABBER_READY);
         teamUtil.pause(READY_TO_PLACE_HOOKS_PAUSE_1);
+        output.lift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         output.lift.setVelocity(READY_TO_PLACE_HOOKS_VELOCITY);
         output.lift.setTargetPosition(Output.LIFT_ABOVE_BAR);
         hang.hook_grabber.setPosition(Hang.HOOKGRABBER_DEPLOY);

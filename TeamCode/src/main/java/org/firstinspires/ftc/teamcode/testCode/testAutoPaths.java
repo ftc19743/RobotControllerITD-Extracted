@@ -8,9 +8,11 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.RobotLog;
 
+import org.firstinspires.ftc.teamcode.assemblies.AxonSlider;
 import org.firstinspires.ftc.teamcode.assemblies.Intake;
 import org.firstinspires.ftc.teamcode.assemblies.Output;
 import org.firstinspires.ftc.teamcode.assemblies.Robot;
+import org.firstinspires.ftc.teamcode.libs.OpenCVSampleDetectorV2;
 import org.firstinspires.ftc.teamcode.libs.TeamGamepad;
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
 
@@ -182,6 +184,22 @@ public class testAutoPaths extends LinearOpMode {
                     robot.sampleAutoV3();
                     elapsedTime = System.currentTimeMillis() - startTime;
                 }
+                if(driverGamepad.wasUpPressed()){
+                    robot.autoGoToLoad(3000);
+                }
+                if(driverGamepad.wasDownPressed()){
+                    robot.sampleAutoUnloadHighBucket();
+                }
+                if(driverGamepad.wasBPressed()){
+                    robot.intake.setTargetColor(OpenCVSampleDetectorV2.TargetColor.YELLOW);
+                    robot.intake.goToSampleAndGrabV3(false,false,true);
+                }
+                if(driverGamepad.wasLeftPressed()){
+                    robot.AutoReadyToSeek((int) AxonSlider.SLIDER_READY,500);
+                }
+                if(driverGamepad.wasAPressed()){
+                    robot.outtake.outtakeRest();
+                }
 
             } else {
                 ////////////////////////////////////////////////////////////////////////////
@@ -190,10 +208,26 @@ public class testAutoPaths extends LinearOpMode {
                     robot.hangPhase1();
                 }
                 if (driverGamepad.wasBPressed()) {
-                    //
+                    robot.hang.calibrate();
                 }
                 if (driverGamepad.wasYPressed()) {
                     robot.hangPhase2V3();
+                }
+                if(driverGamepad.wasRightPressed()){
+                    robot.hang.clearHangServos();
+                }
+                if( driverGamepad.wasUpPressed()){
+                    robot.hang.extendHang();
+                }if( driverGamepad.wasDownPressed()){
+                    robot.hang.engageHangV2();
+                }if( driverGamepad.wasLeftPressed()){
+                    robot.hang.stowHang();
+                }
+                if(driverGamepad.wasOptionsPressed()){
+                    robot.pickUpHooks();
+                }
+                if(driverGamepad.wasHomePressed()){
+                    robot.hang.stowHookGrabber();
                 }
                 if (driverGamepad.wasXPressed()) {
                     robot.hang.hang_Left.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -202,7 +236,7 @@ public class testAutoPaths extends LinearOpMode {
                 robot.hang.joystickDriveV2(gamepad1.left_stick_x, gamepad1.left_stick_y);
                 robot.dropLiftWhenNeeded();
                 robot.stowHangWhenNeeded();
-                robot.moveHookArmWhenNeeded();
+                //robot.moveHookArmWhenNeeded();
                 //teamUtil.log("Hangleft: " + robot.hang.hang_Left.getCurrentPosition()+ " Hangright: "+ robot.hang.hang_Right.getCurrentPosition());
                 telemetry.addLine("Hangleft: " + robot.hang.hang_Left.getCurrentPosition() + " Hangright: " + robot.hang.hang_Right.getCurrentPosition());
 

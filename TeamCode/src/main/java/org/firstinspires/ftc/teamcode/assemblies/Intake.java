@@ -131,7 +131,7 @@ public class Intake {
     /* Values without potentiometer */
     static public float SWEEPER_HORIZONTAL_READY = 0.35f;
     static public float SWEEPER_EXPAND = 0.59f;
-    static public float SWEEPER_GRAB = 0.53f;
+    static public float SWEEPER_GRAB = 0.525f;
     static public float SWEEPER_RELEASE = .95f;
     static public float SWEEPER_VERTICAL_READY = 0.5f;
 
