@@ -17,27 +17,36 @@ public class CalibrateDrive extends LinearOpMode {
 
     BasicDrive drive;
     public static int testVelocity = 1000;
+    public static float testPower = 1f;
     public static int testEndVelocity = 0;
+    public static float testEndPower = .3f;
+
     public static int testDistance = 100;
     public static boolean powerBraking = false;
     public static double HEADING = 0;
-    public static int SECONDS = 3;
+    public static double HELD_HEADING = 0;
+    public static int SECONDS = 1;
     public static int botX = 72;
     public static int botY = 72;
 
 
     public enum Ops {Test_Wiring,
         Move_No_Acc_Heading,
+        Move_Power_No_Acc_Heading,
         Move_No_Acc_With_Heading,
+        Move_Power_No_Acc_With_Heading,
         Find_Max_Forward,
         Find_Max_Left,
         Brake_Test_Forward,
         Brake_Test_Right,
         Reverse_Test,
+        Reverse_Test2,
         Test_Spins,
         Test_Move_CMs,
         Test_Holding_Target,
+        Test_Holding_Target2,
         Test_Move_To,
+        Test_Move_To2,
         Move_CMs_Test,
         Move_Encoder_Target_Test};
     public static Ops AAOP = Ops.Test_Wiring;
@@ -51,7 +60,9 @@ public class CalibrateDrive extends LinearOpMode {
         switch (AAOP) {
             case Test_Wiring : testDriveMotorWiring();break;
             case Move_No_Acc_Heading : moveNoAccelerateNoHeadingControl();break;
+            case Move_Power_No_Acc_Heading : movePowerNoAccelerateNoHeadingControl();break;
             case Move_No_Acc_With_Heading : moveNoAccelerateWithHeadingControl();break;
+            case Move_Power_No_Acc_With_Heading : movePowerNoAccelerateWithHeadingControl();break;
             case Find_Max_Forward : drive.findMaxVelocity(testDistance);break;
             case Find_Max_Left : drive.findMaxStrafeVelocity(testDistance);break;
             case Move_CMs_Test : goForADriveCMs();break;
@@ -60,6 +71,7 @@ public class CalibrateDrive extends LinearOpMode {
             case Brake_Test_Forward : brakeTestForward();break;
             case Brake_Test_Right : brakeTestRight();break;
             case Reverse_Test:  reverseTest();break;
+            case Reverse_Test2: reverseTest2();break;
 
         }
     }
@@ -120,8 +132,12 @@ public class CalibrateDrive extends LinearOpMode {
                 testMoveCMs();
             } else if (AAOP==Ops.Test_Holding_Target){
                 testHoldingTarget();
-            } else if (AAOP==Ops.Test_Move_To){
+            } else if (AAOP==Ops.Test_Holding_Target2){
+                testHoldingTarget2();
+            }else if (AAOP==Ops.Test_Move_To){
                 testMoveTo();
+            } else if (AAOP==Ops.Test_Move_To2){
+                testMoveTo2();
             } else if (AAOP==Ops.Reverse_Test){
                 reverseTest();
             }
@@ -166,6 +182,23 @@ public class CalibrateDrive extends LinearOpMode {
 
     }
 
+    public static int POWER_REVERSE_BRAKING_PAUSE1= 150;
+    public void reverseTest2() {
+        long doneTime = System.currentTimeMillis() + (int)(SECONDS*1000);
+        drive.odo.update();
+        while (System.currentTimeMillis() < doneTime) {
+            drive.driveMotorsHeadingsPower(HEADING, HELD_HEADING,  testPower );
+            drive.odo.update();
+        }
+        doneTime = System.currentTimeMillis() + (int)(SECONDS*1000);
+        while (System.currentTimeMillis() < doneTime) {
+            drive.driveMotorsHeadingsPower(HEADING+180, HELD_HEADING,  testPower );
+            drive.odo.update();
+        }
+        drive.stopMotors();
+    }
+
+
     public void testDriveMotorWiring() {
         drive.setMotorVelocities(drive.MIN_START_VELOCITY,0,0,0);
         teamUtil.pause(1000);
@@ -185,16 +218,36 @@ public class CalibrateDrive extends LinearOpMode {
         drive.stopMotors();
     }
 
+    public void movePowerNoAccelerateNoHeadingControl () {
+        drive.driveMotorsHeadingsPower(HEADING, drive.getHeadingODO(), testPower);
+        teamUtil.pause(SECONDS*1000);
+        drive.stopMotors();
+    }
+
+
     public void moveNoAccelerateWithHeadingControl () {
         long doneTime = System.currentTimeMillis() + (int)(SECONDS*1000);
-        //double heldHeading = drive.getHeading();
+        drive.odo.update();
         double heldHeading = drive.getHeadingODO();
 
         while (System.currentTimeMillis() < doneTime) {
             drive.driveMotorsHeadings(HEADING, heldHeading, testVelocity);
+            drive.odo.update();
         }
         drive.stopMotors();
     }
+
+    public void movePowerNoAccelerateWithHeadingControl () {
+        long doneTime = System.currentTimeMillis() + (int)(SECONDS*1000);
+        drive.odo.update();
+        while (System.currentTimeMillis() < doneTime) {
+            drive.driveMotorsHeadingsPower(HEADING, HELD_HEADING,  testPower );
+            drive.odo.update();
+        }
+        drive.stopMotors();
+    }
+
+
 
     public void testSpins() {
         if (gamepad1.dpad_up) {
@@ -243,6 +296,8 @@ public class CalibrateDrive extends LinearOpMode {
         }
     }
 
+
+
     public void testHoldingTarget() {
         if (gamepad1.dpad_up) {
             //drive.setHeading(0);
@@ -286,9 +341,49 @@ public class CalibrateDrive extends LinearOpMode {
         }
     }
 
-    public void testMoveTo() {
-        //TBD  Set up some button presses to move the robot to some X,Y values?
 
+    public void testHoldingTarget2() {
+        if (gamepad1.dpad_up) {
+            //drive.setHeading(0);
+            drive.loop();
+            drive.odo.update();
+            double startForward = drive.odo.getPosX();
+            double forwardTarget = (long) (startForward + testDistance);
+            double startStrafe = drive.odo.getPosY()+botY;
+            drive.straightHoldingStrafePower(testPower, forwardTarget,startStrafe,0, null,0,3000);
+            drive.stopMotors();
+        }
+        if (gamepad1.dpad_down) {
+            drive.setHeading(0);
+            drive.loop();
+            drive.odo.update();
+            double startForward = drive.odo.getPosX();
+            double forwardTarget = (long) (startForward - testDistance);
+            double startStrafe = drive.odo.getPosY()+botY;
+            drive.straightHoldingStrafePower(testPower, forwardTarget,startStrafe,0, null,0,3000);
+            drive.stopMotors();
+        }
+        if (gamepad1.dpad_right) {
+            drive.loop();
+            drive.odo.update();
+            double startStrafe = drive.odo.getPosY();
+            double strafeTarget = (long) (startStrafe - testDistance);
+            double startForward = drive.odo.getPosX()+botX;
+            drive.strafeHoldingStraightPower(testPower, strafeTarget,startForward,0,null,0,3000);
+            drive.stopMotors();
+        }
+        if (gamepad1.dpad_left) {
+            drive.loop();
+            drive.odo.update();
+            double startStrafe = drive.odo.getPosY();
+            double strafeTarget = (long) (startStrafe + testDistance);
+            double startForward = drive.odo.getPosX()+botX;
+            drive.strafeHoldingStraightPower(testPower, strafeTarget,startForward,0,null,0,3000);
+            drive.stopMotors();
+        }
+    }
+
+    public void testMoveTo() {
         if (gamepad1.dpad_up){
             drive.moveTo(testVelocity,botY,botX,0,0,null,0,5000);
         }
@@ -303,9 +398,25 @@ public class CalibrateDrive extends LinearOpMode {
         }
         if (gamepad1.x) {
             drive.setRobotPosition(0,0,0);
-            drive.moveTo(testVelocity,400,400,45,0,null,0,5000);
-            drive.moveTo(testVelocity,400,0,90,0,null,0,5000);
-            drive.moveTo(testVelocity,0,0,0,0,null,0,5000);
+            drive.moveTo(testVelocity,120,120,0,750,null,0, false,5000);
+            drive.moveTo(testVelocity,510,80,315,0,null,0, true, 5000);
+
+            drive.moveTo(testVelocity,390,260,347,testEndVelocity,null,0, true, 5000);
+            drive.moveTo(testVelocity,510,80,315,testEndVelocity,null,0, true, 5000);
+            drive.setMotorsActiveBrake();
+
+            drive.moveTo(testVelocity,490,275,0,testEndVelocity,null,0, true, 5000);
+            drive.moveTo(testVelocity,510,80,315,0,null,0, true, 5000);
+
+            drive.moveTo(testVelocity,605,310,0,testEndVelocity,null,0, true, 5000);
+            drive.moveTo(testVelocity,510,240,0,750,null,0, false,5000);
+            drive.moveTo(testVelocity,510,80,315,testEndVelocity,null,0, true, 5000);
+            drive.setMotorsActiveBrake();
+
+            drive.stopMotors();
+
+            //drive.moveTo(testVelocity,400,0,90,0,null,0,5000);
+            //drive.moveTo(testVelocity,0,0,0,0,null,0,5000);
         }
         if (gamepad1.y) {
             drive.setRobotPosition(0,0,0);
@@ -315,6 +426,28 @@ public class CalibrateDrive extends LinearOpMode {
             drive.moveTo(testVelocity, 180,1000,0,0,null,0, true,5000);
         }
     }
+
+    public void testMoveTo2() {
+        if (gamepad1.dpad_up){
+            drive.moveToPower(testPower,botY,botX,0,0,null,0,5000);
+            drive.stopMotors();
+        }
+        if (gamepad1.dpad_left){
+            drive.moveToPower(testPower,botY,botX,0,testEndPower,null,0,false,5000);
+            drive.stopMotors();
+        }
+        if (gamepad1.x) {
+            drive.setRobotPosition(0,0,0);
+            drive.moveToPower(testPower,400,400,45,0,null,0,5000);
+            drive.moveToPower(testPower,400,0,90,0,null,0,5000);
+            drive.moveToPower(testPower,0,0,0,0,null,0,5000);
+        }
+        if (gamepad1.y) {
+            drive.moveToPower(testPower,botY,botX,0,0,null,0,5000);
+            drive.setMotorsActiveBrake();
+        }
+    }
+
 
     public void goForADriveCMs() {
         drive.moveCm(testDistance, 90);

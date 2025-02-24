@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.testCode;
 
+import static org.firstinspires.ftc.teamcode.assemblies.Intake.FLIPPER_PRE_GRAB;
 import static org.firstinspires.ftc.teamcode.assemblies.Intake.WHITE_NEOPIXEL;
 
 import com.acmerobotics.dashboard.FtcDashboard;
@@ -47,7 +48,8 @@ public class CalibrateArms extends LinearOpMode {
         Intake_Fine_Manual_Operation,
         Intake_Seek_Testing,
         Test_Axon_Slider,
-        Jump_To_Test
+        Jump_To_Test,
+        Unload_Test
         };
     public static Ops AA_Operation = Ops.Intake_Manual_Operation;
     public static boolean useCV = true;
@@ -93,6 +95,7 @@ public class CalibrateArms extends LinearOpMode {
             case Intake_Seek_Testing: intakeSeekTesting();break;
             case Test_Axon_Slider: testAxonSlider();break;
             case Jump_To_Test: testJumpTo();break;
+            case Unload_Test: testUnloads();break;
 
         }
     }
@@ -184,6 +187,9 @@ public class CalibrateArms extends LinearOpMode {
             }else if (AA_Operation==Ops.Jump_To_Test){
                 testJumpTo();
             }
+            else if(AA_Operation==Ops.Unload_Test){
+                testUnloads();
+            }
 
             // Drawing stuff on the field
             TelemetryPacket packet = new TelemetryPacket();
@@ -257,13 +263,13 @@ public class CalibrateArms extends LinearOpMode {
         if (gp1.wasUpPressed()) {
             intake.lightsOnandOff(WHITE_NEOPIXEL,Intake.RED_NEOPIXEL,Intake.GREEN_NEOPIXEL,Intake.BLUE_NEOPIXEL,true);
 
-            intake.goToSampleV5(5000);
+            intake.goToSampleV5(5000,true);
             intake.restartCVPipeline();
             //intake.goToSampleAndGrabV2(5000);
         } if (gp1.wasRightBumperPressed()) {
             intake.lightsOnandOff(WHITE_NEOPIXEL,Intake.RED_NEOPIXEL,Intake.GREEN_NEOPIXEL,Intake.BLUE_NEOPIXEL,true);
 
-            intake.goToSampleAndGrabV3(false, true);
+            intake.goToSampleAndGrabV3(false, true,true);
             //intake.goToSampleAndGrabV2(5000);
         } if(gp1.wasLeftPressed()){
             intake.flipper.setPosition(Intake.FLIPPER_SEEK);
@@ -293,12 +299,13 @@ public class CalibrateArms extends LinearOpMode {
 
     public void intakeManualOperation() {
         if (gp1.wasUpPressed()) {
-            intake.goToSampleAndGrabV3(true, true);
-            //intake.flipperGoToSeek(2000);
+            //intake.goToSampleAndGrabV3(true, true,true);
+            intake.flipperGoToSeek(2000);
         }
-        if (gp1.wasLeftTriggerPressed()) {
-            intake.goToSampleAndGrabNoWaitV3(true);
+        if (gp1.wasLeftPressed ()) {
+            //intake.goToSampleAndGrabNoWaitV3(true,true);
             //intake.flipperGoToSeek(2000);
+            intake.flipper.setPosition(FLIPPER_PRE_GRAB);
         }
 
         if (gp1.wasDownPressed()) {
@@ -306,7 +313,7 @@ public class CalibrateArms extends LinearOpMode {
             intake.flipperGoToGrab(2000);
 
         }
-        if (gp1.wasLeftPressed()) {
+        if (gp1.wasLeftTriggerPressed()) {
             //intake.goToUnload(2000);
             //intake.flipperGoToUnload(2000);
             intake.unloadV2(false);
@@ -366,7 +373,6 @@ public class CalibrateArms extends LinearOpMode {
             intake.extender.setVelocity(0);
         }
 
-        intake.axonSlider.loop();
         if (gp1.gamepad.left_stick_x < -.25) {
             intake.axonSlider.setAdjustedPower(Intake.SLIDER_MAX_VELOCITY);
         } else if (gp1.gamepad.left_stick_x > .25) {
@@ -467,17 +473,17 @@ public class CalibrateArms extends LinearOpMode {
             hang.calibrate();
             hangCalibrated = true;
         }
-        if(gp1.wasYPressed()){
-            hang.extendHang();
+        if(gp1.wasUpPressed()){
+            hang.extendHangNoWait();
         }
-        if(gp1.wasBPressed()){
-            hang.engageHang();
+        if(gp1.wasLeftPressed()){
+            hang.engageHangNoWait();
         }
-        if(gp1.wasAPressed()){
-            hang.stowHang();
+        if(gp1.wasDownPressed()){
+            hang.stowHangNoWait();
         }
 
-        if(gp1.wasUpPressed()){
+        if(gp1.wasYPressed()){
             hang.deployHookGrabber();
         }
         if(gp1.wasDownPressed()){
@@ -572,10 +578,10 @@ public class CalibrateArms extends LinearOpMode {
             intake.startCVPipeline();
         }
         if (gp1.wasDownPressed()){
-            intake.goToSampleV5(5000);
+            intake.goToSampleV5(5000,true);
         }
         if (gp1.wasUpPressed()){
-            intake.goToSampleAndGrabV3(false, true);
+            intake.goToSampleAndGrabV3(false, true,true);
         }
         if(gp1.wasLeftPressed()){
             intake.flipper.setPosition(Intake.FLIPPER_GRAB);
@@ -668,5 +674,35 @@ public class CalibrateArms extends LinearOpMode {
         output.dropSampleOutBack();
         outtake.outtakeGrab();
         return true;
+    }
+
+    public void testUnloads(){
+        if(gp1.wasRightTriggerPressed()){
+            outtake.outtakeRest();
+            teamUtil.pause(1000);
+            output.calibrate();
+        }
+        if(gp1.wasAPressed()){
+            intake.unloadToChute();
+        }
+        if(gp1.wasYPressed()){
+            intake.unloadV2(true);
+        }
+        if(gp1.wasLeftTriggerPressed()){
+            output.bucket.setPosition(Output.BUCKET_IDLE);
+        }
+        if(gp1.wasXPressed()){
+            intake.flipperGoToSeek(2000);
+            intake.release();
+        }
+        if(gp1.wasBPressed()){
+            intake.grab();
+        }
+        if(gp1.wasUpPressed()){
+            outtake.outtakeRest();
+        }
+        if(gp1.wasDownPressed()){
+            outtake.outtakeGrab();
+        }
     }
 }

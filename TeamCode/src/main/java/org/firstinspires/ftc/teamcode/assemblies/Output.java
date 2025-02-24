@@ -36,6 +36,7 @@ public class Output {
     static public int LIFT_ONTO_BAR= 820;
     static public int LIFT_AT_BAR= 900;
     static public int LIFT_HIGH_BUCKET_THRESHOLD = 250;
+    static public int LIFT_DOWN_THRESHOLD = 30;
 
 
 
@@ -50,6 +51,7 @@ public class Output {
     static public float BUCKET_RELOAD = 0.665f; //was .66
     static public float BUCKET_TRAVEL = 0.5f;
     static public float BUCKET_HANG = 0.245f;
+    static public float BUCKET_IDLE = 0.175f;
 
     static public int DROP_SAMPLE_TIME = 500;
     static public int DROP_SAMPLE_TIME_2 = 500;
@@ -72,7 +74,8 @@ public class Output {
         teamUtil.log("Intake Output");
     }
     public void calibrate(){
-        bucket.setPosition(BUCKET_RELOAD);
+        //bucket.setPosition(BUCKET_RELOAD);
+        bucket.setPosition(BUCKET_IDLE);
 
         lift.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         lift.setPower(-.2);
@@ -150,11 +153,13 @@ public class Output {
             lift.setTargetPosition(LIFT_DOWN);
             lift.setVelocity(LIFT_MAX_VELOCITY);
             long timeOutTime2 = System.currentTimeMillis() + timeout;
-            while (teamUtil.keepGoing(timeOutTime2)&&lift.getCurrentPosition() > LIFT_DOWN+10) {
+            long startTime = System.currentTimeMillis();
+            while (teamUtil.keepGoing(timeOutTime2)&&lift.getCurrentPosition() > LIFT_DOWN+LIFT_DOWN_THRESHOLD) {
                 teamUtil.pause(50);
             }
+            teamUtil.log("Time to bottom out lift: "+ (System.currentTimeMillis()-startTime));
             lift.setVelocity(0);
-            bucket.setPosition(BUCKET_RELOAD);
+            bucket.setPosition(BUCKET_IDLE);
 
             outputLiftAtBottom.set(true);
             teamUtil.log("Go To Load: Finished");

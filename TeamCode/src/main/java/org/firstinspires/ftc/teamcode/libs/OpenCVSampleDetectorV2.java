@@ -37,12 +37,10 @@ import java.util.concurrent.atomic.AtomicLong;
 public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
     HardwareMap hardwareMap;
     Telemetry telemetry;
-
-
+    static public boolean details = false;
 
     Scalar BLACK = new Scalar(0, 0, 0);
     Scalar GREEN = new Scalar(0, 255, 0);
-
 
     static public final int WIDTH = 640;
     static public final int HEIGHT = 480;
@@ -82,16 +80,16 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
 
     public List<Point[]> modPolys;
 
-    public static int polyEp = 10;
+    public static int polyEp = 13;
     public static double AREA_THRESHOLD = 10000;
     public static double EXTERNAL_THRESHOLD = 10;
     public static double SEGMENT_THRESHOLD = 15;
     public static double STRAIGHT_THRESHOLD = 15f; // degrees
     public static double RIGHT_ANGLE_TOLERANCE = 10f;// degrees
     public static double LONG_LENGTH_TARGET = 192;
-    public static double LONG_LENGTH_THRESHOLD = 15;
+    public static double LONG_LENGTH_THRESHOLD = 20;
     public static double SHORT_LENGTH_TARGET = 73;
-    public static double SHORT_LENGTH_THRESHOLD = 8;
+    public static double SHORT_LENGTH_THRESHOLD = 20;
     public static double adjYCoefficient = 0.284;
 
 
@@ -128,10 +126,9 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
     static public int GAIN = 150;
     static public int EXPOSURE = 4; // With Adafruit 12 led ring at full white (no RGB)
     static public int TEMPERATURE = 2800;
-
     static public int blurFactor = 5;
     static public boolean undistort = true;
-    static public boolean details = false;
+
 
     /* 4 leds (Meet 1)
     static public int yellowLowH = 15, yellowLowS = 85, yellowLowV = 150;
@@ -167,6 +164,8 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
     public static int FOUND_ONE_RIGHT_THRESHOLD = 620;
     public static int FOUND_ONE_LEFT_THRESHOLD = 20;
 
+
+    public static int ROTATED_RECT_AREA_THRESHOLD = 12000;
     static public int SAMPLE_SIZE = 1;
     //public double[] samplePixel = new double[3];
     Rect sampleRect;
@@ -426,11 +425,27 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
 
         //Imgproc.Canny(erodedMat, edgesMat, 100, 300); // find edges
 
+        if (details) teamUtil.log("=========================================================  NEW FRAME ==========================================");
 
         List<MatOfPoint> contours = new ArrayList<>();
         contours.clear(); // empty the list from last time
-        Imgproc.findContours(erodedMat, contours, hierarchyMat, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE); // find contours around white areas
-        if (details) teamUtil.log("=========================================================  NEW FRAME ==========================================");
+        Imgproc.findContours(erodedMat, contours, hierarchyMat, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);// find contours around white areas
+
+        if(contours.isEmpty()){
+            if (details) teamUtil.log("Contours List Empty - Finished with Frame");
+            foundOne.set(false);
+            processedFrame.set(true);
+            Context context = new Context();
+            RotatedRect [] foundRects = findRectsInPolys(contours);
+            context.rots = foundRects;
+            context.foundOne = false;
+            context.targetIndex = 0;
+            context.contours = contours;
+            teamUtil.theBlinkin.setSignal(Blinkin.Signals.OFF);
+
+            return context;
+        }
+
         RotatedRect[] foundRects = findRectsInPolys(contours);
 
         if (foundRects.length>0) {
@@ -461,7 +476,7 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
 
 
         if (closestAreaSelectionNum == -1) { // nothing big enough
-            if (details) teamUtil.log("Saw blobs but nothing big enough");
+            if (details) teamUtil.log("No identified rectangles of correct size - Finished with Frame");
             foundOne.set(false);
             processedFrame.set(true);
             Context context = new Context();
@@ -469,6 +484,7 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
             context.foundOne = false;
             context.targetIndex = 0;
             context.contours = contours;
+            teamUtil.theBlinkin.setSignal(Blinkin.Signals.OFF);
             return context;
         }
 
@@ -512,15 +528,13 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
 
         if(foundRects[closestAreaSelectionNum].center.x<FOUND_ONE_LEFT_THRESHOLD||foundRects[closestAreaSelectionNum].center.x>FOUND_ONE_RIGHT_THRESHOLD){
             if (details) {
-                teamUtil.log("OPEN CV SAMPLE DETECTOR FOUND BLOCK BUT CENTER X VALUE WAS OUTSIDE MECHANICAL RANGE");
-                teamUtil.log("X of Block Center: " + foundRects[closestAreaSelectionNum].center.x);
-                teamUtil.log("Y of Block Center: " + foundRects[closestAreaSelectionNum].center.y);
+                teamUtil.log("Identified rectangle center X outside mechanical range " + foundRects[closestAreaSelectionNum].center.x + ", " + foundRects[closestAreaSelectionNum].center.y);
             }
             outsideUseableCameraRange.set(true);
             processedFrame.set(true);
             foundOne.set(false);
-        }
-        else{
+            teamUtil.theBlinkin.setSignal(Blinkin.Signals.OFF);
+        } else{
             outsideUseableCameraRange.set(false);
             processedFrame.set(true);
 
@@ -545,20 +559,26 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
 
             frameDataQueue.clear(); // Only one object in the queue at a time for now.
             frameDataQueue.add(imgData);
-            if (details) teamUtil.log("adding detection to queue. size: " + frameDataQueue.size());
+            //if (details) teamUtil.log("adding detection to queue. size: " + frameDataQueue.size());
 
             // old data setting
+
             rectCenterYOffset.set(-1 * ((int) foundRects[closestAreaSelectionNum].center.y - TARGET_Y));
             rectCenterXOffset.set((int) foundRects[closestAreaSelectionNum].center.x - TARGET_X);
             rectAngle.set((int) realAngle);
             rectArea.set((int) foundRects[closestAreaSelectionNum].size.area());
             foundOne.set(true);
-
+            if(targetColor == TargetColor.BLUE){
+                teamUtil.theBlinkin.setSignal(Blinkin.Signals.BLUE_PATH_1);
+            }else if(targetColor == TargetColor.RED){
+                teamUtil.theBlinkin.setSignal(Blinkin.Signals.RED);
+            }else if (targetColor == TargetColor.YELLOW){
+                teamUtil.theBlinkin.setSignal(Blinkin.Signals.GOLD);
+            }
             targetIndex = closestAreaSelectionNum;
-            if (details) teamUtil.log("Real Angle" + realAngle + "Lowest: " + vertices1[lowestPixel].x + "," + vertices1[lowestPixel].y+"Closest: " + vertices1[closestPixel].x+ "," +vertices1[closestPixel].y);
+            //if (details) teamUtil.log("Lowest: " +  vertices1[lowestPixel].x + "," + vertices1[lowestPixel].y+ " Closest: " + vertices1[closestPixel].x+ "," +vertices1[closestPixel].y);
         }
-
-
+        if (details) teamUtil.log("Found Sample:  Real Angle" + (int) realAngle + " Center X: " + (int) foundRects[closestAreaSelectionNum].center.x + " Center Y: " + (int) foundRects[closestAreaSelectionNum].center.y);
 
         Context context = new Context();
         context.targetIndex = targetIndex;
@@ -621,6 +641,7 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
             double l1 = findLength(points[p1], points[p2]);
             double l2 = findLength(points[p2], points[p3]);
 
+
             if (details) teamUtil.log("--");
             if (details) teamUtil.log("Looking at points: "+ p1+ points[p1] + ", " + p2+ points[p2] + ", " + p3+ points[p3]);
             if (details) teamUtil.log(String.format("s1: %.1f s2: %.1f L1: %.1f L2: %.0f", slope1, slope2, l1, l2));
@@ -646,6 +667,11 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
                 if (details) teamUtil.log("Disregarding candidate with wrong lengths");
                 continue;
             }
+            // now check area of chosen rotated rect
+            if(l1*l2<ROTATED_RECT_AREA_THRESHOLD){
+                if (details) teamUtil.log("Disregarding candidate with area too small");
+                continue;
+            }
 
             // We found one, so impute point 4
             Point point4 = findFourthPoint(points[p1], points[p2], points[p3]);
@@ -659,6 +685,7 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
             } else {
                 if (details) teamUtil.log("4th point inside (or close to) polygon: "+result);
             }
+
 
             // It all looks good so lets set up the found rect and subtract it from remaining poly
             RotatedRect foundRect = getRotatedRect(points[p1], points[p2], points[p3], point4);
@@ -809,7 +836,14 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
     }
 
     public boolean isRightAngle(double s1, double s2, double maxDeviationDegrees) {
+        if(Double.isInfinite(s1)&&Math.abs(s2)<maxDeviationDegrees){
+            return true;
+        }else if(Double.isInfinite(s2)&&Math.abs(s1)<maxDeviationDegrees){
+            return true;
+        }
+
         double angle = Math.toDegrees(Math.atan(Math.abs((s1 - s2) / (1 + s1 * s2))));
+
         if (details) teamUtil.log("Checking Angle: "+ angle);
         return Math.abs(90 - angle) <= maxDeviationDegrees;
     }

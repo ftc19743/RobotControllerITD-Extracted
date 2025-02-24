@@ -171,13 +171,16 @@ public class Teleop extends LinearOpMode {
                     outtakeUp = true;
                 }
             }
+
+            if(armsGamepad.wasLeftPressed()){
+                robot.outtake.outtakeRest();
+            }
+
             /*
             if(armsGamepad.wasDownPressed()){
                 robot.dropSampleOutBackAndArmGrabNoWait(3000);
             }
-            if(armsGamepad.wasLeftPressed()){
-                robot.outtake.outtakeRest();
-            }
+
             if(armsGamepad.wasRightPressed()){
                 robot.outtake.outakearm.setPosition(Outtake.ARM_DOWN);
                 robot.outtake.outakewrist.setPosition(Outtake.WRIST_GRAB);
@@ -190,7 +193,7 @@ public class Teleop extends LinearOpMode {
             if (armsGamepad.wasAPressed() && !robot.intake.autoSeeking.get()) {
                 if(robot.intake.extender.getCurrentPosition()<Intake.EXTENDER_GO_TO_SEEK_THRESHOLD){
                     //robot.intake.unloadV2NoWait(true); (fast unload)
-                    robot.intake.safeUnloadNoWait();
+                    robot.intake.unloadToChuteNoWait();
                 }
                 else{
                     robot.intake.extenderSafeRetractNoWait(4000);
@@ -215,25 +218,26 @@ public class Teleop extends LinearOpMode {
             if ((armsGamepad.wasBPressed()&&teamUtil.alliance == teamUtil.Alliance.RED)&&!robot.intake.autoSeeking.get()) { //Grab Red
                 robot.intake.setTargetColor(OpenCVSampleDetectorV2.TargetColor.RED);
                 if((robot.drive.getHeadingODO()>45&&robot.drive.getHeadingODO()<135)||(robot.drive.getHeadingODO()>225&&robot.drive.getHeadingODO()<315)){
-                    robot.intake.goToSampleAndGrabNoWaitV3(false); // TODO was true for auto unload--switched to false to try intake-only collection
+                    robot.intake.goToSampleAndGrabNoWaitV3(false,false); // TODO was true for auto unload--switched to false to try intake-only collection
                 }else{
-                    robot.intake.goToSampleAndGrabNoWaitV3(false);
+                    robot.intake.goToSampleAndGrabNoWaitV3(false,false);
                 }
             }
             if ((armsGamepad.wasYPressed())&&!robot.intake.autoSeeking.get()) { //Grab Yellow
                 robot.intake.setTargetColor(OpenCVSampleDetectorV2.TargetColor.YELLOW);
+                robot.output.bucket.setPosition(Output.BUCKET_RELOAD);
                 if((robot.drive.getHeadingODO()>45&&robot.drive.getHeadingODO()<135)||(robot.drive.getHeadingODO()>225&&robot.drive.getHeadingODO()<315)){
                     robot.goToSampleAndGrabAndLiftToBucketNoWait(true);
                 }else{
-                    robot.intake.goToSampleAndGrabNoWaitV3(false);
+                    robot.intake.goToSampleAndGrabNoWaitV3(false,false);
                 }
             }
             if ((armsGamepad.wasXPressed()&&teamUtil.alliance == teamUtil.Alliance.BLUE)&&!robot.intake.autoSeeking.get()) { //Grab Blue
                 robot.intake.setTargetColor(OpenCVSampleDetectorV2.TargetColor.BLUE);
                 if((robot.drive.getHeadingODO()>45&&robot.drive.getHeadingODO()<135)||(robot.drive.getHeadingODO()>225&&robot.drive.getHeadingODO()<315)){
-                    robot.intake.goToSampleAndGrabNoWaitV3(false); // TODO was true for auto unload--switched to false to try intake-only collection
+                    robot.intake.goToSampleAndGrabNoWaitV3(false,false); // TODO was true for auto unload--switched to false to try intake-only collection
                 }else{
-                    robot.intake.goToSampleAndGrabNoWaitV3(false);
+                    robot.intake.goToSampleAndGrabNoWaitV3(false,false);
                 }
             }
 

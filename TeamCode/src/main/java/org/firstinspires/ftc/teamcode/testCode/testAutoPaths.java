@@ -9,6 +9,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.RobotLog;
 
 import org.firstinspires.ftc.teamcode.assemblies.Intake;
+import org.firstinspires.ftc.teamcode.assemblies.Output;
 import org.firstinspires.ftc.teamcode.assemblies.Robot;
 import org.firstinspires.ftc.teamcode.libs.TeamGamepad;
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
@@ -30,15 +31,12 @@ public class testAutoPaths extends LinearOpMode {
     public static int START_CYCLE = 1;
     public static boolean GRAB_SAMPLE = false;
     public static boolean useCV = true;
-
-    public static boolean ASCENT = true;
-
-
-    public long startTime;
+    public enum Ops {Specimen,
+        Sample,
+        Hang
+    };
+    public static testAutoPaths.Ops AA_Operation = Ops.Specimen;
     public long elapsedTime;
-
-
-
     private boolean enableLiveView = false;
 
 
@@ -80,6 +78,8 @@ public class testAutoPaths extends LinearOpMode {
             driverGamepad.loop();
             armsGamepad.loop();
             telemetry.addLine("Alliance: "+ teamUtil.alliance);
+            telemetry.addLine("Testing: " + AA_Operation);
+
             telemetry.addLine("Use Arms: "+ useArms);
 
             telemetry.addLine("Strafe: "+ robot.drive.odo.getPosY());
@@ -96,102 +96,119 @@ public class testAutoPaths extends LinearOpMode {
                 }
             }
             if (driverGamepad.wasRightBumperPressed()) {
-                useArms = !useArms;
+                if (AA_Operation == Ops.Specimen) {
+                    AA_Operation = Ops.Sample;
+                } else if (AA_Operation == Ops.Sample) {
+                    AA_Operation = Ops.Hang;
+                } else if (AA_Operation == Ops.Hang) {
+                    AA_Operation = Ops.Specimen;
+                }
             }
 
-
-            if(driverGamepad.wasLeftPressed()) {
-                robot.resetRobot();
-            }
-            if(driverGamepad.wasUpPressed()) {
-               //long startTime = System.currentTimeMillis();
-               //robot.autoV1Bucket(BLOCKS,ASCENT);
-               //elapsedTime = System.currentTimeMillis()-startTime;
-            }
-            if(driverGamepad.wasDownPressed()) {
-                robot.specimenCollectBlocksV2();
-            }
             if(driverGamepad.wasRightTriggerPressed()) {
                 robot.drive.setRobotPosition(0,0,0);
             }
-            if(driverGamepad.wasYPressed()){
-                robot.outtake.outtakeGrab();
+            if(driverGamepad.wasLeftTriggerPressed()){
+                robot.resetRobot();
             }
-            if(driverGamepad.wasXPressed()) {
-                robot.nextExtenderPos = Intake.EXTENDER_AUTO_START_SEEK;
-                long startTime = System.currentTimeMillis();
-                for(int i = START_CYCLE; i<=END_CYCLES;i++){
-                    teamUtil.log("Auto V3 Specimen Cycle Number: " + i);
-                    switch (i) {
-                        case 1 : robot.specimenCycleV3(1, Robot.F33_5_CYCLE_Y_PLACEMENTS[0],false, true, true); break;
-                        case 2 : robot.specimenCycleV3(2, Robot.F33_5_CYCLE_Y_PLACEMENTS[1],false, true, true); break;
-                        case 3 : robot.specimenCycleV3(3, Robot.F33_5_CYCLE_Y_PLACEMENTS[2],false, true, true); break;
-                        case 4 : robot.specimenCycleV3(4, Robot.F33_5_CYCLE_Y_PLACEMENTS[3],false, true, true); break;          }
+
+            ////////////////// Testing Specimen Auto
+            if (AA_Operation == Ops.Specimen) {
+
+                if(driverGamepad.wasUpPressed()) {
+
                 }
-                robot.drive.stopMotors();
-                elapsedTime = System.currentTimeMillis()-startTime;
-            }
-            if(driverGamepad.wasAPressed()){
-                long startTime = System.currentTimeMillis();
-                robot.autoV4Specimen();
-                elapsedTime = System.currentTimeMillis()-startTime;
-            }
-            if(driverGamepad.wasBPressed()){
-                long startTime = System.currentTimeMillis();
-                robot.placeFirstSpecimen();
-                robot.drive.stopMotors();
-                elapsedTime = System.currentTimeMillis()-startTime;
-            }
-
-            ////////////////////////////////////////////////////////////////////////////
-            // TESTING HANG
-            if(armsGamepad.wasAPressed()) {
-                robot.hangPhase1();
-            }
-            if(armsGamepad.wasBPressed()) {
-                robot.hangPhase2();
-            }
-            if(armsGamepad.wasYPressed()) {
-                robot.hangPhase2V3();
-            }
-            if(armsGamepad.wasXPressed()) {
-                robot.hang.hang_Left.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-                robot.hang.hang_Right.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            }
-            robot.hang.joystickDriveV2(gamepad2.left_stick_x, gamepad2.left_stick_y);
-            robot.dropLiftWhenNeeded();
-            robot.stowHangWhenNeeded();
-            robot.moveHookArmWhenNeeded();
-            //teamUtil.log("Hangleft: " + robot.hang.hang_Left.getCurrentPosition()+ " Hangright: "+ robot.hang.hang_Right.getCurrentPosition());
-            telemetry.addLine("Hangleft: " + robot.hang.hang_Left.getCurrentPosition()+ " Hangright: "+ robot.hang.hang_Right.getCurrentPosition());
-
-
-            /*
-            if(driverGamepad.wasOptionsPressed()){
-                robot.intake.setTargetColor(OpenCVSampleDetector.TargetColor.RED);
-                robot.drive.setRobotPosition(robot.B07_GO_TO_SAMPLE_X,robot.B08_GO_TO_SAMPLE_Y,0);
-
-                if(!robot.intake.goToSampleAndGrab(5000)){
-                    teamUtil.log("FAILED to intake sample.  Giving up");
-                    break;
+                if(driverGamepad.wasDownPressed()) {
+                    long startTime = System.currentTimeMillis();
+                    robot.drive.setRobotPosition(0,0,0);
+                    robot.drive.setMotorsBrake();
+                    robot.specimenCollectBlocksV3(false);
+                    robot.drive.stopMotors();
+                    elapsedTime = System.currentTimeMillis()-startTime;
                 }
-                robot.intake.goToUnloadNoWait(5000);
-                robot.drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY, robot.B11_WALL_SPECIMEN_X, robot.B12_WALL_SPECIMEN_Y,0,200,null,0,4000);
-                robot.output.dropSampleOutBackNoWait();
+                if(driverGamepad.wasYPressed()){
+                    robot.outtake.outtakeGrab();
+                }
+                if(driverGamepad.wasXPressed()) {
+                    robot.nextExtenderPos = Intake.EXTENDER_AUTO_START_SEEK;
+                    long startTime = System.currentTimeMillis();
+                    for(int i = START_CYCLE; i<=END_CYCLES;i++){
+                        teamUtil.log("Auto V4 Specimen Cycle Number: " + i);
+                        switch (i) {
+                            case 1 : robot.specimenCycleV4(1, Robot.G33_6_CYCLE_Y_PLACEMENTS[0],false, true); break;
+                            case 2 : robot.specimenCycleV4(2, Robot.G33_6_CYCLE_Y_PLACEMENTS[1],false,  true); break;
+                            case 3 : robot.specimenCycleV4(3, Robot.G33_6_CYCLE_Y_PLACEMENTS[2],false,  true); break;
+                            case 4 : robot.specimenCycleV4(4, Robot.G33_6_CYCLE_Y_PLACEMENTS[3],false,  true); break;
+                            case 5 : robot.specimenCycleV4(5, Robot.G33_6_CYCLE_Y_PLACEMENTS[4],false,  true); break;
+                        }
+                    }
+                    robot.drive.stopMotors();
+                    elapsedTime = System.currentTimeMillis()-startTime;
+                }
+                if(driverGamepad.wasAPressed()){
+                    long startTime = System.currentTimeMillis();
+                    robot.autoV4Specimen();
+                    elapsedTime = System.currentTimeMillis()-startTime;
+                }
+                if(driverGamepad.wasBPressed()){
+                    long startTime = System.currentTimeMillis();
+                    if (GRAB_SAMPLE) {
+                        robot.placeFirstSpecimenV2(true);
+                        robot.deliverFirstSample();
+                        robot.specimenCyclePlace(1,robot.G33_6_CYCLE_Y_PLACEMENTS[0]);
+                        robot.drive.stopMotors();
+                    } else {
+                        robot.placeFirstSpecimenV2(false);
+                        robot.drive.driveMotorsHeadingsFRPower(180, 0, 1);
+                        teamUtil.pause(250);
+                        robot.drive.stopMotors();
+                    }
+                    elapsedTime = System.currentTimeMillis()-startTime;
+                }
+
+            } else if (AA_Operation == Ops.Sample) {
+                ////////////////////// Testing SAMPLE Auto
+
+                if (driverGamepad.wasYPressed()) {
+                    robot.outtake.outtakeRest();
+                    teamUtil.pause(1000);
+                    robot.output.outputLoad(3000);
+                    robot.output.bucket.setPosition(Output.BUCKET_RELOAD);
+                    teamUtil.pause(1000);
+                    robot.outtake.secondCalibrate();
+                }
+                if (driverGamepad.wasXPressed()) {
+                    long startTime = System.currentTimeMillis();
+                    robot.sampleAutoV3();
+                    elapsedTime = System.currentTimeMillis() - startTime;
+                }
+
+            } else {
+                ////////////////////////////////////////////////////////////////////////////
+                // TESTING HANG
+                if (driverGamepad.wasAPressed()) {
+                    robot.hangPhase1();
+                }
+                if (driverGamepad.wasBPressed()) {
+                    //
+                }
+                if (driverGamepad.wasYPressed()) {
+                    robot.hangPhase2V3();
+                }
+                if (driverGamepad.wasXPressed()) {
+                    robot.hang.hang_Left.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                    robot.hang.hang_Right.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                }
+                robot.hang.joystickDriveV2(gamepad1.left_stick_x, gamepad1.left_stick_y);
+                robot.dropLiftWhenNeeded();
+                robot.stowHangWhenNeeded();
+                robot.moveHookArmWhenNeeded();
+                //teamUtil.log("Hangleft: " + robot.hang.hang_Left.getCurrentPosition()+ " Hangright: "+ robot.hang.hang_Right.getCurrentPosition());
+                telemetry.addLine("Hangleft: " + robot.hang.hang_Left.getCurrentPosition() + " Hangright: " + robot.hang.hang_Right.getCurrentPosition());
+
             }
-
-             */
-
-            if(driverGamepad.wasStartPressed()){
-                //robot.intake.putFlickerDown();
-            }
-
-
-
-
 
             robot.drive.odo.update();
-
             robot.drive.driveMotorTelemetry();
             telemetry.addLine("Running Tests " );
             telemetry.addLine("Last Auto Elapsed Time: " + elapsedTime);

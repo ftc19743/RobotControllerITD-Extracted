@@ -24,6 +24,8 @@ public class Outtake {
     static public float WRIST_RELEASE = .82f;
     static public float ARM_REST = .26f;
     static public float ARM_ENGAGE = 0.2f;
+    static public float ARM_SOFT_ENGAGE = 0.19f;
+
     static public float WRIST_REST = 0.48f;
     static public double POTENTIOMETER_OUTPUT_CLEAR = 2.183;
     static public double POTENTIOMETER_SAFE = 2.38;

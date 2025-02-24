@@ -67,6 +67,7 @@ public class BasicDrive {
 
     static public double MIN_START_VELOCITY = 300; //TODO (Current value works OK, but maybe could be more aggressive)
     static public double MIN_END_VELOCITY = 90; //TODO (Current value works OK, but maybe could be more aggressive)
+    static public float MIN_END_POWER = .1f;
     static public double MAX_ACCELERATION = 50;
     static public double MAX_DECELERATION = 1.65;
     static public double POWER_BRAKING_STRAIGHT_FACTOR = .25f; // MMs per velocity unit
@@ -94,6 +95,7 @@ public class BasicDrive {
     static public float STRAFE_MAX_DECLINATION = 27f; // don't veer off of straight more than this number of degrees
 
     static public double MOVE_TO_COEFFICIENT = 2;
+    static public float MOVE_TO_POWER_COEFFICIENT = .001f;
     static public double MOVE_TO_THRESHOLD = 10;
     static public double MOVE_TO_DECCEL_COEFFICIENT = 0.5;
 
@@ -263,6 +265,13 @@ public class BasicDrive {
         br.setVelocity(brV);
     }
 
+    public void setMotorPowers(float flP, float frP, float blP, float brP) {
+        fl.setPower(flP);
+        fr.setPower(frP);
+        bl.setPower(blP);
+        br.setPower(brP);
+    }
+
     public void setMotorsRunToPosition() {
         fl.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         fr.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -296,6 +305,48 @@ public class BasicDrive {
     /************************************************************************************************************/
     //   Holonomic Motor Operations
 
+    // drive the motors at the specified (robot relative) at the specified velocity while holding the (robot relative) robot heading
+    // power is 0-1
+    public static float ROTATION_ADJUST_FACTOR_POWER = 0.1f;
+    public void driveMotorsHeadingsPower(double driveHeading, double robotHeading, double power) {
+        // move robot based on a heading to face and a heading to drive to
+        float flV, frV, blV, brV;
+        double x, y, scale;
+
+        // Determine how much adjustment for rotational drift
+        double headingError = getHeadingError(robotHeading); // Difference between desired and actual robot heading
+        //double headingError = Math.max(-45.0, Math.min(getHeadingError(robotHeading), 45.0)); // clip this to 45 degrees in either direction to control rate of spin
+        float rotationAdjust = (float)(ROTATION_ADJUST_FACTOR_POWER *  headingError * power); // scale based on amount of rotational error and power
+        if(details) teamUtil.log("Params: DriveHeading: " +driveHeading + " RobotHeading: " + robotHeading + " Power: " + power + " RobotHeadingError: " + headingError +  " IMUHeading: " + getHeading() + " ODOHeading: " + getHeadingODO()+ " RotAdjust: " + rotationAdjust);
+
+        // Covert heading to cartesian on the unit circle and scale so largest value is 1
+        // This is essentially creating joystick values from the heading
+        // driveHeading is relative to robot at this point since the wheels are relative to robot!
+        x = Math.cos(Math.toRadians(driveHeading + 90)); // + 90 cause forward is 0...
+        y = Math.sin(Math.toRadians(driveHeading + 90));
+        scale = 1 / Math.max(Math.abs(x), Math.abs(y));
+        x = x * scale * power; // Then set proportional to commanded power
+        y = y * scale * power;
+
+        // Clip to motor power range
+        flV = (float) Math.max(-1.0, Math.min(x + y, 1.0)) ;
+        brV = flV;
+        frV = (float) Math.max(-1.0, Math.min(y - x, 1.0)) ;
+        blV = frV;
+        if(details) teamUtil.log("Powers before rot adjust: FLV/BRV: " + flV + " FRV/BLV: " + frV);
+
+        // Adjust for rotational drift
+        flV = flV - rotationAdjust;
+        brV = brV + rotationAdjust;
+        frV = frV + rotationAdjust;
+        blV = blV - rotationAdjust;
+        if(details) teamUtil.log("Powers AFTER rot adjust: FLV: " + flV + " FRV: " + frV + " BLV: " + blV + " BRV: " + brV);
+
+        // Update the motors
+        setMotorPowers(flV, frV, blV, brV);
+    }
+
+    // drive the motors at the specified (robot relative) at the specified velocity while holding the (robot relative) robot heading
     public void driveMotorsHeadings(double driveHeading, double robotHeading, double velocity) {
         // move robot based on a heading to face and a heading to drive to
         double flV, frV, blV, brV;
@@ -303,9 +354,9 @@ public class BasicDrive {
 
         // Determine how much adjustment for rotational drift
         double headingError = getHeadingError(robotHeading); // Difference between desired and actual robot heading
-        if(details) teamUtil.log("RobotHeading: " + robotHeading + " RobotHeadingError: " + headingError + " DriveHeading: " +driveHeading + "IMUHeading: " + getHeading() + "ODOHeading: " + getHeadingODO());
         //double headingError = Math.max(-45.0, Math.min(getHeadingError(robotHeading), 45.0)); // clip this to 45 degrees in either direction to control rate of spin
-        double rotationAdjust = ROTATION_ADJUST_FACTOR * headingError; // scale based on velocity AND amount of rotational error.....Took out velocity
+        double rotationAdjust = ROTATION_ADJUST_FACTOR * headingError; // scale based on amount of rotational error.....Took out velocity
+        if(details) teamUtil.log("Params: DriveHeading: " +driveHeading + " RobotHeading: " + robotHeading + " Velocity: " + velocity+ " RobotHeadingError: " + headingError +  " IMUHeading: " + getHeading() + " ODOHeading: " + getHeadingODO()+ " RotAdjust: " + rotationAdjust);
 
         // Covert heading to cartesian on the unit circle and scale so largest value is 1
         // This is essentially creating joystick values from the heading
@@ -321,12 +372,14 @@ public class BasicDrive {
         brV = flV;
         frV = Math.max(-1.0, Math.min(y - x, 1.0)) * velocity;
         blV = frV;
+        if(details) teamUtil.log("Velocities before rot adjust: FLV/BRV: " + flV + " FRV/BLV: " + frV);
 
         // Adjust for rotational drift
         flV = flV - rotationAdjust;
         brV = brV + rotationAdjust;
         frV = frV + rotationAdjust;
         blV = blV - rotationAdjust;
+        if(details) teamUtil.log("Velocities AFTER rot adjust: FLV: " + flV + " FRV: " + frV + " BLV: " + blV + " BRV: " + brV);
 
         // Update the motors
         setMotorVelocities(flV, frV, blV, brV);
@@ -339,6 +392,15 @@ public class BasicDrive {
         double RRDriveHeading = getHeadingError(driveHeading);
         if(details)teamUtil.log("RRDriveHeading: " + RRDriveHeading + " RobotHeading: " + robotHeading + " DriveHeading: " + driveHeading);
         driveMotorsHeadings(RRDriveHeading, robotHeading, velocity);
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Set the velocity of all 4 motors based on a driveHeading RELATIVE TO FIELD and provided velocity
+    // Will rotate robot as needed to achieve and hold robotHeading RELATIVE TO FIELD by moving to a set target
+    public void driveMotorsHeadingsFRPower(double driveHeading, double robotHeading, float power) {
+        double RRDriveHeading = getHeadingError(driveHeading);
+        if(details)teamUtil.log("RRDriveHeading: " + RRDriveHeading + " RobotHeading: " + robotHeading + " DriveHeading: " + driveHeading);
+        driveMotorsHeadingsPower(RRDriveHeading, robotHeading, power);
     }
 
     public double getHeadingError(double targetAngle) {
@@ -959,7 +1021,6 @@ public class BasicDrive {
             double decelPercentage = 1-accelPercentage;
             accelerationDistance = totalTics * accelPercentage;
             decelerationDistance = totalTics * decelPercentage;
-            if (details) teamUtil.log("Adjusting distances to eliminate cruise phase");
         }
         double distanceRemaining = 0;
         if (details) {
@@ -1233,8 +1294,6 @@ public class BasicDrive {
             double decelPercentage = 1-accelPercentage;
             accelerationDistance = totalTics * accelPercentage;
             decelerationDistance = totalTics * decelPercentage;
-            if (details) teamUtil.log("Adjusting distances to eliminate cruise phase");
-
         }
         double distanceRemaining = 0;
         if (details) {
@@ -1352,6 +1411,123 @@ public class BasicDrive {
         teamUtil.log("strafeHoldingStraightEncoder--Finished.  Current Strafe Encoder:" + odo.getPosY());
         return true;
     }
+
+    // Drive straight forward or backward while attempting to hold the strafe encoder at a specific value
+    // Robot heading should be 0,90,180, or 270.  Drive Heading will be determined by the target
+    public boolean straightHoldingStrafePower(float power, double straightTarget, double strafeTarget, int robotHeading) {
+        return straightHoldingStrafePower(power, straightTarget, strafeTarget, robotHeading,null, 0, 4000);
+    }
+    public boolean straightHoldingStrafePower(float power, double straightTarget, double strafeTarget, int robotHeading, ActionCallback action, double actionTarget, long timeout) {
+        if(robotHeading != 90 && robotHeading != 270 && robotHeading != 0 && robotHeading != 180){
+            teamUtil.log("straightHoldingStrafePower - ERROR INCOMPATIBLE ROBOT HEADING");
+            stopMotors();
+            return false;
+        }
+        details = details; // default to class level details member instead of false
+        long startTime = System.currentTimeMillis();
+        long timeoutTime = startTime+timeout;
+        odo.update();
+        double driveHeading;
+        double startEncoder = odo.getPosX();
+        boolean goingUp;
+        if(straightTarget-startEncoder >=0){
+            driveHeading = robotHeading;
+            goingUp = true;
+        }else{
+            driveHeading = adjustAngle(robotHeading+180);
+            goingUp=false;
+        }
+        float headingFactor = goingUp? -1 : 1; // reverse correction for going backwards
+
+        double totalTics = Math.abs(startEncoder-straightTarget);
+        teamUtil.log("straightHoldingStrafePower target: " + straightTarget +  " Strafe target: " + strafeTarget + " robotH: " + robotHeading + " Power: " + power + " TotalMMss: " + totalTics + " Starting Forward Pos: "+ odo.getPosX() + " Starting Strafe Pos: "+ odo.getPosY() + " Starting Heading:" + getHeadingODO());
+        double distanceRemaining = Math.abs(straightTarget - odo.getPosX());
+        boolean actionDone = false;
+        double currentPos;
+        double adjustedDriveHeading;
+
+        //-------ONLY a CRUISE PHASE
+        while ((distanceRemaining > 0) && teamUtil.keepGoing(timeoutTime)) {
+            odo.update();
+            currentPos = odo.getPosX();
+            distanceRemaining = (!goingUp) ? currentPos-straightTarget : straightTarget - currentPos;
+            adjustedDriveHeading = driveHeading + MathUtils.clamp((odo.getPosY() - strafeTarget)* STRAIGHT_HEADING_DECLINATION, -STRAIGHT_MAX_DECLINATION, STRAIGHT_MAX_DECLINATION) * headingFactor;
+            if (details) teamUtil.log("Cruising at Power: "+ power + " Adjusted Drive Heading: " + adjustedDriveHeading + " MMs Remaining: " + distanceRemaining);
+            driveMotorsHeadingsFRPower(adjustedDriveHeading, robotHeading, power);
+            if(action!=null&&!actionDone&&((goingUp&&currentPos>=actionTarget)||(!goingUp&&currentPos<=actionTarget))){
+                action.action();
+                actionDone=true;
+            }
+        }
+        if(System.currentTimeMillis()>timeoutTime){
+            teamUtil.log("TIMEOUT Triggered");
+            stopMotors();
+            return false;
+        }
+        teamUtil.log("straightHoldingStrafePower--Finished.  Current Forward Pos:" + odo.getPosX());
+        return true;
+    }
+
+    // Strafe straight left or right while attempting to hold the forward encoder at a specific value
+    // Robot heading should be 0,90,180, or 270.  Drive Heading will be determined by the target
+    public boolean strafeHoldingStraightPower(float power, double strafeTarget, double straightTarget, int robotHeading) {
+        return strafeHoldingStraightPower(power, strafeTarget, straightTarget, robotHeading,null, 0, 4000);
+    }
+    public boolean strafeHoldingStraightPower(float power, double strafeTarget, double straightTarget, int robotHeading, ActionCallback action, double actionTarget, long timeout) {
+        if(robotHeading!=90&&robotHeading!=270&&robotHeading!=0&&robotHeading!=180){
+            teamUtil.log("strafeHoldingStraightPower - ERROR INCOMPATIBLE ROBOT HEADING");
+            stopMotors();
+            return false;
+        }
+        long startTime = System.currentTimeMillis();
+        long timeoutTime = startTime+timeout;
+        odo.update();
+        double driveHeading;
+        double startEncoder = odo.getPosY();
+        boolean goingUp;
+        if(strafeTarget-startEncoder >=0){
+            driveHeading = adjustAngle(robotHeading+90);
+            goingUp = true;
+        }else{
+            driveHeading = adjustAngle(robotHeading-90);
+            goingUp=false;
+        }
+        float headingFactor = goingUp? 1 : -1; // reverse correction for going backwards
+
+
+        double totalTics = Math.abs(startEncoder-strafeTarget);
+        teamUtil.log("strafeHoldingStraightPower target: " + strafeTarget +  " Straight target: " + straightTarget + " robotH: " + robotHeading + " Power: " + power + " TotalMMss: " + totalTics + " Starting Forward Pos: "+ odo.getPosX() + " Starting Strafe Pos: "+ odo.getPosY() + " Starting Heading:" + getHeadingODO());
+        odo.update();
+        double distanceRemaining = Math.abs(strafeTarget - odo.getPosY());
+        boolean actionDone = false;
+        double currentPos;
+        double adjustedDriveHeading;
+
+        //-------ONLY a Cruise Phase
+        while ((distanceRemaining > 0) && teamUtil.keepGoing(timeoutTime)) {
+            odo.update();
+            currentPos = odo.getPosY();
+            distanceRemaining = (!goingUp) ? currentPos-strafeTarget : strafeTarget - currentPos;
+            adjustedDriveHeading = driveHeading + MathUtils.clamp((odo.getPosX() - straightTarget)* STRAFE_HEADING_DECLINATION, -STRAFE_MAX_DECLINATION, STRAFE_MAX_DECLINATION) * headingFactor;
+            if (details) {
+                teamUtil.log("dh: " + adjustedDriveHeading);
+            }
+            if (details) teamUtil.log("Cruising at Power: "+ power + " Adjusted Drive Heading: " + adjustedDriveHeading + " MMs Remaining: " + distanceRemaining);
+            driveMotorsHeadingsFRPower(adjustedDriveHeading, robotHeading, power);
+            if(action!=null&&!actionDone&&((goingUp&&currentPos>=actionTarget)||(!goingUp&&currentPos<=actionTarget))){
+                action.action();
+                actionDone=true;
+            }
+        }
+       if(System.currentTimeMillis()>timeoutTime){
+            teamUtil.log("TIMEOUT Triggered");
+            stopMotors();
+            return false;
+        }
+        teamUtil.log("strafeHoldingStraightPower--Finished.  Current Strafe Encoder:" + odo.getPosY());
+        return true;
+    }
+
 
     public void moveToV2(double maxVelocity, double strafeTarget, double straightTarget, double robotHeading, double endVelocity,ActionCallback action, double actionTarget, boolean endInDeadband, long timeout){
         teamUtil.log("MoveTo StrafeTarget: " + strafeTarget +  " Straight target: " + straightTarget + " robotH: " + robotHeading + " MaxV: " + maxVelocity + " EndV: " + endVelocity + " EndInDeadband: " + endInDeadband);
@@ -1482,6 +1658,8 @@ public class BasicDrive {
         }
         double angle = 0;
         double driveHeading;
+        setMotorsWithEncoder();
+
         while(!withinThreshold&&teamUtil.keepGoing(timeoutTime)) {
             odo.update();
             double straightChange = straightTarget - odo.getPosX();
@@ -1555,6 +1733,84 @@ public class BasicDrive {
 
         teamUtil.log("MoveTo FINISHED");
     }
+
+    public void moveToPower(float maxPower, double strafeTarget, double straightTarget, double robotHeading, long timeout){
+        moveToPower(maxPower,strafeTarget,straightTarget,robotHeading,0,null,0,true,timeout);
+    }
+    public void moveToPower(float maxPower, double strafeTarget, double straightTarget, double robotHeading, boolean endInDeadband, long timeout){
+        moveToPower(maxPower,strafeTarget,straightTarget,robotHeading,0,null,0,endInDeadband,timeout);
+    }
+    public void moveToPower(float maxPower, double strafeTarget, double straightTarget, double robotHeading, float endPower,ActionCallback action, double actionTarget, long timeout){
+        moveToPower(maxPower,strafeTarget,straightTarget,robotHeading,endPower,action,actionTarget,true,timeout);
+    }
+
+    public double computeDriveHeading(double strafeChange, double straightChange) {
+        if(strafeChange==0){
+            return straightChange>0? 0:180;
+        } else if (straightChange==0) {
+            return strafeChange>0? 90:270;
+        }else {
+            double angle = Math.toDegrees(Math.atan(straightChange / strafeChange));
+            if (straightChange > 0) {
+                if (strafeChange > 0) {
+                    return 90-angle;
+                } else {
+                    return 270-angle;
+                }
+            } else {
+                if (strafeChange > 0) {
+                    return 90-angle;
+                } else {
+                    return 270-angle;
+                }
+            }
+        }
+    }
+
+    public void moveToPower(float maxPower, double strafeTarget, double straightTarget, double robotHeading, float  endPower,ActionCallback action, double actionTarget, boolean endInDeadband, long timeout){
+        teamUtil.log("moveToPower StrafeTarget: " + strafeTarget +  " Straight target: " + straightTarget + " robotH: " + robotHeading + " MaxV: " + maxPower + " EndV: " + endPower + " EndInDeadband: " + endInDeadband);
+        details = true;
+        odo.update();
+        long timeoutTime = System.currentTimeMillis()+timeout;
+        boolean withinThreshold = false;
+        boolean strafeTargetAchieved = false;
+        boolean straightTargetAchieved = false;
+        boolean strafeIncreasing = (strafeTarget - odo.getPosY() > 0);
+        boolean straightIncreasing = (straightTarget - odo.getPosX() > 0);
+        endPower = Math.max(endPower, MIN_END_POWER);
+        double driveHeading;
+        setMotorsRunWithoutEncoder();
+        while(!withinThreshold&&teamUtil.keepGoing(timeoutTime)) {
+            odo.update();
+            double straightChange = straightTarget - odo.getPosX();
+            double strafeChange = strafeTarget - odo.getPosY();
+
+            driveHeading = computeDriveHeading(strafeChange, straightChange);
+            double remainingDistance = Math.sqrt(straightChange * straightChange + strafeChange * strafeChange);
+            float power = Math.min(MOVE_TO_POWER_COEFFICIENT * (float) remainingDistance + endPower, maxPower);
+
+            if(endInDeadband){ // We must be at or near the target
+                if (remainingDistance <= MOVE_TO_THRESHOLD) {
+                    withinThreshold = true;
+                }
+            }else{ // We just need to exceed the targets in both dimensions once
+                strafeTargetAchieved = strafeTargetAchieved || strafeIncreasing ? odo.getPosY() > strafeTarget - MOVE_TO_THRESHOLD : odo.getPosY() < strafeTarget + MOVE_TO_THRESHOLD;
+                straightTargetAchieved = straightTargetAchieved || straightIncreasing ? odo.getPosX() > straightTarget - MOVE_TO_THRESHOLD : odo.getPosX() < straightTarget + MOVE_TO_THRESHOLD;
+                withinThreshold = strafeTargetAchieved && straightTargetAchieved;
+            }
+            driveMotorsHeadingsFRPower(driveHeading, robotHeading, power);
+
+            if (details) {
+                teamUtil.log(String.format("DH: %.1f RH: %.1f Power: %.2f Distance: %.0f X: %.0f Y %.0f", driveHeading, robotHeading, power, remainingDistance, strafeChange, straightChange));
+            }
+        }
+        if(endPower<=MIN_END_POWER){
+            stopMotors();
+            teamUtil.log("Stopping Motors");
+        }
+        teamUtil.log("MoveToPower FINISHED");
+    }
+
 
     // This was developed for CS April Tag Localization.  Might be some stuff here useful for the new "moveTo" odometry pod method
     public void backToPoint(double robotHeading, double x, double y, double endVelocity) { // assumes robot heading is 180

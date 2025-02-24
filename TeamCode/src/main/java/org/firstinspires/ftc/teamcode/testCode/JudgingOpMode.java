@@ -130,9 +130,9 @@ public class JudgingOpMode extends LinearOpMode {
             if ((driverGamepad.wasBPressed()&&teamUtil.alliance == teamUtil.Alliance.RED)&&!robot.intake.autoSeeking.get()) { //Grab Red
                 robot.intake.setTargetColor(OpenCVSampleDetectorV2.TargetColor.RED);
                 if((robot.drive.getHeadingODO()>45&&robot.drive.getHeadingODO()<135)||(robot.drive.getHeadingODO()>225&&robot.drive.getHeadingODO()<315)){
-                    robot.intake.goToSampleAndGrabNoWaitV3(false); // TODO was true for auto unload--switched to false to try intake-only collection
+                    robot.intake.goToSampleAndGrabNoWaitV3(false,false); // TODO was true for auto unload--switched to false to try intake-only collection
                 }else{
-                    robot.intake.goToSampleAndGrabNoWaitV3(false);
+                    robot.intake.goToSampleAndGrabNoWaitV3(false,false);
                 }
             }
             if ((driverGamepad.wasYPressed())&&!robot.intake.autoSeeking.get()) { //Grab Yellow
@@ -140,15 +140,15 @@ public class JudgingOpMode extends LinearOpMode {
                 if((robot.drive.getHeadingODO()>45&&robot.drive.getHeadingODO()<135)||(robot.drive.getHeadingODO()>225&&robot.drive.getHeadingODO()<315)){
                     robot.goToSampleAndGrabAndLiftToBucketNoWait(true);
                 }else{
-                    robot.intake.goToSampleAndGrabNoWaitV3(false);
+                    robot.intake.goToSampleAndGrabNoWaitV3(false,false);
                 }
             }
             if ((driverGamepad.wasXPressed()&&teamUtil.alliance == teamUtil.Alliance.BLUE)&&!robot.intake.autoSeeking.get()) { //Grab Blue
                 robot.intake.setTargetColor(OpenCVSampleDetectorV2.TargetColor.BLUE);
                 if((robot.drive.getHeadingODO()>45&&robot.drive.getHeadingODO()<135)||(robot.drive.getHeadingODO()>225&&robot.drive.getHeadingODO()<315)){
-                    robot.intake.goToSampleAndGrabNoWaitV3(false); // TODO was true for auto unload--switched to false to try intake-only collection
+                    robot.intake.goToSampleAndGrabNoWaitV3(false,false); // TODO was true for auto unload--switched to false to try intake-only collection
                 }else{
-                    robot.intake.goToSampleAndGrabNoWaitV3(false);
+                    robot.intake.goToSampleAndGrabNoWaitV3(false,false);
                 }
             }
 

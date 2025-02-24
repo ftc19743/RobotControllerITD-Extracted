@@ -18,8 +18,9 @@ public class Hang {
     HardwareMap hardwareMap;
     Telemetry telemetry;
 
-    public Servo pulley_left;
-    public Servo pulley_right;
+    public AxonHang hangServos;
+    //public Servo pulley_left;
+    //public Servo pulley_right;
     public Servo hook_grabber;
     public DcMotorEx hang_Right;
     public DcMotorEx hang_Left;
@@ -89,8 +90,10 @@ public class Hang {
 
     public void initalize() {
         teamUtil.log("Initializing Hang");
-        pulley_left = hardwareMap.get(Servo.class,"pulleyleft");
-        pulley_right = hardwareMap.get(Servo.class,"pulleyright");
+        hangServos = new AxonHang();
+        hangServos.init(hardwareMap);
+        //pulley_left = hardwareMap.get(Servo.class,"pulleyleft");
+        //pulley_right = hardwareMap.get(Servo.class,"pulleyright");
         hook_grabber = hardwareMap.get(Servo.class,"hookgrabber");
         ((PwmControl)hook_grabber).setPwmRange(new PwmControl.PwmRange(500,2500)); // expand range on GoBilda Torque Servo
 
@@ -107,14 +110,17 @@ public class Hang {
 
     }
 
+    public static float HANG_SERVOS_CALIBRATE_POWER = .15f;
     public void calibrate(){
         stowHookGrabber();
+        hangServos.calibrate(HANG_SERVOS_CALIBRATE_POWER);
     }
 
 
 
     public void outputTelemetry(){
-        telemetry.addLine("Hang Current Position: " +  hang_Left.getCurrentPosition() + " "+ hang_Right.getCurrentPosition());
+        telemetry.addLine("Hang Spindles: " +  hang_Left.getCurrentPosition() + ", "+ hang_Right.getCurrentPosition());
+        telemetry.addLine("Hang Servos: " +  hangServos.getLPosition() + ", " + hangServos.getRPosition() + "  " + hangServos.lPotentiometer.getVoltage() + ", " + hangServos.rPotentiometer.getVoltage());
     }
 
     public void stowHookGrabber(){
@@ -140,31 +146,79 @@ public class Hang {
     public void extendHang(){
         if (details) teamUtil.log("Extending Hang");
         hangMoving.set(true);
-        pulley_left.setPosition(PULLEYLEFT_EXTEND);
-        pulley_right.setPosition(PULLEYRIGHT_EXTEND);
-
+        hangServos.runToTarget(hangServos.HANG_L_EXTEND, hangServos.HANG_R_EXTEND, false, 2000);
+        //pulley_left.setPosition(PULLEYLEFT_EXTEND);
+        //pulley_right.setPosition(PULLEYRIGHT_EXTEND);
         teamUtil.log("Hang Extended");
         hangMoving.set(false);
     }
 
+    public void extendHangNoWait() {
+        if (hangMoving.get()) {
+            teamUtil.log("WARNING: Attempt to extendHang while Hang is moving--ignored");
+            return;
+        } else {
+            hangMoving.set(true);
+            teamUtil.log("Launching Thread to extendHang");
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    extendHang();
+                }
+            });
+            thread.start();
+        }
+    }
     public void engageHang(){
         if (details) teamUtil.log("Engaging Hang");
         hangMoving.set(true);
-        pulley_left.setPosition(PULLEYLEFT_HANG);
-        pulley_right.setPosition(PULLEYRIGHT_HANG);
-
+        hangServos.runToTarget(hangServos.HANG_L_ENGAGE, hangServos.HANG_R_ENGAGE, true, 2000);
+        //pulley_left.setPosition(PULLEYLEFT_HANG);
+        //pulley_right.setPosition(PULLEYRIGHT_HANG);
         teamUtil.log("Hang Engaged");
         hangMoving.set(false);
     }
-
+    public void engageHangNoWait() {
+        if (hangMoving.get()) {
+            teamUtil.log("WARNING: Attempt to engageHang while Hang is moving--ignored");
+            return;
+        } else {
+            hangMoving.set(true);
+            teamUtil.log("Launching Thread to engageHang");
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    engageHang();
+                }
+            });
+            thread.start();
+        }
+    }
     public void stowHang(){
         if (details) teamUtil.log("Stowing Hang");
         hangMoving.set(true);
-        pulley_left.setPosition(PULLEYLEFT_STOW);
-        pulley_right.setPosition(PULLEYRIGHT_STOW);
+        hangServos.runToTarget(hangServos.HANG_L_STOW, hangServos.HANG_R_STOW, false, 2000);
+        //pulley_left.setPosition(PULLEYLEFT_STOW);
+        //pulley_right.setPosition(PULLEYRIGHT_STOW);
 
         teamUtil.log("Hang Stowed");
         hangMoving.set(false);
+    }
+    public void stowHangNoWait() {
+        if (hangMoving.get()) {
+            teamUtil.log("WARNING: Attempt to stowHang while Hang is moving--ignored");
+            return;
+        } else {
+            hangMoving.set(true);
+            teamUtil.log("Launching Thread to stowHang");
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    stowHang();
+                }
+            });
+            thread.start();
+        }
     }
 
     public void joystickDrive(float x, float y) {
