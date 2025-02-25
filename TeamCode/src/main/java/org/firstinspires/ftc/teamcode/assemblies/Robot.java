@@ -856,8 +856,8 @@ public class Robot {
 
     public void hangPhase2V3(){
         long timeOutTime = System.currentTimeMillis() + 8000;
-        hang.hang_Left.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER); // Assumes 33" of string out
-        hang.hang_Right.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER); // Assumes 39" of string out
+        hang.hang_Left.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER); // Assumes 33.5" of string out
+        hang.hang_Right.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER); // Assumes 39.5" of string out
 
         hang.engageHangV2NoWait();
         teamUtil.pause(Hang.HANG_PHASE_2_ENGAGE_PAUSE); // don't put hooks on bar until we are off of ground
@@ -1060,12 +1060,7 @@ public class Robot {
     public static int A12_3_BUCKET_STRAFE = 500;
     public static int A12_3_BUCKET_HEADING = 315;
 
-
-
-    public void sampleAutoV3 () {
-        drive.setRobotPosition(0,0,0);
-        intake.setTargetColor(OpenCVSampleDetectorV2.TargetColor.YELLOW);
-
+    public void deliver4Samples() {
         outtakeUpandGoToHighBucketNoWait();
         AutoReadyToSeekNoWait(A01_SAMPLE_1_SLIDER, A01_SAMPLE_1_EXTENDER); // move intake out for the grab
 
@@ -1141,7 +1136,71 @@ public class Robot {
 
         BasicDrive.ROTATION_ADJUST_FACTOR_POWER = BasicDrive.ROTATION_ADJUST_FACTOR_POWER*2;
         BasicDrive.STRAIGHT_MAX_DECLINATION = BasicDrive.STRAIGHT_MAX_DECLINATION/2;
-        drive.stopMotors();
+
+    }
+
+    public static float B00_MAX_POWER = 1f;
+    public static float B00_SUB_POWER = .4f;
+    public static float B00_SUB_HOLD_POWER = .2f;
+    public static float B00_ROT_ADJUST = 2f;
+
+    public static int B01_SUB_X = 900;
+    public static int B01_SUB_INITIAL_HEADING = 340;
+    public static int B01_SUB_Y = -250;
+    public static int B01_SUB_HEADING = 270;
+    public static int B01_SUB_BRAKE_PAUSE = 200;
+    public static int B01_SUB_STALL_PAUSE = 250;
+
+    public void bucketToSub() {
+        // chill out rotational adjust for these movements
+        BasicDrive.ROTATION_ADJUST_FACTOR_POWER = BasicDrive.ROTATION_ADJUST_FACTOR_POWER/B00_ROT_ADJUST;
+
+        // Move to sub
+        drive.moveToX(B00_MAX_POWER, B01_SUB_X, B01_SUB_INITIAL_HEADING, B01_SUB_INITIAL_HEADING);
+        drive.moveToY(B00_SUB_POWER, B01_SUB_Y, B01_SUB_HEADING, B01_SUB_HEADING);
+        drive.stopMotors(); // fast braking
+        teamUtil.pause(B01_SUB_BRAKE_PAUSE);
+
+        // Use motors to hold robot against barrier while intaking
+        drive.driveMotorsHeadingsFRPower(B01_SUB_HEADING, B01_SUB_HEADING, B00_SUB_HOLD_POWER);
+        teamUtil.pause(B01_SUB_STALL_PAUSE); // give it a little time to get motionless
+
+        // Restore rotational coefficient
+        BasicDrive.ROTATION_ADJUST_FACTOR_POWER = BasicDrive.ROTATION_ADJUST_FACTOR_POWER*B00_ROT_ADJUST;
+    }
+
+
+    public static int B02_SUB_BACKUP_Y = -250;
+    public static int B02_SUB_BACKUP_HEADING = 90;
+    public static int B02_SUB_BASKET_X1 = 600;
+    public static int B02_SUB_BASKET_HEADING1 = 160;
+    public static int B02_BASKET_BRAKE_PAUSE = 350;
+    public static int B02_MAX_SPEED_NEAR_BUCKET = 2500;
+    public static int B02_END_SPEED_NEAR_BUCKET = 400;
+    public static int B02_CYCLE_BUCKET_STRAIGHT = 90;
+    public static int B02_CYCLE_BUCKET_STRAFE = 500;
+    public static int B02_CYCLE_BUCKET_HEADING = 315;
+
+    public void subToBucket() {
+        // chill out rotational adjust for these movements
+        BasicDrive.ROTATION_ADJUST_FACTOR_POWER = BasicDrive.ROTATION_ADJUST_FACTOR_POWER/B00_ROT_ADJUST;
+
+        drive.moveToY(B00_MAX_POWER, B02_SUB_BACKUP_Y, B02_SUB_BACKUP_HEADING, B01_SUB_HEADING);
+        drive.moveToX(B00_MAX_POWER, B02_SUB_BASKET_X1, B02_SUB_BASKET_HEADING1, (int) drive.adjustAngle(B02_SUB_BASKET_HEADING1+180));
+        drive.stopMotors(); // fast braking
+        teamUtil.pause(B02_BASKET_BRAKE_PAUSE);
+
+        // Restore rotational coefficient for last movement to make sure we are aligned on bucket
+        BasicDrive.ROTATION_ADJUST_FACTOR_POWER = BasicDrive.ROTATION_ADJUST_FACTOR_POWER*B00_ROT_ADJUST;
+        drive.moveTo(B02_MAX_SPEED_NEAR_BUCKET,B02_CYCLE_BUCKET_STRAFE,B02_CYCLE_BUCKET_STRAIGHT,B02_CYCLE_BUCKET_HEADING,B02_END_SPEED_NEAR_BUCKET,null,0, false, 5000);
+        drive.setMotorsActiveBrake();
+
+    }
+
+    public void sampleAutoV3 () {
+        drive.setRobotPosition(0,0,0);
+        intake.setTargetColor(OpenCVSampleDetectorV2.TargetColor.YELLOW);
+        deliver4Samples();
     }
 
     public void sampleAutoUnloadHighBucket(){

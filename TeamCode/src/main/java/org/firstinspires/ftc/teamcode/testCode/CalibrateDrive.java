@@ -397,33 +397,17 @@ public class CalibrateDrive extends LinearOpMode {
             drive.stopMotors();
         }
         if (gamepad1.x) {
-            drive.setRobotPosition(0,0,0);
-            drive.moveTo(testVelocity,120,120,0,750,null,0, false,5000);
-            drive.moveTo(testVelocity,510,80,315,0,null,0, true, 5000);
-
-            drive.moveTo(testVelocity,390,260,347,testEndVelocity,null,0, true, 5000);
-            drive.moveTo(testVelocity,510,80,315,testEndVelocity,null,0, true, 5000);
-            drive.setMotorsActiveBrake();
-
-            drive.moveTo(testVelocity,490,275,0,testEndVelocity,null,0, true, 5000);
-            drive.moveTo(testVelocity,510,80,315,0,null,0, true, 5000);
-
-            drive.moveTo(testVelocity,605,310,0,testEndVelocity,null,0, true, 5000);
-            drive.moveTo(testVelocity,510,240,0,750,null,0, false,5000);
-            drive.moveTo(testVelocity,510,80,315,testEndVelocity,null,0, true, 5000);
-            drive.setMotorsActiveBrake();
-
+            drive.moveToX(testPower, botX, (int) HEADING, (int) HELD_HEADING);
             drive.stopMotors();
-
-            //drive.moveTo(testVelocity,400,0,90,0,null,0,5000);
-            //drive.moveTo(testVelocity,0,0,0,0,null,0,5000);
         }
         if (gamepad1.y) {
-            drive.setRobotPosition(0,0,0);
-            drive.moveTo(testVelocity, 0,1000,0,2000,null,0, false,5000);
-            drive.strafeToTarget(90,0,2000, 100,2000);
-            drive.moveTo(testVelocity, 180,200,0,testEndVelocity,null,0,false,5000);
-            drive.moveTo(testVelocity, 180,1000,0,0,null,0, true,5000);
+            drive.moveToY(testPower, botY, (int) HEADING, (int) HELD_HEADING);
+            drive.stopMotors();
+        }
+        if (gamepad1.a) {
+            drive.moveToX(testPower, botX, (int) HEADING, (int) HELD_HEADING);
+            drive.moveToY(testPower, botY, (int) 270, (int) 270);
+            drive.stopMotors();
         }
     }
 

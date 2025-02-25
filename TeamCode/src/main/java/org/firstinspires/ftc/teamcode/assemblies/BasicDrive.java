@@ -1497,6 +1497,90 @@ public class BasicDrive {
         return true;
     }
 
+    public boolean moveToX (float power, int x, int driveHeading, int robotHeading) {
+        return moveToX(power, x, driveHeading, robotHeading,null, 0, 3000);
+    }
+
+    public boolean moveToX (float power, int x, int driveHeading, int robotHeading, ActionCallback action, double actionTarget, int timeout) {
+        long startTime = System.currentTimeMillis();
+        long timeoutTime = startTime+timeout;
+        odo.update();
+        double startEncoder = odo.getPosX();
+        boolean goingUp;
+        if (x-startEncoder >=0){
+            goingUp = true;
+        }else{
+            goingUp=false;
+        }
+        float headingFactor = goingUp? -1 : 1; // reverse correction for going backwards
+        double totalTics = Math.abs(startEncoder-x);
+        teamUtil.log("moveToX target: " + x + " driveH: " + driveHeading + " robotH: " + robotHeading + " Power: " + power + " TotalMMss: " + totalTics + " Starting Forward Pos: "+ odo.getPosX() + " Starting Strafe Pos: "+ odo.getPosY() + " Starting Heading:" + getHeadingODO());
+        double distanceRemaining = Math.abs(x - odo.getPosX());
+        setMotorsWithEncoder();
+        boolean actionDone = false;
+        double currentPos;
+        while ((distanceRemaining > 0) && teamUtil.keepGoing(timeoutTime)) {
+            odo.update();
+            currentPos = odo.getPosX();
+            distanceRemaining = (!goingUp) ? currentPos-x : x - currentPos;
+            if(details)teamUtil.log("Cruising at Power: "+ power + " MMs Remaining: " + distanceRemaining);
+            driveMotorsHeadingsFRPower(driveHeading, robotHeading, power);
+            if(action!=null&&!actionDone&&((goingUp&&currentPos>=actionTarget)||(!goingUp&&currentPos<=actionTarget))){
+                action.action();
+                actionDone=true;
+            }
+        }
+        if(System.currentTimeMillis()>timeoutTime){
+            teamUtil.log("TIMEOUT Triggered");
+            stopMotors();
+            return false;
+        }
+        teamUtil.log("moveToX--Finished.  Current Forward Pos:" + odo.getPosX());
+        return true;
+    }
+
+    public boolean moveToY (float power, int y, int driveHeading, int robotHeading) {
+        return moveToY(power, y, driveHeading, robotHeading,null, 0, 3000);
+    }
+
+    public boolean moveToY (float power, int y, int driveHeading, int robotHeading, ActionCallback action, double actionTarget, int timeout) {
+        long startTime = System.currentTimeMillis();
+        long timeoutTime = startTime+timeout;
+        odo.update();
+        double startEncoder = odo.getPosY();
+        boolean goingUp;
+        if (y-startEncoder >=0){
+            goingUp = true;
+        }else{
+            goingUp=false;
+        }
+        double totalTics = Math.abs(startEncoder-y);
+        teamUtil.log("moveToY target: " + y + " driveH: " + driveHeading + " robotH: " + robotHeading + " Power: " + power + " TotalMMss: " + totalTics + " Starting Forward Pos: "+ odo.getPosX() + " Starting Strafe Pos: "+ odo.getPosY() + " Starting Heading:" + getHeadingODO());
+        double distanceRemaining = Math.abs(y - odo.getPosY());
+        setMotorsWithEncoder();
+        boolean actionDone = false;
+        double currentPos;
+        while ((distanceRemaining > 0) && teamUtil.keepGoing(timeoutTime)) {
+            odo.update();
+            currentPos = odo.getPosY();
+            distanceRemaining = (!goingUp) ? currentPos-y : y - currentPos;
+            if(details)teamUtil.log("Cruising at Power: "+ power + " MMs Remaining: " + distanceRemaining);
+            driveMotorsHeadingsFRPower(driveHeading, robotHeading, power);
+            if(action!=null&&!actionDone&&((goingUp&&currentPos>=actionTarget)||(!goingUp&&currentPos<=actionTarget))){
+                action.action();
+                actionDone=true;
+            }
+        }
+        if(System.currentTimeMillis()>timeoutTime){
+            teamUtil.log("TIMEOUT Triggered");
+            stopMotors();
+            return false;
+        }
+        teamUtil.log("moveToY--Finished.  Current Forward Pos:" + odo.getPosY());
+        return true;
+    }
+
+
     // Strafe straight left or right while attempting to hold the forward encoder at a specific value
     // Robot heading should be 0,90,180, or 270.  Drive Heading will be determined by the target
     public boolean strafeHoldingStraightPower(float power, double strafeTarget, double straightTarget, int robotHeading) {
