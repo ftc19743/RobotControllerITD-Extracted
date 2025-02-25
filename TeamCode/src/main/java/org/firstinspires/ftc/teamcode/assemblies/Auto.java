@@ -225,6 +225,7 @@ public class Auto extends LinearOpMode {
         while (opModeIsActive()) {}
 
         teamUtil.justRanAuto = true; // avoid recalibration at start of teleop
+        //TODO stop sample opMode right after its done dont wait
     }
 }
 

@@ -8,7 +8,6 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.RobotLog;
 
-import org.firstinspires.ftc.teamcode.assemblies.AxonSlider;
 import org.firstinspires.ftc.teamcode.assemblies.Intake;
 import org.firstinspires.ftc.teamcode.assemblies.Output;
 import org.firstinspires.ftc.teamcode.assemblies.Robot;
@@ -186,7 +185,7 @@ public class testAutoPaths extends LinearOpMode {
                 }
                 if (driverGamepad.wasRightPressed()) {
                     long startTime = System.currentTimeMillis();
-                    robot.bucketToSub();
+                    robot.bucketToSub(true);
                     elapsedTime = System.currentTimeMillis() - startTime;
                     teamUtil.pause(500);
                     robot.drive.stopMotors();
@@ -200,10 +199,15 @@ public class testAutoPaths extends LinearOpMode {
                 }
 
                 if(driverGamepad.wasUpPressed()){
-                    robot.autoGoToLoad(3000);
+                    long startTime = System.currentTimeMillis();
+                    // robot.bucketCycle();
+                    robot.autoAscentPark();
+                    elapsedTime = System.currentTimeMillis() - startTime;
+                    teamUtil.pause(500);
+                    robot.drive.stopMotors();
                 }
                 if(driverGamepad.wasDownPressed()){
-                    robot.sampleAutoUnloadHighBucket();
+                    robot.sampleAutoUnloadHighBucket(false);
                 }
                 if(driverGamepad.wasBPressed()){
                     robot.intake.setTargetColor(OpenCVSampleDetectorV2.TargetColor.YELLOW);

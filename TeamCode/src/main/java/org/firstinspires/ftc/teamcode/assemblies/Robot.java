@@ -1084,7 +1084,7 @@ public class Robot {
 
         // Grab and unload (counting on bucket to be at the bottom by the time we get there!
         boolean grabbedSample=intake.autoGoToSampleAndGrabV3(false,false,true);
-        sampleAutoUnloadHighBucketNoWait();
+        sampleAutoUnloadHighBucketNoWait(false);
 
         drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,A07_2_BUCKET_STRAFE,A07_2_BUCKET_STRAIGHT,A07_2_BUCKET_HEADING,A00_END_SPEED,null,0, false, 5000);
         AutoReadyToSeekNoWait(A02_SAMPLE_2_SLIDER, A02_SAMPLE_2_EXTENDER); // move intake out for the next grab
@@ -1101,8 +1101,8 @@ public class Robot {
         drive.stopMotors();
         teamUtil.pause(A08_2_BRAKE_PAUSE);
         // Grab and unload (counting on bucket to be at the bottom by the time we get there!
-        grabbedSample=intake.goToSampleAndGrabV3(false, false,true);
-        sampleAutoUnloadHighBucketNoWait();
+        grabbedSample=intake.autoGoToSampleAndGrabV3(false, false,true);
+        sampleAutoUnloadHighBucketNoWait(false);
 
         drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,A09_3_BUCKET_STRAFE,A09_3_BUCKET_STRAIGHT,A09_3_BUCKET_HEADING,A00_END_SPEED,null,0, false, 5000);
         AutoReadyToSeekNoWait(A03_SAMPLE_3_SLIDER, A03_SAMPLE_3_EXTENDER); // move intake out for the next grab
@@ -1122,8 +1122,8 @@ public class Robot {
         // Grab and unload (counting on bucket to be at the bottom by the time we get there!
 
 
-        grabbedSample=intake.goToSampleAndGrabV3(false, false,true);
-        sampleAutoUnloadHighBucketNoWait();
+        grabbedSample=intake.autoGoToSampleAndGrabV3(false, false,true);
+        sampleAutoUnloadHighBucketNoWait(false);
 
         drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,A11_3_PRE_BUCKET_STRAFE,A11_3_PRE_BUCKET_STRAIGHT,A11_3_PRE_BUCKET_HEADING,A00_TRANSITION_SPEED,null,0, false, 5000);
         drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,A12_3_BUCKET_STRAFE,A12_3_BUCKET_STRAIGHT,A12_3_BUCKET_HEADING,A00_END_SPEED,null,0, false, 5000);
@@ -1150,13 +1150,16 @@ public class Robot {
     public static int B01_SUB_HEADING = 270;
     public static int B01_SUB_BRAKE_PAUSE = 200;
     public static int B01_SUB_STALL_PAUSE = 250;
+    public static int B01_EXTENDER_POS = 250;
+    public static int B01_SLIDER_POS = (int) AxonSlider.SLIDER_READY;
 
-    public void bucketToSub() {
+    public void bucketToSub(boolean launchIntake) {
         // chill out rotational adjust for these movements
         BasicDrive.ROTATION_ADJUST_FACTOR_POWER = BasicDrive.ROTATION_ADJUST_FACTOR_POWER/B00_ROT_ADJUST;
 
         // Move to sub
         drive.moveToX(B00_MAX_POWER, B01_SUB_X, B01_SUB_INITIAL_HEADING, B01_SUB_INITIAL_HEADING);
+        if(launchIntake) AutoReadyToSeekNoWait(B01_SLIDER_POS, B01_EXTENDER_POS);
         drive.moveToY(B00_SUB_POWER, B01_SUB_Y, B01_SUB_HEADING, B01_SUB_HEADING);
         drive.stopMotors(); // fast braking
         teamUtil.pause(B01_SUB_BRAKE_PAUSE);
@@ -1165,6 +1168,7 @@ public class Robot {
         drive.driveMotorsHeadingsFRPower(B01_SUB_HEADING, B01_SUB_HEADING, B00_SUB_HOLD_POWER);
         teamUtil.pause(B01_SUB_STALL_PAUSE); // give it a little time to get motionless
 
+
         // Restore rotational coefficient
         BasicDrive.ROTATION_ADJUST_FACTOR_POWER = BasicDrive.ROTATION_ADJUST_FACTOR_POWER*B00_ROT_ADJUST;
     }
@@ -1172,9 +1176,10 @@ public class Robot {
 
     public static int B02_SUB_BACKUP_Y = -250;
     public static int B02_SUB_BACKUP_HEADING = 90;
-    public static int B02_SUB_BASKET_X1 = 600;
-    public static int B02_SUB_BASKET_HEADING1 = 160;
-    public static int B02_BASKET_BRAKE_PAUSE = 350;
+    public static int B02_SUB_BASKET_X1 = 570; //maybe use 550
+    public static int B02_SUB_BASKET_HEADING1 = 176;//was 160
+    public static int B02_SUB_BASKET_HEADING2 = 315;
+    public static int B02_BASKET_BRAKE_PAUSE = 200;
     public static int B02_MAX_SPEED_NEAR_BUCKET = 2500;
     public static int B02_END_SPEED_NEAR_BUCKET = 400;
     public static int B02_CYCLE_BUCKET_STRAIGHT = 90;
@@ -1185,8 +1190,9 @@ public class Robot {
         // chill out rotational adjust for these movements
         BasicDrive.ROTATION_ADJUST_FACTOR_POWER = BasicDrive.ROTATION_ADJUST_FACTOR_POWER/B00_ROT_ADJUST;
 
+
         drive.moveToY(B00_MAX_POWER, B02_SUB_BACKUP_Y, B02_SUB_BACKUP_HEADING, B01_SUB_HEADING);
-        drive.moveToX(B00_MAX_POWER, B02_SUB_BASKET_X1, B02_SUB_BASKET_HEADING1, (int) drive.adjustAngle(B02_SUB_BASKET_HEADING1+180));
+        drive.moveToX(B00_MAX_POWER, B02_SUB_BASKET_X1, B02_SUB_BASKET_HEADING1, (int) drive.adjustAngle(B02_SUB_BASKET_HEADING2));
         drive.stopMotors(); // fast braking
         teamUtil.pause(B02_BASKET_BRAKE_PAUSE);
 
@@ -1197,23 +1203,63 @@ public class Robot {
 
     }
 
+    public void autoAscentPark(){
+        bucketToSub(false);
+        drive.stopMotors();
+        outtake.setArmLevelOneAscent();
+    }
+
+    public void bucketCycle(){
+        bucketToSub(true);
+        boolean grabbedSample = intake.autoGoToSampleAndGrabV3(false,false,true);
+        sampleAutoUnloadHighBucketNoWait(true);
+        subToBucket();
+        liftAtTop(2000);
+        output.bucket.setPosition(Output.BUCKET_DEPLOY_AT_TOP);
+        teamUtil.pause(A03_DROP_TIME);
+        autoGoToLoadNoWait(3000);
+
+    }
+
+    public static long Z0_TIME_LEFT_FOR_CYCLE = 100000;
+
     public void sampleAutoV3 () {
+        long startTime = System.currentTimeMillis();
         drive.setRobotPosition(0,0,0);
         intake.setTargetColor(OpenCVSampleDetectorV2.TargetColor.YELLOW);
         deliver4Samples();
+        if(System.currentTimeMillis()-startTime<Z0_TIME_LEFT_FOR_CYCLE){
+            bucketCycle();
+            if(System.currentTimeMillis()-startTime<25000){
+                autoAscentPark();
+            }
+            else{
+                teamUtil.log("No time left to park or cycle");
+            }
+        }
+        else{
+            teamUtil.log("No Time For Cycling");
+        }
+
     }
 
-    public void sampleAutoUnloadHighBucket(){
-        intake.retractAll(true,4000);
+    public void sampleAutoUnloadHighBucket(boolean safeTransfer){
+        if(safeTransfer){
+            intake.retractAll(false,4000);
+            intake.safeUnload();
+        }
+        else{
+            intake.retractAll(true,4000);
+        }
         output.outputHighBucket(3000);
     }
 
-    public void sampleAutoUnloadHighBucketNoWait() {
+    public void sampleAutoUnloadHighBucketNoWait(boolean safeTransfer) {
         teamUtil.log("Thread to sampleAutoUnloadHighBucket LAUNCHED");
             Thread thread = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    sampleAutoUnloadHighBucket();
+                    sampleAutoUnloadHighBucket(safeTransfer);
                 }
             });
             thread.start();
