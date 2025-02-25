@@ -133,6 +133,7 @@ public class Intake {
     static public float SWEEPER_EXPAND = 0.59f;
     static public float SWEEPER_GRAB = 0.525f;
     static public float SWEEPER_RELEASE = .95f;
+    static public float SWEEPER_STOW = .95f;
     static public float SWEEPER_VERTICAL_READY = 0.5f;
 
     /* Values with potentiometer--WAITING TO HEAR FROM AXON ON THIS
@@ -152,6 +153,7 @@ public class Intake {
     /* Values without potentiometer */
     static public float GRABBER_READY = 0.25f; //No Pot .25f
     static public float GRABBER_GRAB = 0.655f; // No Pot .64f
+    static public float GRABBER_STOW = 0.75f;
     static public float GRABBER_RELEASE = .17f; // No Pot .63f TODO: Is this really the right value? Almost the same as grab?
     static public long GRABBER_UNLOAD_PAUSE = 0; // No Pot .63f TODO: Is this really the right value? Almost the same as grab?
 
@@ -415,6 +417,13 @@ public class Intake {
         stopCVPipeline();
         teamUtil.pause(100);
         startCVPipeline();
+    }
+
+
+    public void flipperGoToStow() {
+        flipper.setPosition(FLIPPER_UNLOAD);
+        sweeper.setPosition(SWEEPER_STOW);
+        grabber.setPosition(GRABBER_STOW);
     }
 
     public boolean flipperGoToSeek(long timeout){

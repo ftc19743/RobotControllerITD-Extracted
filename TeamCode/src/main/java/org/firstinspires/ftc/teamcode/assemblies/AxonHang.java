@@ -158,9 +158,9 @@ public class AxonHang {
         moving.set(false);
         if (System.currentTimeMillis() > timeoutTime) {
             timedOut.set(true);
-            teamUtil.log("Slider runToTarget TIMED OUT: " + getLPosition() + ", " + getRPosition());
+            teamUtil.log("Axon Hang runToTarget TIMED OUT: " + getLPosition() + ", " + getRPosition());
         } else {
-            teamUtil.log("Slider runToTarget Finished at : " + getLPosition() + ", " + getRPosition());
+            teamUtil.log("Axon Hang runToTarget Finished at : " + getLPosition() + ", " + getRPosition());
         }
     }
 

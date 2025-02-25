@@ -876,7 +876,7 @@ public class Robot {
         while (teamUtil.keepGoing(timeOutTime) &&
                 (Hang.HANG_TENSION_L - hang.hang_Left.getCurrentPosition() > 50 ||
                  Hang.HANG_TENSION_R - hang.hang_Right.getCurrentPosition() > 50 ))  {
-            dropLiftWhenNeeded();
+            hangPhase2DelayedOps();
             if (details) {teamUtil.log("Hangleft: " + hang.hang_Left.getCurrentPosition()+ " HangRight: "+ hang.hang_Right.getCurrentPosition());}
             teamUtil.pause(50);
         }
@@ -940,7 +940,30 @@ public class Robot {
             hookArmMoved = true;
             hang.deployHookGrabber();
         }
+    }
 
+    boolean bucketRotated = false;
+    public void rotateBucketWhenNeeded() {
+        if (!bucketRotated && hang.hang_Right.getCurrentPosition() > Hang.BUCKET_ROTATE_DURING_TENSION ) {
+            bucketRotated = true;
+            output.bucket.setPosition(Output.BUCKET_DEPLOY_AT_BOTTOM);
+        }
+    }
+
+    boolean flipperStowed = false;
+    public void stowFlipperWhenNeeded() {
+        if (!flipperStowed && hang.hang_Left.getCurrentPosition() > Hang.STOW_FLIPPER ) {
+            flipperStowed = true;
+            intake.flipperGoToStow();
+        }
+    }
+
+    public void hangPhase2DelayedOps() {
+        rotateBucketWhenNeeded();
+        dropLiftWhenNeeded();
+        stowFlipperWhenNeeded();
+        stowHangWhenNeeded();
+        moveHookArmWhenNeeded();
     }
 
     public static float LIFT_PICKUP_HOOKS_POWER_1 = 0.5f;
@@ -949,7 +972,7 @@ public class Robot {
     public void pickUpHooks(){
         intake.flipper.setPosition(Intake.FLIPPER_SAFE);
         intake.grab();
-        outtake.outakearm.setPosition(Outtake.ARM_ENGAGE);
+        outtake.outakearm.setPosition(Outtake.ARM_LEVEL_THREE_ASCENT);
 
         output.lift.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         output.lift.setPower(LIFT_PICKUP_HOOKS_POWER_1);

@@ -36,6 +36,7 @@ public class Outtake {
     static public float ARM_START = 0.85f;
     static public float ARM_LEVEL_ONE_ASCENT = 0.13f;
     static public double POTENTIOMETER_WRIST_DEPLOY = 2.2;
+    static public float ARM_LEVEL_THREE_ASCENT = 0.13f;
 
 
 

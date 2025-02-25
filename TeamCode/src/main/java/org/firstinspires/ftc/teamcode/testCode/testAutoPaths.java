@@ -251,9 +251,8 @@ public class testAutoPaths extends LinearOpMode {
                     robot.hang.hang_Right.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                 }
                 robot.hang.joystickDriveV2(gamepad1.left_stick_x, gamepad1.left_stick_y);
-                robot.dropLiftWhenNeeded();
-                robot.stowHangWhenNeeded();
-                //robot.moveHookArmWhenNeeded();
+                robot.hangPhase2DelayedOps();
+
                 //teamUtil.log("Hangleft: " + robot.hang.hang_Left.getCurrentPosition()+ " Hangright: "+ robot.hang.hang_Right.getCurrentPosition());
                 telemetry.addLine("Hangleft: " + robot.hang.hang_Left.getCurrentPosition() + " Hangright: " + robot.hang.hang_Right.getCurrentPosition());
 

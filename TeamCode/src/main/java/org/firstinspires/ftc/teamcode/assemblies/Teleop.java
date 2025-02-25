@@ -281,13 +281,11 @@ public class Teleop extends LinearOpMode {
 
             if(hangManualControl){
 
-
                 robot.drive.stopMotors();
                 robot.hang.joystickDriveV2(gamepad1.left_stick_x, gamepad1.left_stick_y);
                 telemetry.addLine("Hangleft: " + robot.hang.hang_Left.getCurrentPosition()+ " Hangright: "+ robot.hang.hang_Right.getCurrentPosition());
-                robot.dropLiftWhenNeeded();
-                robot.stowHangWhenNeeded();
-                robot.moveHookArmWhenNeeded();
+                robot.hangPhase2DelayedOps();
+
                 //break out
                 if(driverGamepad.wasHomePressed()){
                     hangManualControl=false;

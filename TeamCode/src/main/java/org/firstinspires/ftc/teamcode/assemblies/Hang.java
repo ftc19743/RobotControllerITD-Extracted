@@ -53,9 +53,11 @@ public class Hang {
     public static int HANG_TENSION_THRESHOLD= 200;
     public static int HANG_STOWED_ON_WAY_UP= 3410;
     public static int HOOK_ARM_MOVED_ON_WAY_UP = 6136;
+    public static int BUCKET_ROTATE_DURING_TENSION = 2500;
+    public static int STOW_FLIPPER = 5000;
 
     public static int HANG_TENSION_L = 2122;//was 1600
-    public static int HANG_TENSION_R = 3222;//was 2798
+    public static int HANG_TENSION_R = 3400;//was 3222  was 2798
     public static int HANG_LEVEL_3_L = 8024;//5884
     public static int HANG_LEVEL_3_R = 9325;//6838
 
