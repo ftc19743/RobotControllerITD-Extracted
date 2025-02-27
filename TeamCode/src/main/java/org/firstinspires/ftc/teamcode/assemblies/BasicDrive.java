@@ -337,7 +337,8 @@ public class BasicDrive {
 
     // drive the motors at the specified (robot relative) at the specified velocity while holding the (robot relative) robot heading
     // power is 0-1
-    public static float ROTATION_ADJUST_FACTOR_POWER = 0.1f;
+    public static float ROTATION_ADJUST_FACTOR_POWER = 0.05f;
+    public static boolean newDrivePowerAlgo = false;
     public void driveMotorsHeadingsPower(double driveHeading, double robotHeading, double power) {
         // move robot based on a heading to face and a heading to drive to
         float flV, frV, blV, brV;
@@ -349,20 +350,33 @@ public class BasicDrive {
         float rotationAdjust = (float)(ROTATION_ADJUST_FACTOR_POWER *  headingError * power); // scale based on amount of rotational error and power
         if(details) teamUtil.log("Params: DriveHeading: " +driveHeading + " RobotHeading: " + robotHeading + " Power: " + power + " RobotHeadingError: " + headingError +  " IMUHeading: " + getHeading() + " ODOHeading: " + getHeadingODO()+ " RotAdjust: " + rotationAdjust);
 
-        // Covert heading to cartesian on the unit circle and scale so largest value is 1
-        // This is essentially creating joystick values from the heading
-        // driveHeading is relative to robot at this point since the wheels are relative to robot!
-        x = Math.cos(Math.toRadians(driveHeading + 90)); // + 90 cause forward is 0...
-        y = Math.sin(Math.toRadians(driveHeading + 90));
-        scale = 1 / Math.max(Math.abs(x), Math.abs(y));
-        x = x * scale * power; // Then set proportional to commanded power
-        y = y * scale * power;
 
-        // Clip to motor power range
-        flV = (float) Math.max(-1.0, Math.min(x + y, 1.0)) ;
-        brV = flV;
-        frV = (float) Math.max(-1.0, Math.min(y - x, 1.0)) ;
-        blV = frV;
+        if (newDrivePowerAlgo) {
+            // The new stuff
+            x = Math.cos(Math.toRadians(driveHeading + 90)); // + 90 cause forward is 0...
+            y = Math.sin(Math.toRadians(driveHeading + 90));
+            // adjust so x+y and x-y are between -1 and 1 but retain their ratio
+            scale = 1 / Math.max(Math.abs(x + y), Math.abs(y - x));
+            flV = (float) ((x + y) * scale * power);
+            brV = flV;
+            frV = (float) ((y - x) * scale * power);
+            blV = frV;
+        } else {
+            // The old stuff
+            // Covert heading to cartesian on the unit circle and scale so largest value is 1
+            // This is essentially creating joystick values from the heading
+            // driveHeading is relative to robot at this point since the wheels are relative to robot!
+            x = Math.cos(Math.toRadians(driveHeading + 90)); // + 90 cause forward is 0...
+            y = Math.sin(Math.toRadians(driveHeading + 90));
+            scale = 1 / Math.max(Math.abs(x), Math.abs(y));
+            x = x * scale * power; // Then set proportional to commanded power
+            y = y * scale * power;
+            // Clip to motor power range
+            flV = (float) Math.max(-1.0, Math.min(x + y, 1.0)) ;
+            brV = flV;
+            frV = (float) Math.max(-1.0, Math.min(y - x, 1.0)) ;
+            blV = frV;
+        }
         if(details) teamUtil.log("Powers before rot adjust: FLV/BRV: " + flV + " FRV/BLV: " + frV);
 
         // Adjust for rotational drift

@@ -638,12 +638,12 @@ public class Intake {
     }
 
     // This uses a different version of flipToSampleAndGrab to avoid interference on the potentiometer while the drive motors are energized
-    public boolean autoGoToSampleAndGrabV3(boolean unload,boolean retract,boolean phase1){
+    public boolean autoGoToSampleAndGrabV3(boolean unload,boolean retract,boolean phase1, long timeout){
         autoSeeking.set(true);
         teamUtil.log("Launched Auto GoToSample and Grab" );
         timedOut.set(false);
         long timeOutTime = System.currentTimeMillis() + 1000;
-        if(goToSampleV5(3000,phase1) && !timedOut.get()) {
+        if(goToSampleV5(timeOutTime,phase1) && !timedOut.get()) {
             long loopStartTime = System.currentTimeMillis();
             //TODO: This looks like a bug...setToPreGrabTime
             while( System.currentTimeMillis()-setToPreGrabTime <FLIPPER_SEEK_TO_PRE_GRAB_TIME && teamUtil.keepGoing(timeOutTime)){
@@ -900,7 +900,7 @@ public class Intake {
         teamUtil.log("Processor State" + arduPortal.getProcessorEnabled(sampleDetector));
         long timeoutTime = System.currentTimeMillis() + timeOut;
         long startTime = System.currentTimeMillis();
-        OpenCVSampleDetectorV2.FrameData frame = null;
+        OpenCVSampleDetectorV2.FrameData frameData = null;
 
         lightsOnandOff(WHITE_NEOPIXEL,RED_NEOPIXEL,GREEN_NEOPIXEL,BLUE_NEOPIXEL,true);
         setSeekSignal();
@@ -915,18 +915,18 @@ public class Intake {
         waitForArmatureStop(1000);
         // Process one frame (and one frame only--even if nothing is detected)
         // leave processor running in case we need to do a phase 1 seek
-        frame = sampleDetector.processNextFrame(false, false, false, timeOut);
+        frameData = sampleDetector.processNextFrame(false, false, false, timeOut);
 
-        if(frame==null&&phase1){ // did not see anything so move forward to try and find one (Phase 1)
+        if(frameData==null&&phase1){ // did not see anything so move forward to try and find one (Phase 1)
             teamUtil.log("GoToSampleV5--No initial detection--moving forward");
             // Move extender out until we see a target
             extender.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
             extender.setTargetPositionTolerance(EXTENDER_TOLERANCE_SEEK);
             extender.setVelocity(EXTENDER_SEEK_PHASE1_VELOCITY);
 
-            while(teamUtil.keepGoing(timeoutTime) && frame==null && extender.getCurrentPosition()<EXTENDER_MAX-10) {
+            while(teamUtil.keepGoing(timeoutTime) && frameData==null && extender.getCurrentPosition()<EXTENDER_MAX-10) {
                 teamUtil.pause(30); // TODO: We need to worry about a detection outside our horizontal target range
-                frame = sampleDetector.frameDataQueue.peek();
+                frameData = sampleDetector.frameDataQueue.peek();
             }
             if(System.currentTimeMillis()>timeoutTime){
                 teamUtil.log("SampleV5 Phase 1 TIMED OUT");
@@ -939,9 +939,9 @@ public class Intake {
 
             extender.setVelocity(0);
             teamUtil.pause(300); // let extenders come to a stop TODO: Is this enough time?
-            frame = sampleDetector.processNextFrame(false, true, false, timeOut);
+            frameData = sampleDetector.processNextFrame(false, true, false, timeOut);
 
-            if(frame==null){
+            if(frameData==null){
                 teamUtil.log("No Detection in Phase 1 search.  Giving up.");
                 extender.setVelocity(0);
                 moving.set(false);
@@ -960,16 +960,16 @@ public class Intake {
         extender.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
         teamUtil.theBlinkin.setSignal(Blinkin.Signals.NORMAL_WHITE); // signal that we are now jumping
         while (teamUtil.keepGoing(timeoutTime)) {
-            if(frame==null){
+            if(frameData==null){
                 teamUtil.log("Failed to Detect Sample During Jumps");
                 moving.set(false);
                 teamUtil.theBlinkin.setSignal(Blinkin.Signals.OFF);
                 stopCVPipeline();
                 return false;
             }
-            teamUtil.log("Target Frame:" + sampleDetector.frameString(frame));
+            teamUtil.log("Target Frame:" + sampleDetector.frameString(frameData));
             //boolean lastJumpStartedInGrabZone = inGrabZone(frame.rectCenterXOffset, frame.rectCenterYOffset);
-            boolean lastJumpStartedInGrabZone = inGrabZone(frame.adjRectCenterXOffset, frame.adjRectCenterYOffset);
+            boolean lastJumpStartedInGrabZone = inGrabZone(frameData.adjRectCenterXOffset, frameData.adjRectCenterYOffset);
             if (lastJumpStartedInGrabZone) {
                 teamUtil.log("Starting Jump IN Grab Zone; Setting Flipper Down To Pre Grab");
                 // flipper is moved to pre-grab inside of jumpToSampleV5()!
@@ -978,7 +978,7 @@ public class Intake {
                 teamUtil.log("Starting Jump OUTSIDE Grab Zone");
             }
             //if (!jumpToSampleV5(frame.rectCenterXOffset, frame.rectCenterYOffset, frame.rectAngle, 2000)) {
-            if (!jumpToSampleV5(frame.adjRectCenterXOffset, frame.adjRectCenterYOffset, frame.rectAngle, 2000, lastJumpStartedInGrabZone)) {
+            if (!jumpToSampleV5(frameData.adjRectCenterXOffset, frameData.adjRectCenterYOffset, frameData.rectAngle, 2000, lastJumpStartedInGrabZone)) {
                  // We failed, clean up and bail out
                  moving.set(false);
                  stopCVPipeline();
@@ -990,7 +990,7 @@ public class Intake {
                  break;
              }
             teamUtil.pause(GO_TO_SAMPLE_JUMP_PAUSE);// let actuators settle down before we grab the next CV result
-            frame = sampleDetector.processNextFrame(false, true, false, timeOut);
+            frameData = sampleDetector.processNextFrame(false, true, false, timeOut);
         }
         stopCVPipeline();
         moving.set(false);

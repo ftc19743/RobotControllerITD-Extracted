@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.assemblies.BasicDrive;
+import org.firstinspires.ftc.teamcode.assemblies.Outtake;
 import org.firstinspires.ftc.teamcode.libs.TeamGamepad;
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
 
@@ -31,6 +32,8 @@ public class CalibrateDrive extends LinearOpMode {
 
 
     public enum Ops {Test_Wiring,
+        Test_Rot_Bug,
+        Test_Power_Consumption,
         Move_No_Acc_Heading,
         Move_Power_No_Acc_Heading,
         Move_No_Acc_With_Heading,
@@ -140,6 +143,10 @@ public class CalibrateDrive extends LinearOpMode {
                 testMoveTo2();
             } else if (AAOP==Ops.Reverse_Test){
                 reverseTest();
+            } else if (AAOP==Ops.Test_Rot_Bug){
+                testRotBug();
+            } else if (AAOP==Ops.Test_Power_Consumption) {
+                testPowerConsumption();
             }
 
             // Drawing stuff on the field
@@ -164,6 +171,56 @@ public class CalibrateDrive extends LinearOpMode {
             //sleep(20);
         }
     }
+
+    public void testRotBug() {
+        if (gamepad1.dpad_up) {
+            BasicDrive.newDrivePowerAlgo = true;
+        }
+        if (gamepad1.dpad_down) {
+            BasicDrive.newDrivePowerAlgo = false;
+        }
+        if (gamepad1.x) {
+            float strafeMaxDeclination = BasicDrive.STRAFE_MAX_DECLINATION; // save for later
+            BasicDrive.STRAFE_MAX_DECLINATION = 35;
+            drive.strafeHoldingStraightPower(testPower, 112 - 300, 500, 0, null, 0, 5000);
+            BasicDrive.STRAFE_MAX_DECLINATION = strafeMaxDeclination;
+            drive.stopMotors();
+        }
+        telemetry.addLine("New Algo: " + BasicDrive.newDrivePowerAlgo);
+    }
+
+    public void testPowerConsumption () {
+        if (gamepad1.dpad_up) {
+            drive.straightHoldingStrafePower(testPower, botX, 0, 0);
+            drive.straightHoldingStrafePower(testPower, 0, 0, 0);
+        } if (gamepad1.dpad_down) {
+            drive.straightHoldingStrafePower(testPower, botX, 0, 0);
+            drive.setMotorsBrake();
+            drive.stopMotors();
+            teamUtil.pause(POWER_REVERSE_BRAKING_PAUSE1);
+            drive.straightHoldingStrafePower(testPower, 0, 0, 0);
+            drive.setMotorsBrake();
+            drive.stopMotors();
+            teamUtil.pause(POWER_REVERSE_BRAKING_PAUSE1);
+        } if (gamepad1.dpad_right) {
+            drive.straightHoldingStrafePower(testPower, botX, 0, 0);
+            drive.setMotorsActiveBrake();
+            teamUtil.pause(POWER_REVERSE_BRAKING_PAUSE1);
+            drive.setMotorsWithEncoder();
+            drive.straightHoldingStrafePower(testPower, 0, 0, 0);
+            drive.setMotorsActiveBrake();
+            teamUtil.pause(POWER_REVERSE_BRAKING_PAUSE1);
+            drive.setMotorsWithEncoder();
+        } else if (gamepad1.dpad_left) {
+            drive.straightHoldingStrafePower(testPower, botX-400, 0, 0);
+            drive.strafeHoldingStraightPower(testPower, botY-300, botX, 0);
+            drive.straightHoldingStrafePower(testPower, 400, botY, 0);
+            drive.strafeHoldingStraightPower(testPower, 300, 0, 0);
+        } else {
+            drive.stopMotors();
+        }
+    }
+
 
     public static int REVERSE_BRAKING_PAUSE1= 150;
     public void reverseTest() {

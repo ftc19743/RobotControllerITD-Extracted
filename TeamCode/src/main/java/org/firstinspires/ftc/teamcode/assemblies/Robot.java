@@ -81,6 +81,7 @@ public class Robot {
     static public long DROP_SAMPLE_OUT_BACK_WITH_FLIPPER_RESET_2 = 300;
 
     public static float G00_MAX_POWER = 1f;
+    public static float G00_SAFE_POWER = 0.9f;
     public static int G0a_FAST_STRAFE_ADJUST = 300;
     public static int G0a_FAST_STRAIGHT_ADJUST1 = 200;
     public static int G0a_FAST_REVERSE_ADJUST = 0;
@@ -337,6 +338,8 @@ public class Robot {
     static public float G01_SPECIMEN1_END_POWER = .3f;
     static public float G01_SPECIMEN1_GRAB_POWER = .4f;
 
+    public boolean successfullyGrabbedSample = false;
+
     public boolean placeFirstSpecimenV2(boolean grab) {
         teamUtil.log("Place First Specimen V2");
         outtake.deployArm();
@@ -350,15 +353,19 @@ public class Robot {
             drive.straightHoldingStrafePower(G00_MAX_POWER, G01_PLACE_AND_GRAB_SPECIMEN1_X, G01_PLACE_SPECIMEN1_Y, 0);
             drive.driveMotorsHeadingsFRPower(180, 0, G01_PLACE_AND_GRAB_REVERSE_POWER); // reverse motors to decelerate quickly
             teamUtil.pause(G01_SPECIMEN1_PAUSE3); // give it time to decelerate
-            drive.driveMotorsHeadingsFRPower(0, 0, G01_SPECIMEN1_GRAB_POWER);
+            drive.setMotorPowers(0,0,G01_SPECIMEN1_GRAB_POWER,G01_SPECIMEN1_GRAB_POWER);
             outtake.outakearm.setPosition(outtake.ARM_SOFT_ENGAGE);
             teamUtil.pause(G01_SPECIMEN1_PAUSE4); // give it time to click in and settle down before we use the CV
 
             // retract set to true so we wait here until fully retracted (could be sped up but we need to be careful not to clip the sub with the intake while leaving!
-            boolean grabbedSample=intake.autoGoToSampleAndGrabV3(false, true,true); // TODO: <- Specify phase 1 timeout?
+            successfullyGrabbedSample = intake.autoGoToSampleAndGrabV3(false, true,true,3000); // TODO: <- Specify phase 1 timeout?
+            if(!successfullyGrabbedSample){
+                intake.retractAll(false, 3000);
+            }
+
             intake.lightsOff();
             teamUtil.log("Finished Place First Specimen V2");
-            return grabbedSample;
+            return successfullyGrabbedSample;
         } else {
             drive.straightHoldingStrafePower(G00_MAX_POWER, G01_PLACE_SPECIMEN1_X, G01_PLACE_SPECIMEN1_Y, 0);
             drive.driveMotorsHeadingsFRPower(180, 0, G00_MAX_POWER);
@@ -411,11 +418,11 @@ public class Robot {
     public static int G0a_GRAB_SAMPLE_STRAIGHT_ADJUST2 = 380;
 
     //Collects all blocks using robot to push them
-    public void specimenCollectBlocksV3(boolean grab) {
+    public void specimenCollectBlocksV3() {
 
         long startTime = System.currentTimeMillis();
 
-        placeFirstSpecimenV2(grab);
+
         teamUtil.log("First Specimen Dropped: "+ (System.currentTimeMillis()-startTime));
 
         // Back up to clear sub
@@ -528,10 +535,12 @@ public class Robot {
     static public float G18b_ADJUSTED_MAX_DECLINATION = 35;
     static public int G19_CYCLE_MIDFIELD_X = 500; // was 550 when we were trying for 6
     static public int G20_CYCLE_SPECIMEN_Y_ADJUSTMENT = 25;
-    static public int G21_CYCLE_PLACE_SAMPLE_X = 700;
+    static public int G21_CYCLE_PLACE_SAMPLE_X = 675;
     static public int G21b_CYCLE_PLACE_SAMPLE_X = 690;
-    static public int G22_CYCLE_WRIST_CALLBACK = -600;
-    static public int G22b_CYCLE1_WRIST_CALLBACK = -800;
+    static public int G22_CYCLE1_WRIST_CALLBACK = -450;
+    static public int G22b_CYCLE2_WRIST_CALLBACK = -800;
+    static public int G22c_CYCLE345_WRIST_CALLBACK = -600;
+
     static public int G23_CYCLE_PLACE_SPECIMEN_PAUSE = 200;
     static public int G23b_CYCLE_REVERSE_PLACE_SPECIMEN_PAUSE = 200;
     static public int G24_CYCLE_BACKUP_X = 700;
@@ -544,6 +553,7 @@ public class Robot {
     static public long G32_CYCLE_PICKUP_Y_SPECIAL = -790; //was -650
 
     public boolean specimenCyclePlace(int cycle, int cycleYTarget) {
+        outtake.deployArm();
         float strafeMaxDeclination = BasicDrive.STRAFE_MAX_DECLINATION; // save for later
         BasicDrive.STRAFE_MAX_DECLINATION = G18b_ADJUSTED_MAX_DECLINATION;
         drive.strafeHoldingStraightPower(G00_MAX_POWER, cycleYTarget - G0a_FAST_STRAFE_ADJUST, G19_CYCLE_MIDFIELD_X, 0,
@@ -552,9 +562,9 @@ public class Robot {
                     public void action() {
                         outtake.outakewrist.setPosition(Outtake.WRIST_RELEASE);
                     }
-                }, cycle == 1? G22b_CYCLE1_WRIST_CALLBACK:G22_CYCLE_WRIST_CALLBACK, 5000);
+                }, cycle == 1? G22_CYCLE1_WRIST_CALLBACK:(cycle==2?G22b_CYCLE2_WRIST_CALLBACK : G22c_CYCLE345_WRIST_CALLBACK), 5000);
         BasicDrive.STRAFE_MAX_DECLINATION = strafeMaxDeclination;
-        outtake.deployArm();
+
 
         if(cycle>=2){ // TODO: If we stick with grabbing a sample on first place, this should be ">3" as cycle 2 will be the one from deep in the observation zone
             drive.straightHoldingStrafePower(G00_MAX_POWER, G21b_CYCLE_PLACE_SAMPLE_X, cycleYTarget, 0);
@@ -636,11 +646,11 @@ public class Robot {
                         public void action() {
                             outtake.outakewrist.setPosition(Outtake.WRIST_RELEASE);
                         }
-                    }, cycle == 1? F22b_CYCLE1_WRIST_CALLBACK:F22_CYCLE_WRIST_CALLBACK, 5000);
+                    }, cycle == 2? F22b_CYCLE1_WRIST_CALLBACK:F22_CYCLE_WRIST_CALLBACK, 5000);
             BasicDrive.STRAFE_MAX_DECLINATION = strafeMaxDeclination;
             outtake.deployArm();
 
-            if(cycle>=2){
+            if(cycle>=3){
                 drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY, F21b_CYCLE_PLACE_SAMPLE_X, cycleYTarget, 0, BasicDrive.MAX_VELOCITY, false, null, 0, 4000);
 
                 drive.driveMotorsHeadingsFR(180,0,BasicDrive.MAX_VELOCITY);
@@ -813,6 +823,25 @@ public class Robot {
         specimenCollectBlocksV2();
         fiveSpecimenCycle();
         drive.stopMotors();
+        //TODO make it so AUTO_INTAKE_SPECIMEN is an option when initializing
+        return true;
+    }
+
+    public boolean autoV5Specimen(){
+        teamUtil.log("Running Specimen Auto V5.  Alliance: " + (teamUtil.alliance == RED ? "RED" : "BLUE"));
+        drive.setRobotPosition(0,0,0);
+
+        placeFirstSpecimenV2(true);
+        deliverFirstSample();
+        specimenCyclePlace(1,G33_6_CYCLE_Y_PLACEMENTS[0]); //second specimen delivered
+        specimenCollectBlocksV3();
+
+        specimenCycleV4(2, G33_6_CYCLE_Y_PLACEMENTS[1], false,true); //third specimen delivered
+        specimenCycleV4(3, G33_6_CYCLE_Y_PLACEMENTS[2], false,true); //fourth specimen delivered
+        specimenCycleV4(4, G33_6_CYCLE_Y_PLACEMENTS[3], false,true); //fifth specimen delivered
+        specimenCycleV4(5, G33_6_CYCLE_Y_PLACEMENTS[4], false,true); //sixth specimen delivered
+        drive.stopMotors();
+
         //TODO make it so AUTO_INTAKE_SPECIMEN is an option when initializing
         return true;
     }
@@ -1106,7 +1135,7 @@ public class Robot {
 
 
         // Grab and unload (counting on bucket to be at the bottom by the time we get there!
-        boolean grabbedSample=intake.autoGoToSampleAndGrabV3(false,false,true);
+        boolean grabbedSample=intake.autoGoToSampleAndGrabV3(false,false,true,3000);
         sampleAutoUnloadHighBucketNoWait(false);
 
         drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,A07_2_BUCKET_STRAFE,A07_2_BUCKET_STRAIGHT,A07_2_BUCKET_HEADING,A00_END_SPEED,null,0, false, 5000);
@@ -1124,7 +1153,7 @@ public class Robot {
         drive.stopMotors();
         teamUtil.pause(A08_2_BRAKE_PAUSE);
         // Grab and unload (counting on bucket to be at the bottom by the time we get there!
-        grabbedSample=intake.autoGoToSampleAndGrabV3(false, false,true);
+        grabbedSample=intake.autoGoToSampleAndGrabV3(false, false,true,3000);
         sampleAutoUnloadHighBucketNoWait(false);
 
         drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,A09_3_BUCKET_STRAFE,A09_3_BUCKET_STRAIGHT,A09_3_BUCKET_HEADING,A00_END_SPEED,null,0, false, 5000);
@@ -1145,7 +1174,7 @@ public class Robot {
         // Grab and unload (counting on bucket to be at the bottom by the time we get there!
 
 
-        grabbedSample=intake.autoGoToSampleAndGrabV3(false, false,true);
+        grabbedSample=intake.autoGoToSampleAndGrabV3(false, false,true,3000);
         sampleAutoUnloadHighBucketNoWait(false);
 
         drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,A11_3_PRE_BUCKET_STRAFE,A11_3_PRE_BUCKET_STRAIGHT,A11_3_PRE_BUCKET_HEADING,A00_TRANSITION_SPEED,null,0, false, 5000);
@@ -1234,7 +1263,7 @@ public class Robot {
 
     public void bucketCycle(){
         bucketToSub(true);
-        boolean grabbedSample = intake.autoGoToSampleAndGrabV3(false,false,true);
+        boolean grabbedSample = intake.autoGoToSampleAndGrabV3(false,false,true,3000);
         sampleAutoUnloadHighBucketNoWait(true);
         subToBucket();
         liftAtTop(2000);

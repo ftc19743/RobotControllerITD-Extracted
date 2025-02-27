@@ -123,7 +123,7 @@ public class testAutoPaths extends LinearOpMode {
                     long startTime = System.currentTimeMillis();
                     robot.drive.setRobotPosition(0,0,0);
                     robot.drive.setMotorsBrake();
-                    robot.specimenCollectBlocksV3(false);
+                    robot.specimenCollectBlocksV3();
                     robot.drive.stopMotors();
                     elapsedTime = System.currentTimeMillis()-startTime;
                 }
@@ -148,12 +148,13 @@ public class testAutoPaths extends LinearOpMode {
                 }
                 if(driverGamepad.wasAPressed()){
                     long startTime = System.currentTimeMillis();
-                    robot.autoV4Specimen();
+                    robot.autoV5Specimen();
                     elapsedTime = System.currentTimeMillis()-startTime;
                 }
                 if(driverGamepad.wasBPressed()){
                     long startTime = System.currentTimeMillis();
                     if (GRAB_SAMPLE) {
+                        robot.drive.setRobotPosition(0,0,0);
                         robot.placeFirstSpecimenV2(true);
                         robot.deliverFirstSample();
                         robot.specimenCyclePlace(1,robot.G33_6_CYCLE_Y_PLACEMENTS[0]);
