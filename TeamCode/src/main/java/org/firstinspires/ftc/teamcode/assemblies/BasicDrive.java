@@ -257,11 +257,11 @@ public class BasicDrive {
         br.setVelocity(0);
     }
 
-    public static double VELO_THRESHOLD = 10;
+    public static double VELO_THRESHOLD = 1;
     public static double ANGLE_VELO_THRESHOLD = 0.5;
 
-    public void stopAndWaitForRobotToStop(long timeout){
-        stopMotors();
+    public void waitForRobotToStop(long timeout){
+        teamUtil.log("waitForRobotToStop");
         odo.update();
         long timeOutTime = System.currentTimeMillis()+timeout;
 
@@ -270,9 +270,9 @@ public class BasicDrive {
         double yVelo = odo.getVelY();
         double hVelo = odo.getHeadingVelocity();
 
-        while((xVelo>VELO_THRESHOLD||yVelo>VELO_THRESHOLD||hVelo>ANGLE_VELO_THRESHOLD)&&teamUtil.keepGoing(timeOutTime)){
+        while((Math.abs(xVelo)>VELO_THRESHOLD || Math.abs(yVelo)>VELO_THRESHOLD/*||hVelo>ANGLE_VELO_THRESHOLD*/) && teamUtil.keepGoing(timeOutTime)){
             teamUtil.pause(10);
-            if(details) teamUtil.log("xVelo: " + xVelo + "yVelo: " + yVelo + "hVelo: " + hVelo);
+            if(details) teamUtil.log(String.format("xPos: %.0f xVel: %.2f yPos: %.0f yVel: %.2f hVel: %.2f", odo.getPosX(), xVelo, odo.getPosY(), yVelo , hVelo));
             odo.update();
             xVelo = odo.getVelX();
             yVelo = odo.getVelY();
@@ -280,12 +280,10 @@ public class BasicDrive {
         }
 
         if(System.currentTimeMillis()>timeOutTime){
-            teamUtil.log("StopAndWaitForRobotToStop has TIMEDOUT");
+            teamUtil.log("waitForRobotToStop has TIMED OUT");
             return;
         }
-
-        teamUtil.log("stopAndWaitForRobotToStop has Finished");
-
+        teamUtil.log("waitForRobotToStop has Finished");
     }
 
     public void setMotorVelocities(double flV, double frV, double blV, double brV) {

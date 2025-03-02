@@ -117,7 +117,10 @@ public class testAutoPaths extends LinearOpMode {
             if (AA_Operation == Ops.Specimen) {
 
                 if(driverGamepad.wasUpPressed()) {
-
+                    long startTime = System.currentTimeMillis();
+                    robot.autoV4Specimen();
+                    robot.drive.stopMotors();
+                    elapsedTime = System.currentTimeMillis()-startTime;
                 }
                 if(driverGamepad.wasDownPressed()) {
                     long startTime = System.currentTimeMillis();
@@ -136,11 +139,11 @@ public class testAutoPaths extends LinearOpMode {
                     for(int i = START_CYCLE; i<=END_CYCLES;i++){
                         teamUtil.log("Auto V4 Specimen Cycle Number: " + i);
                         switch (i) {
-                            case 1 : robot.specimenCycleV4(1, Robot.G33_6_CYCLE_Y_PLACEMENTS[0],false, true); break;
-                            case 2 : robot.specimenCycleV4(2, Robot.G33_6_CYCLE_Y_PLACEMENTS[1],false,  true); break;
-                            case 3 : robot.specimenCycleV4(3, Robot.G33_6_CYCLE_Y_PLACEMENTS[2],false,  true); break;
-                            case 4 : robot.specimenCycleV4(4, Robot.G33_6_CYCLE_Y_PLACEMENTS[3],false,  true); break;
-                            case 5 : robot.specimenCycleV4(5, Robot.G33_6_CYCLE_Y_PLACEMENTS[4],false,  true); break;
+                            case 1 : robot.specimenCycleV4(1, Robot.G33_6_CYCLE_Y_PLACEMENTS[0],false, 0, true); break;
+                            case 2 : robot.specimenCycleV4(2, Robot.G33_6_CYCLE_Y_PLACEMENTS[1],true,  Robot.G33_6_CYCLE_SHIFT_2, true); break;
+                            case 3 : robot.specimenCycleV4(3, Robot.G33_6_CYCLE_Y_PLACEMENTS[2],false,  0, true); break;
+                            case 4 : robot.specimenCycleV4(4, Robot.G33_6_CYCLE_Y_PLACEMENTS[3],false,  0, true); break;
+                            case 5 : robot.specimenCycleV4(5, Robot.G33_6_CYCLE_Y_PLACEMENTS[4],false,  0, false); break;
                         }
                     }
                     robot.drive.stopMotors();
@@ -157,7 +160,7 @@ public class testAutoPaths extends LinearOpMode {
                         robot.drive.setRobotPosition(0,0,0);
                         robot.placeFirstSpecimenV2(true);
                         robot.deliverFirstSample();
-                        robot.specimenCyclePlace(1,robot.G33_6_CYCLE_Y_PLACEMENTS[0]);
+                        //robot.specimenCyclePlace(1,robot.G33_6_CYCLE_Y_PLACEMENTS[0]);
                         robot.drive.stopMotors();
                     } else {
                         robot.placeFirstSpecimenV2(false);

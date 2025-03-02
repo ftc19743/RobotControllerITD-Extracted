@@ -1,6 +1,10 @@
 package org.firstinspires.ftc.teamcode.assemblies;
 
+import static org.firstinspires.ftc.teamcode.assemblies.Intake.EXTENDER_HOLD_RETRACT_VELOCITY;
+import static org.firstinspires.ftc.teamcode.assemblies.Intake.FLIPPER_UNLOAD;
+
 import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
@@ -27,6 +31,7 @@ public class FiveSpecimenAutoV4 {
     public void init (Robot robot) {
         drive = robot.drive;
         output = robot.output;
+        intake = robot.intake;
         outtake = robot.outtake;
         blinkin = robot.blinkin;
         hang = robot.hang;
@@ -34,7 +39,14 @@ public class FiveSpecimenAutoV4 {
 
 
     public boolean autoV4Specimen(){
-        teamUtil.log("Running Specimen Auto V4.  Alliance: " + (teamUtil.alliance == teamUtil.Alliance.RED ? "RED" : "BLUE"));
+        teamUtil.log("Running 5 Specimen Auto V4.  Alliance: " + (teamUtil.alliance == teamUtil.Alliance.RED ? "RED" : "BLUE"));
+
+        // make sure extender isn't going anywhere
+        intake.extender.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        intake.extender.setTargetPosition(Intake.EXTENDER_CALIBRATE);
+        intake.extender.setVelocity(EXTENDER_HOLD_RETRACT_VELOCITY);
+        intake.flipper.setPosition(FLIPPER_UNLOAD);
+
         drive.setRobotPosition(0,0,0);
         specimenCollectBlocksV2();
         fiveSpecimenCycle();
@@ -137,20 +149,29 @@ public class FiveSpecimenAutoV4 {
 
         // push first sample to observation zone
         drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY, F11_DROP_SAMPLE1_X +F0a_FAST_REVERSE_ADJUST, F10_SAMPLE_1_Y,0,BasicDrive.MAX_VELOCITY, false, null,0,4000);
+/*
         //drive.stopMotors(); // faster to just reverse motors at full speed
         //teamUtil.pause(F12_REVERSE_BRAKING_PAUSE);
+ */
+        // TODO: CHANGE
+        drive.stopMotors(); // faster to just reverse motors at full speed
+        teamUtil.pause(F12_REVERSE_BRAKING_PAUSE);
+
         // head back out to get second sample
-        drive.lastVelocity = BasicDrive.MAX_VELOCITY; // make motors start at full power
+        // TODO: CHANGE
+        //drive.lastVelocity = BasicDrive.MAX_VELOCITY; // make motors start at full power // was in effect
         drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY, F09_CLEAR_SAMPLE_X- F0a_FAST_STRAIGHT_ADJUST2, F10_SAMPLE_1_Y,0,F08_TRANSITION_VELOCITY_FAST, false, null,0,4000);
         drive.strafeToTarget(270,0,F08_TRANSITION_VELOCITY_FAST, F13_SAMPLE_2_Y+F10_SAMPLE_Y_ADJUST,2000);
 
         // push second sample to observation zone
         drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY, F13a_DROP_SAMPLE2_X +F0a_FAST_REVERSE_ADJUST, F13_SAMPLE_2_Y,0,BasicDrive.MAX_VELOCITY, false, null,0,4000);
-        //drive.stopMotors(); // faster to just reverse motors at full speed
-        //teamUtil.pause(F12_REVERSE_BRAKING_PAUSE);
+
+        // TODO: CHANGE
+        drive.stopMotors(); // faster to just reverse motors at full speed // was commented out
+        teamUtil.pause(F12_REVERSE_BRAKING_PAUSE);                         // was commented out
 
         // head back out for 3rd sample
-        drive.lastVelocity = BasicDrive.MAX_VELOCITY; // make motors start at full power
+        //drive.lastVelocity = BasicDrive.MAX_VELOCITY; // make motors start at full power // was in effect
         drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY, F09_CLEAR_SAMPLE_X- F0a_FAST_STRAIGHT_ADJUST2, F13_SAMPLE_2_Y,0,F08_TRANSITION_VELOCITY_FAST,false,null,0,4000);
         drive.strafeToTarget(270,0,F08_TRANSITION_VELOCITY_FAST, F14_SAMPLE_3_Y+F14a_SAMPLE3_Y_ADJUST,2000);
 
@@ -200,7 +221,10 @@ public class FiveSpecimenAutoV4 {
             if(cycle>=2){
                 drive.straightHoldingStrafeEncoder(BasicDrive.MAX_VELOCITY, F21b_CYCLE_PLACE_SAMPLE_X, cycleYTarget, 0, BasicDrive.MAX_VELOCITY, false, null, 0, 4000);
 
-                drive.driveMotorsHeadingsFR(180,0,BasicDrive.MAX_VELOCITY);
+                // TODO: CHANGE
+                //drive.driveMotorsHeadingsFR(180,0,BasicDrive.MAX_VELOCITY);
+                drive.stopMotors();
+
                 teamUtil.pause(F23b_CYCLE_REVERSE_PLACE_SPECIMEN_PAUSE); // give it time to decelerate
             }
             else{

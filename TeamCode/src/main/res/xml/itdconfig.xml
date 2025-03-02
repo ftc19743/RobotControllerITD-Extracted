@@ -10,11 +10,13 @@
     <LynxUsbDevice name="Control Hub Portal" serialNumber="(embedded)" parentModuleAddress="173">
         <LynxModule name="Expansion Hub 2" port="2">
 
-            <goBILDA5202SeriesMotor name="extender" port="3" />
-            <goBILDA5202SeriesMotor name="lift" port="0" />
 
-            <goBILDA5202SeriesMotor name="hangLeft" port="1" />
+            <goBILDA5202SeriesMotor name="frm" port="0" />
+            <goBILDA5202SeriesMotor name="flm" port="1" />
+            <!-- <goBILDA5202SeriesMotor name="lift" port="0" /> Split motors between hubs-->
+            <!-- <goBILDA5202SeriesMotor name="hangLeft" port="1" /> Split motors between hubs-->
             <goBILDA5202SeriesMotor name="hangRight" port="2" />
+            <goBILDA5202SeriesMotor name="extender" port="3" />
 
             <Servo name="outakewrist" port="0" />
             <Servo name="flipper" port="1" />
@@ -39,8 +41,11 @@
             <ContinuousRotationServo name = "pulleyleft" port = "5" />
             <!---<Servo name="bucket" port="" /> -->
 
-            <goBILDA5202SeriesMotor name="frm" port="0" />
-            <goBILDA5202SeriesMotor name="flm" port="1" />
+            <goBILDA5202SeriesMotor name="lift" port="0" />
+            <goBILDA5202SeriesMotor name="hangLeft" port="1" />
+
+            <!---<goBILDA5202SeriesMotor name="frm" port="0" /> Split motors between hubs-->
+            <!---<goBILDA5202SeriesMotor name="flm" port="1" /> Split motors between hubs-->
             <goBILDA5202SeriesMotor name="brm" port="2" />
             <goBILDA5202SeriesMotor name="blm" port="3" />
 

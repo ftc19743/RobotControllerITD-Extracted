@@ -92,6 +92,8 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
     public static double SHORT_LENGTH_THRESHOLD = 20;
     public static double adjYCoefficient = 0.284;
 
+    public static boolean signalWithBlinkin = true;
+
 
 
     private final double CMS_PER_PIXEL_X = 0; //Set (Will most likely not be linear)
@@ -441,7 +443,8 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
             context.foundOne = false;
             context.targetIndex = 0;
             context.contours = contours;
-            teamUtil.theBlinkin.setSignal(Blinkin.Signals.OFF);
+            if(signalWithBlinkin) teamUtil.theBlinkin.setSignal(Blinkin.Signals.OFF);
+
 
             return context;
         }
@@ -484,7 +487,7 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
             context.foundOne = false;
             context.targetIndex = 0;
             context.contours = contours;
-            teamUtil.theBlinkin.setSignal(Blinkin.Signals.OFF);
+            if(signalWithBlinkin) teamUtil.theBlinkin.setSignal(Blinkin.Signals.OFF);
             return context;
         }
 
@@ -533,7 +536,7 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
             outsideUseableCameraRange.set(true);
             processedFrame.set(true);
             foundOne.set(false);
-            teamUtil.theBlinkin.setSignal(Blinkin.Signals.OFF);
+            if(signalWithBlinkin) teamUtil.theBlinkin.setSignal(Blinkin.Signals.OFF);
         } else{
             outsideUseableCameraRange.set(false);
             processedFrame.set(true);
@@ -569,11 +572,11 @@ public class OpenCVSampleDetectorV2 extends OpenCVProcesser {
             rectArea.set((int) foundRects[closestAreaSelectionNum].size.area());
             foundOne.set(true);
             if(targetColor == TargetColor.BLUE){
-                teamUtil.theBlinkin.setSignal(Blinkin.Signals.BLUE_PATH_1);
+                if(signalWithBlinkin) teamUtil.theBlinkin.setSignal(Blinkin.Signals.BLUE_PATH_1);
             }else if(targetColor == TargetColor.RED){
-                teamUtil.theBlinkin.setSignal(Blinkin.Signals.RED);
+                if(signalWithBlinkin) teamUtil.theBlinkin.setSignal(Blinkin.Signals.RED);
             }else if (targetColor == TargetColor.YELLOW){
-                teamUtil.theBlinkin.setSignal(Blinkin.Signals.GOLD);
+                if(signalWithBlinkin) teamUtil.theBlinkin.setSignal(Blinkin.Signals.GOLD);
             }
             targetIndex = closestAreaSelectionNum;
             //if (details) teamUtil.log("Lowest: " +  vertices1[lowestPixel].x + "," + vertices1[lowestPixel].y+ " Closest: " + vertices1[closestPixel].x+ "," +vertices1[closestPixel].y);

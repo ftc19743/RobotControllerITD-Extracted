@@ -85,6 +85,7 @@ public class Intake {
     static public float FLIPPER_GRAB_STEP_2 = .240f;
     static public long FLIPPER_GRAB_STEP_1_PAUSE = 50;
     static public long FLIPPER_GRAB_STEP_2_PAUSE = 50;
+    static public long FLIPPER_GRAB_STEP_3_PAUSE = 50;
     static public double FLIPPER_PRE_GRAB_POT_VOLTAGE = 2.338;
     static public long FLIPPER_PRE_GRAB_MOMENTUM_PAUSE = 100;
     static public long FLIPPER_SEEK_TO_PRE_GRAB_TIME = 150;
@@ -488,7 +489,7 @@ public class Intake {
         flipper.setPosition(FLIPPER_GRAB_STEP_2);
         teamUtil.pause(FLIPPER_GRAB_STEP_2_PAUSE);
         flipper.setPosition(FLIPPER_GRAB);
-        teamUtil.pause(FLIPPER_GRAB_STEP_2_PAUSE);
+        teamUtil.pause(FLIPPER_GRAB_STEP_3_PAUSE);
         teamUtil.log("flipperGoToGrabNoPot has Finished");
         return true;
     }
@@ -643,6 +644,7 @@ public class Intake {
         teamUtil.log("Launched Auto GoToSample and Grab" );
         timedOut.set(false);
         long timeOutTime = System.currentTimeMillis() + 1000;
+        teamUtil.theBlinkin.setSignal(Blinkin.Signals.GOLD);
         if(goToSampleV5(timeOutTime,phase1) && !timedOut.get()) {
             long loopStartTime = System.currentTimeMillis();
             //TODO: This looks like a bug...setToPreGrabTime
@@ -903,7 +905,7 @@ public class Intake {
         OpenCVSampleDetectorV2.FrameData frameData = null;
 
         lightsOnandOff(WHITE_NEOPIXEL,RED_NEOPIXEL,GREEN_NEOPIXEL,BLUE_NEOPIXEL,true);
-        setSeekSignal();
+        //setSeekSignal();
 
         // Get everything ready to find one if it isn't already
         flipper.setPosition(FLIPPER_SEEK);
