@@ -106,7 +106,7 @@ public class BasicDrive {
     public static float SLOWSPEED = .1f;
     public static float STRAFESLOWSPEED = 0.25f;
     public static float MAXROTATIONFACTOR = 0.8f;
-    public static float ROTATION_ADJUST_HELD_HEADING = 0.05f;
+    public static float ROTATION_ADJUST_HELD_HEADING = 0.025f;
     public static float SLOWSLOPE =0.22f;
     public static float SLOWSLOPESTRAFE =0.35f;
 

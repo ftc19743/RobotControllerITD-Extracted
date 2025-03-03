@@ -199,6 +199,7 @@ public class Intake {
     static public int EXTENDER_FAST_INCREMENT = 170;
     static public int EXTENDER_MIN = 10;
     static public int EXTENDER_TOLERANCE_RETRACT = 10;
+    static public int EXTENDER_AUTO_RETRACT_THRESHOLD = 580;
 
     static public int EXTENDER_RETRACT_TIMEOUT = 3000;
     static public int EXTENDER_SAFE_TO_UNLOAD_THRESHOLD = 6;
@@ -1164,6 +1165,15 @@ public class Intake {
             teamUtil.pause(50);
             sliderEncoderPos = axonSlider.getPositionEncoder();
         }
+
+        if(System.currentTimeMillis()>timeOutTime){
+            teamUtil.log("Slider Movement Timed Out In RetractAll");
+        }
+
+        if((sliderEncoderPos<axonSlider.RETRACT_LEFT_LIMIT || sliderEncoderPos> axonSlider.RETRACT_RIGHT_LIMIT)){
+            teamUtil.log("Slider Didnt Make it In RetractAll");
+        }
+
         if(unload){
             flipper.setPosition(FLIPPER_PRE_UNLOAD);
             teamUtil.pause(FLIPPER_PRE_UNLOAD_PAUSE);
@@ -1172,13 +1182,39 @@ public class Intake {
         while((axonSlider.moving.get() || extender.getCurrentPosition()>EXTENDER_GOTOUNLOAD_THRESHOLD)&&teamUtil.keepGoing(timeOutTime)){
             teamUtil.pause(50);
         }
+
+        if(System.currentTimeMillis()>timeOutTime){
+            teamUtil.log("Extender Movement Timed Out In RetractAll");
+        }
+        if(extender.getCurrentPosition()>EXTENDER_GOTOUNLOAD_THRESHOLD){
+            teamUtil.log("Extender Didnt Make it In RetractAll");
+        }
         if (unload){
 
             unloadV2(false);
         }
+        moving.set(false);
         teamUtil.log("retractAll Finished");
     }
 
+
+    public void retractAllNoWait(boolean unload, long timeOut) {
+        if (moving.get()) { // Intake is already moving in another thread
+            teamUtil.log("WARNING: Attempt to retractAllNoWait while intake is moving--ignored");
+            return;
+        } else {
+            moving.set(true);
+            teamUtil.log("Launching Thread to retractAllNoWait");
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    retractAll(unload, timeOut);
+                }
+            });
+            thread.start();
+        }
+
+    }
 
 
     public void goToSafeRetract(long timeOut) {

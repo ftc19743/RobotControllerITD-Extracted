@@ -24,12 +24,12 @@ public class Output {
 
     public boolean details;
 
-    static public int LIFT_MAX = 1850;
+    static public int LIFT_MAX = 1795;
     static public int LIFT_MAX_VELOCITY = 2800;
     static public int LIFT_MAX_POWER = 1;
     static public int LIFT_MIN_VELOCITY = 200;
     static public int LIFT_DOWN = 2;
-    static public int LIFT_TOP_BUCKET = 1850;
+    static public int LIFT_TOP_BUCKET = 1795;
     static public int LIFT_SAFE_FOR_HOOK_HOLDER= 175;
     static public int LIFT_PICKUP_FOR_HOOK_HOLDER= 5;
     static public int LIFT_ABOVE_BAR= 1160;

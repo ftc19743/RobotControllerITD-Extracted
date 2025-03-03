@@ -225,6 +225,7 @@ public class Teleop extends LinearOpMode {
             }
             if ((armsGamepad.wasYPressed())&&!robot.intake.autoSeeking.get()) { //Grab Yellow
                 robot.intake.setTargetColor(OpenCVSampleDetectorV2.TargetColor.YELLOW);
+                robot.outtake.outtakeRest();
                 robot.output.bucket.setPosition(Output.BUCKET_RELOAD);
                 if((robot.drive.getHeadingODO()>45&&robot.drive.getHeadingODO()<135)||(robot.drive.getHeadingODO()>225&&robot.drive.getHeadingODO()<315)){
                     robot.goToSampleAndGrabAndLiftToBucketNoWait(true);

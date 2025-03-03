@@ -57,7 +57,9 @@ public class Blinkin {
 
         GOTOSCORE_RED,
 
-        GOTOSCORE_BLUE
+        GOTOSCORE_BLUE,
+        SINELON_RED,
+        SINELON_BLUE
 
     }
 
@@ -133,6 +135,15 @@ public class Blinkin {
                 break;
             case RED:
                 current = RevBlinkinLedDriver.BlinkinPattern.RED;
+                blinkinLedDriver.setPattern(current);
+                break;
+
+            case SINELON_BLUE:
+                current = RevBlinkinLedDriver.BlinkinPattern.SINELON_OCEAN_PALETTE;
+                blinkinLedDriver.setPattern(current);
+                break;
+            case SINELON_RED:
+                current = RevBlinkinLedDriver.BlinkinPattern.SINELON_LAVA_PALETTE;
                 blinkinLedDriver.setPattern(current);
                 break;
             case OCEANPALETTE:

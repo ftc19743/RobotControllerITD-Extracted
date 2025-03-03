@@ -281,16 +281,25 @@ public class Robot {
 
     static public int G01_PLACE_SPECIMEN1_X = 590;
     static public int G01_PLACE_AND_GRAB_SPECIMEN1_X = 500;
-    static public int G01_PLACE_SPECIMEN1_Y = 0;
-    static public float G01_PLACE_AND_GRAB_REVERSE_POWER = .1f;
+    static public int G01_PLACE_SPECIMEN1_Y = 20;
+    static public float G01_PLACE_AND_GRAB_REVERSE_POWER = .5f;
     static public int G01_SPECIMEN1_PAUSE1 = 200;
     static public int G01_SPECIMEN1_PAUSE2 = 0;
     static public int G01_SPECIMEN1_PAUSE3 = 200;
     static public int G01_SPECIMEN1_PAUSE4 = 100;
     static public float G01_SPECIMEN1_END_POWER = .3f;
     static public float G01_SPECIMEN1_GRAB_POWER = .4f;
-
+    public int extenderTicPerTooth = 71;
+    public int sliderMMperTooth = 30;
     public boolean successfullyGrabbedSample = false;
+
+    public int extenderTeethToEncoder(int teeth){
+        return 84 + teeth*extenderTicPerTooth;
+
+    }public int sliderTeethToEncoder(int teeth){
+        return (int) (AxonSlider.SLIDER_READY+ (teeth-2)*AxonSlider.SLIDER_TICS_PER_MM*sliderMMperTooth);
+
+    }
 
     public boolean placeFirstSpecimenV2(boolean grab) {
         teamUtil.log("Place First Specimen V2");
@@ -316,10 +325,12 @@ public class Robot {
             teamUtil.pause(G01_SPECIMEN1_PAUSE4); // Give it just a little bit more time after Pinpoint thinks we are stationary
 
             // retract set to true so we wait here until fully retracted (could be sped up but we need to be careful not to clip the sub with the intake while leaving!
-            successfullyGrabbedSample = intake.autoGoToSampleAndGrabV3(false, true,true,3000); // TODO: <- Specify phase 1 timeout?
-            if(!successfullyGrabbedSample){
-                intake.retractAll(false, 3000);
+            successfullyGrabbedSample = intake.autoGoToSampleAndGrabV3(false, false,true,3000); // TODO: <- Specify phase 1 timeout?
+            intake.retractAllNoWait(false,3000);
+            while (intake.extender.getCurrentPosition()>Intake.EXTENDER_AUTO_RETRACT_THRESHOLD){
+                teamUtil.pause(5);
             }
+            teamUtil.theBlinkin.setSignal(Blinkin.Signals.OFF);
 
             intake.lightsOff();
             teamUtil.log("Finished Place First Specimen V2");
@@ -378,6 +389,7 @@ public class Robot {
     static public float G16_PICKUP_1_POWER = .3f;
     static public int G17_PICKUP_1_PAUSE = 400;
     public static int G0a_GRAB_SAMPLE_STRAIGHT_ADJUST2 = 380;
+    public static float G18_REVERSE_POWER = 1f;
 
     //Collects all blocks using robot to push them
     public void specimenCollectBlocksV3() {
@@ -400,21 +412,21 @@ public class Robot {
         drive.strafeHoldingStraightPower(G00_MAX_POWER, G10_SAMPLE_1_Y+G10_SAMPLE_Y_ADJUST, G09_CLEAR_SAMPLE_X, 0);
 
         // push first sample to observation zone
-        drive.straightHoldingStrafePower(G00_MAX_POWER, G11_DROP_SAMPLE1_X +G0a_FAST_REVERSE_ADJUST, G10_SAMPLE_1_Y,0);
+        drive.straightHoldingStrafePower(G18_REVERSE_POWER, G11_DROP_SAMPLE1_X +G0a_FAST_REVERSE_ADJUST, G10_SAMPLE_1_Y,0);
 
         // head back out to get 2nd sample
         drive.straightHoldingStrafePower(G00_MAX_POWER, G09_CLEAR_SAMPLE_X- G0a_GRAB_SAMPLE_STRAIGHT_ADJUST2, G10_SAMPLE_1_Y,0);
         drive.strafeHoldingStraightPower(G00_MAX_POWER, G13_SAMPLE_2_Y+G10_SAMPLE_Y_ADJUST, G09_CLEAR_SAMPLE_X, 0);
 
         // push second sample to observation zone
-        drive.straightHoldingStrafePower(G00_MAX_POWER, G13a_DROP_SAMPLE2_X +G0a_FAST_REVERSE_ADJUST, G13_SAMPLE_2_Y,0);
+        drive.straightHoldingStrafePower(G18_REVERSE_POWER, G13a_DROP_SAMPLE2_X +G0a_FAST_REVERSE_ADJUST, G13_SAMPLE_2_Y,0);
 
         // head back out for 3rd sample
         drive.straightHoldingStrafePower(G00_MAX_POWER, G09_CLEAR_SAMPLE_X- G0a_GRAB_SAMPLE_STRAIGHT_ADJUST2, G13_SAMPLE_2_Y,0);
         drive.strafeHoldingStraightPower(G00_MAX_POWER, G14_SAMPLE_3_Y+G14a_SAMPLE3_Y_ADJUST, G09_CLEAR_SAMPLE_X, 0);
 
         // push 3rd sample to observation zone and grab 2nd specimen
-        drive.straightHoldingStrafePower(G00_MAX_POWER, G14a_DROP_SAMPLE3_X + G0a_FAST_REVERSE_ADJUST, G14_SAMPLE_3_Y,0);
+        drive.straightHoldingStrafePower(G18_REVERSE_POWER, G14a_DROP_SAMPLE3_X + G0a_FAST_REVERSE_ADJUST, G14_SAMPLE_3_Y,0);
         drive.driveMotorsHeadingsFRPower(0, 0, G00_MAX_POWER); // reverse motors for fast deceleration
         teamUtil.pause(G12_REVERSE_BRAKING_PAUSE1); // wait a little bit for decel
         // Move over a bit to ensure 3rd Sample doesn't block us on wall
@@ -444,13 +456,14 @@ public class Robot {
     static public int G26a_CYCLE_PICKUP_X = 75;
     static public int G28_CYCLE_PICKUP_PAUSE = 200;
     static public long G29_AUTO_MOMENTUM_PAUSE = 200;
-    static public long G32_CYCLE_PICKUP_Y_SPECIAL = -790; //was -650
+    static public long G32_CYCLE_PICKUP_Y_SPECIAL = -790;
+    static public long G19_CYCLE_MIDFIELD_2_X = 400;
 
     public boolean specimenCyclePlace(int cycle, int cycleYTarget) {
         outtake.deployArm();
         float strafeMaxDeclination = BasicDrive.STRAFE_MAX_DECLINATION; // save for later
         BasicDrive.STRAFE_MAX_DECLINATION = G18b_ADJUSTED_MAX_DECLINATION;
-        drive.strafeHoldingStraightPower(G00_MAX_POWER, cycleYTarget - G0a_FAST_STRAFE_ADJUST, G19_CYCLE_MIDFIELD_X, 0,
+        drive.strafeHoldingStraightPower(G00_MAX_POWER, cycleYTarget - G0a_FAST_STRAFE_ADJUST, cycle == 2 ? G19_CYCLE_MIDFIELD_2_X: G19_CYCLE_MIDFIELD_X, 0,
                 new BasicDrive.ActionCallback() {
                     @Override
                     public void action() {
@@ -506,24 +519,50 @@ public class Robot {
     // Work in progress on 6 specimen auto
     static public int[] G33_6_CYCLE_Y_PLACEMENTS = {0, 110, 20, 69, 120}; // was {0, 68, 112, 145, 178}
     static public int G33_6_CYCLE_SHIFT_2 = 40;
+    static public int G33_6_TIME_FOR_LAST_SPECIMEN = 28500;
+    static public int G33_7_TIME_FOR_PARK = 28500;
 
-    public boolean autoV5Specimen(){
+    public boolean autoV5Specimen() {
         teamUtil.log("Running Specimen Auto V5.  Alliance: " + (teamUtil.alliance == RED ? "RED" : "BLUE"));
-        drive.setRobotPosition(0,0,0);
+        teamUtil.startTime = System.currentTimeMillis();
+
+        drive.setRobotPosition(0, 0, 0);
 
         placeFirstSpecimenV2(true);
         deliverFirstSample();
-        specimenCyclePlace(1,G33_6_CYCLE_Y_PLACEMENTS[0]); //second specimen delivered
+        specimenCyclePlace(1, G33_6_CYCLE_Y_PLACEMENTS[0]); //second specimen delivered
         specimenCollectBlocksV3();
 
         specimenCycleV4(2, G33_6_CYCLE_Y_PLACEMENTS[1], true, G33_6_CYCLE_SHIFT_2, true); //third specimen delivered
-        specimenCycleV4(3, G33_6_CYCLE_Y_PLACEMENTS[2], false, 0,true); //fourth specimen delivered
-        specimenCycleV4(4, G33_6_CYCLE_Y_PLACEMENTS[3], false, 0,true); //fifth specimen delivered
-        specimenCycleV4(5, G33_6_CYCLE_Y_PLACEMENTS[4], false, 0, false); //sixth specimen delivered
+        specimenCycleV4(3, G33_6_CYCLE_Y_PLACEMENTS[2], false, 0, true); //fourth specimen delivered
+        specimenCycleV4(4, G33_6_CYCLE_Y_PLACEMENTS[3], false, 0, true); //fifth specimen delivered
+        if (successfullyGrabbedSample) {
+            if (System.currentTimeMillis() - teamUtil.startTime < G33_6_TIME_FOR_LAST_SPECIMEN) {
+                specimenCycleV4(5, G33_6_CYCLE_Y_PLACEMENTS[4], false, 0, false); //sixth specimen delivered
+            } else {
+                teamUtil.log("No Time for Last Cycle");
+            }
+            if (System.currentTimeMillis() - teamUtil.startTime < G33_7_TIME_FOR_PARK) {
+                park();
+            } else {
+                teamUtil.log("No Time for Park");
+            }
+        }
         drive.stopMotors();
 
         //TODO make it so AUTO_INTAKE_SPECIMEN is an option when initializing
         return true;
+    }
+
+    static public int G34_PARK_X = 130;
+    static public int G34_PARK_Y = -777;
+
+    public void park(){
+        drive.straightHoldingStrafePower(G00_MAX_POWER,G24_CYCLE_BACKUP_X,G02_PLACE_SPECIMEN_Y,0);
+        outtake.outtakeGrab();
+
+        drive.moveToPower(G00_MAX_POWER,G34_PARK_Y,G34_PARK_X,0,G00_MAX_POWER, null,0,false,1500);
+        drive.stopMotors();
     }
 
     // 5 specimen auto as ran at League Champs

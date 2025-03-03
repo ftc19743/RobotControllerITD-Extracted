@@ -32,6 +32,11 @@ public class testAutoPaths extends LinearOpMode {
     public static int START_CYCLE = 1;
     public static boolean GRAB_SAMPLE = false;
     public static boolean useCV = true;
+
+    public static int teethXOffset = 0;
+    public static int teethYOffset = 0;
+
+
     public enum Ops {Specimen,
         Sample,
         Hang
@@ -154,6 +159,16 @@ public class testAutoPaths extends LinearOpMode {
                     robot.autoV5Specimen();
                     elapsedTime = System.currentTimeMillis()-startTime;
                 }
+                if(driverGamepad.wasHomePressed()){
+                    robot.nextExtenderPos = robot.extenderTeethToEncoder(teethXOffset);
+                    robot.nextSliderPos = robot.sliderTeethToEncoder(teethYOffset);
+                    long startTime = System.currentTimeMillis();
+                    robot.drive.setRobotPosition(0,0,0);
+                    robot.placeFirstSpecimenV2(true);
+                    robot.deliverFirstSample();
+                    robot.drive.stopMotors();
+                    elapsedTime = System.currentTimeMillis()-startTime;
+                }
                 if(driverGamepad.wasBPressed()){
                     long startTime = System.currentTimeMillis();
                     if (GRAB_SAMPLE) {
@@ -264,7 +279,6 @@ public class testAutoPaths extends LinearOpMode {
 
             robot.drive.odo.update();
             robot.drive.driveMotorTelemetry();
-            telemetry.addLine("Running Tests " );
             telemetry.addLine("Last Auto Elapsed Time: " + elapsedTime);
             telemetry.update();
         }
