@@ -107,6 +107,7 @@ public class Robot {
         outtake.firstCalibrate();
         intake.calibrate();
         output.calibrate();
+        teamUtil.pause(250);
         outtake.secondCalibrate();
     }
 
@@ -517,7 +518,7 @@ public class Robot {
 
 
     // Work in progress on 6 specimen auto
-    static public int[] G33_6_CYCLE_Y_PLACEMENTS = {0, 110, 20, 69, 120}; // was {0, 68, 112, 145, 178}
+    static public int[] G33_6_CYCLE_Y_PLACEMENTS = {20, 130, 20, 69, 120}; // was {0, 68, 112, 145, 178}
     static public int G33_6_CYCLE_SHIFT_2 = 40;
     static public int G33_6_TIME_FOR_LAST_SPECIMEN = 28500;
     static public int G33_7_TIME_FOR_PARK = 28500;
@@ -582,6 +583,7 @@ public class Robot {
     public static int PLACE_HOOKS_VELOCITY = 400;
 
 
+
     public void hangPhase1(){
         hang.extendHangNoWait();
         output.bucket.setPosition(Output.BUCKET_HANG);
@@ -639,12 +641,21 @@ public class Robot {
         // Head to the top
         teamUtil.log("Heading Up");
         hang.hang_Right.setTargetPosition(Hang.HANG_LEVEL_3_R);
-        hang.hang_Left.setTargetPosition(Hang.HANG_LEVEL_3_L);
+        hang.hang_Left.setTargetPosition(Hang.HANG_LEFT_INTERMEDIATE);
+        //hang.hang_Left.setTargetPosition(Hang.HANG_LEVEL_3_L);
 
         teamUtil.log("Both Joystick Drive Booleans HANGINGL and HANGINGR set true in hang Phase 2");
         hang.hangingL = true; hang.hangingR = true;// fake out control code to let it go up automatically until someone touches the joystick
     }
 
+    boolean evenedStringsOut = false;
+    public void evenOutStringsWhenNeeded(){
+        if(hang.hang_Right.getCurrentPosition()>Hang.HANG_RIGHT_INTERMEDIATE&&!evenedStringsOut){
+            evenedStringsOut=true;
+            teamUtil.log("Strings evened out");
+            hang.hang_Left.setTargetPosition(Hang.HANG_LEVEL_3_L);
+        }
+    }
 
 
     public void dropLift() {
@@ -715,6 +726,7 @@ public class Robot {
         stowFlipperWhenNeeded();
         stowHangWhenNeeded();
         moveHookArmWhenNeeded();
+        evenOutStringsWhenNeeded();
     }
 
     public static float LIFT_PICKUP_HOOKS_POWER_1 = 0.5f;

@@ -156,6 +156,8 @@ public class testAutoPaths extends LinearOpMode {
                 }
                 if(driverGamepad.wasAPressed()){
                     long startTime = System.currentTimeMillis();
+                    robot.nextExtenderPos = robot.extenderTeethToEncoder(teethXOffset);
+                    robot.nextSliderPos = robot.sliderTeethToEncoder(teethYOffset);
                     robot.autoV5Specimen();
                     elapsedTime = System.currentTimeMillis()-startTime;
                 }

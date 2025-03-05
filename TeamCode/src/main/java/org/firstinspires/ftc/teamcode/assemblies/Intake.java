@@ -1623,15 +1623,16 @@ public class Intake {
     }
 
     public static int EXTENDER_NO_SEEK_INCREMENT = 350;
+    public static int MANUAL_EXTENDER_MIN = 20;
     public void manualYNoSeek(double joystickValue){
         // Doesn't check to see if another thread is moving the intake system!
         // This might interrupt a retract (OK) or mess up a seek (bad)
         extender.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
         extender.setVelocity(EXTENDER_MAX_VELOCITY);
         if (joystickValue < 0) {
-            extender.setTargetPosition((int) (clamp(extender.getCurrentPosition() + EXTENDER_NO_SEEK_INCREMENT, EXTENDER_MIN, EXTENDER_MAX)));
+            extender.setTargetPosition((int) (clamp(extender.getCurrentPosition() + EXTENDER_NO_SEEK_INCREMENT, MANUAL_EXTENDER_MIN, EXTENDER_MAX)));
         } else {
-            extender.setTargetPosition((int) (clamp(extender.getCurrentPosition() - EXTENDER_NO_SEEK_INCREMENT, EXTENDER_MIN, EXTENDER_MAX)));
+            extender.setTargetPosition((int) (clamp(extender.getCurrentPosition() - EXTENDER_NO_SEEK_INCREMENT, MANUAL_EXTENDER_MIN, EXTENDER_MAX)));
         }
     }
 

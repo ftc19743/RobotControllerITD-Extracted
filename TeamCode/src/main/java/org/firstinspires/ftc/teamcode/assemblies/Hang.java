@@ -73,6 +73,9 @@ public class Hang {
     public static long ENGAGE_HANG_PAUSE_R = 1250;
     public static long ENGAGE_HANG_PAUSE_L = 200;
 
+    public static int HANG_LEFT_INTERMEDIATE = 6512;
+    public static int HANG_RIGHT_INTERMEDIATE = 7614;
+
     public static double HANG_HOLD_POWER = 0.1;
     public boolean hanging = false;
     public boolean hangingL = false;
