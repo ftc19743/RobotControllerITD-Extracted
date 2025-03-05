@@ -55,6 +55,15 @@ public class Intake {
     public static final int NUM_PIXELS = 12;
     public static final int BYTES_PER_PIXEL=4; // RGBW neo pixel device
 
+    static public float MM_PER_PIX_Y = 0.5076f;
+    static public float MM_PER_PIX_X = 0.4975f;
+    //Old Value below = 0.64935f
+    static public float EXTENDER_TIC_PER_MM = 2.4f;
+    static public float MM_PER_EXTENDER_TIC = 1/EXTENDER_TIC_PER_MM;
+    static public float MM_PER_SLIDER_TIC = 1/AxonSlider.SLIDER_TICS_PER_MM;
+
+    static public float PIX_PER_MM_Y = 1.97f;
+    static public float PIX_PER_MM_X = 2.01f;
     static public int SLIDER_MM_DEADBAND = 5;
     static public float SLIDER_MAX_VELOCITY = 0.5f;
     static public float SLIDER_MIN_VELOCITY = 0.05f;
@@ -79,19 +88,30 @@ public class Intake {
     static public double FLIPPER_PRE_UNLOAD_POT_VOLTAGE = 0.74;
     static public double FLIPPER_PRE_UNLOAD_POT_THRESHOLD = 0.1;
 
-    static public float FLIPPER_GRAB = 0.225f;
     static public float FLIPPER_PRE_GRAB = 0.27f;
+    static public float FLIPPER_PRE_GRAB_EXTENDED = 0.28f;
+    static public float FLIPPER_GRAB = 0.225f;
+    static public float FLIPPER_GRAB_EXTENDED = 0.237f;
+    static public int EXTENDER_LONG_GRAB = 900; // The point at which pre-grab and grab will switch to EXTENDED settings to handle droop in extenders
+    static public float EXTENDER_LONG_GRAB_Y_ADJUST = EXTENDER_TIC_PER_MM * -6.25f; // tics to adjust ytarget if we are not going all the way down to grab with flipper
     static public float FLIPPER_GRAB_STEP_1 =.255f;
     static public float FLIPPER_GRAB_STEP_2 = .240f;
     static public long FLIPPER_GRAB_STEP_1_PAUSE = 50;
     static public long FLIPPER_GRAB_STEP_2_PAUSE = 50;
     static public long FLIPPER_GRAB_STEP_3_PAUSE = 50;
+    static public float FLIPPER_GRAB_STEP_1_EXTENDED =.255f;
+    static public float FLIPPER_GRAB_STEP_2_EXTENDED = .245f;
+    static public long FLIPPER_GRAB_STEP_1_PAUSE_EXTENDED = 50;
+    static public long FLIPPER_GRAB_STEP_2_PAUSE_EXTENDED = 50;
+    static public long FLIPPER_GRAB_STEP_3_PAUSE_EXTENDED = 50;
     static public double FLIPPER_PRE_GRAB_POT_VOLTAGE = 2.338;
     static public long FLIPPER_PRE_GRAB_MOMENTUM_PAUSE = 100;
     static public long FLIPPER_SEEK_TO_PRE_GRAB_TIME = 150;
 
 
     static public double FLIPPER_GRAB_POT_VOLTAGE = 2.44;
+    static public double FLIPPER_GRAB_POT_VOLTAGE_EXTENDED = 2.44;
+
     static public double FLIPPER_GRAB_POT_THRESHOLD = .02;
     static public float FLIPPER_SAFE = .7f;
     static public double FLIPPER_SAFE_POT_VOLTAGE = 1.045;
@@ -132,7 +152,7 @@ public class Intake {
     /* Values without potentiometer */
     static public float SWEEPER_HORIZONTAL_READY = 0.35f;
     static public float SWEEPER_EXPAND = 0.59f;
-    static public float SWEEPER_GRAB = 0.525f;
+    static public float SWEEPER_GRAB = 0.521f; // was .525
     static public float SWEEPER_RELEASE = .95f;
     static public float SWEEPER_STOW = .95f;
     static public float SWEEPER_VERTICAL_READY = 0.5f;
@@ -153,7 +173,7 @@ public class Intake {
 
     /* Values without potentiometer */
     static public float GRABBER_READY = 0.25f; //No Pot .25f
-    static public float GRABBER_GRAB = 0.655f; // No Pot .64f
+    static public float GRABBER_GRAB = 0.659f; // was .655
     static public float GRABBER_STOW = 0.75f;
     static public float GRABBER_RELEASE = .17f; // No Pot .63f TODO: Is this really the right value? Almost the same as grab?
     static public long GRABBER_UNLOAD_PAUSE = 0; // No Pot .63f TODO: Is this really the right value? Almost the same as grab?
@@ -171,16 +191,6 @@ public class Intake {
     static public int GRAB_DELAY_H = 75;
     static public int GRAB_DELAY2 = 100;
     static public int GRAB_DELAY3 = 200;
-
-    static public float MM_PER_PIX_Y = 0.5076f;
-    static public float MM_PER_PIX_X = 0.4975f;
-    //Old Value below = 0.64935f
-    static public float EXTENDER_TIC_PER_MM = 2.4f;
-    static public float MM_PER_EXTENDER_TIC = 1/EXTENDER_TIC_PER_MM;
-    static public float MM_PER_SLIDER_TIC = 1/AxonSlider.SLIDER_TICS_PER_MM;
-
-    static public float PIX_PER_MM_Y = 1.97f;
-    static public float PIX_PER_MM_X = 2.01f;
 
 
     static public int EXTENDER_MAX = 1200;
@@ -493,6 +503,32 @@ public class Intake {
         teamUtil.pause(FLIPPER_GRAB_STEP_3_PAUSE);
         teamUtil.log("flipperGoToGrabNoPot has Finished");
         return true;
+    }
+
+    public boolean flipperGoToGrabExtended(long timeout) {
+        teamUtil.log("flipperGoToGrabExtended has Started. Starting Potentiometer Value: " + flipperPotentiometer.getVoltage()+ "Distance: " + Math.abs(flipperPotentiometer.getVoltage()-FLIPPER_GRAB_POT_VOLTAGE_EXTENDED));
+        long timeoutTime = System.currentTimeMillis() + timeout;
+
+        flipper.setPosition(FLIPPER_GRAB_STEP_1_EXTENDED);
+        teamUtil.pause(FLIPPER_GRAB_STEP_1_PAUSE_EXTENDED);
+
+        flipper.setPosition(FLIPPER_GRAB_STEP_2_EXTENDED);
+        teamUtil.pause(FLIPPER_GRAB_STEP_2_PAUSE_EXTENDED);
+
+        flipper.setPosition(FLIPPER_GRAB_EXTENDED);
+
+        while(Math.abs(flipperPotentiometer.getVoltage()-FLIPPER_GRAB_POT_VOLTAGE_EXTENDED)>FLIPPER_GRAB_POT_THRESHOLD&&teamUtil.keepGoing(timeoutTime)){
+            if(details)teamUtil.log("Voltage: " + flipperPotentiometer.getVoltage() + "Target Voltage: " + FLIPPER_GRAB_POT_VOLTAGE_EXTENDED);
+            teamUtil.pause(10);
+        }
+
+        if(!teamUtil.keepGoing(timeoutTime)) {
+            teamUtil.log("flipperGoToGrabExtended has FAILED");
+            return false;
+        }
+        teamUtil.log("flipperGoToGrabExtended has Finished");
+        return true;
+
     }
 
     public boolean flipperGoToGrab(long timeout){
@@ -839,7 +875,7 @@ public class Intake {
             return false;
         }
         if(last){ // If we are going to move and this is the last jump before we grab the sample then move the flipper down to get ready
-            flipper.setPosition(FLIPPER_PRE_GRAB);
+            flipper.setPosition(extender.getCurrentPosition() > EXTENDER_LONG_GRAB ? FLIPPER_PRE_GRAB_EXTENDED : FLIPPER_PRE_GRAB); // deal with droop in extenders over long distance
         }
         extender.setVelocity(EXTENDER_JUMP_VELOCITY);
 
@@ -848,7 +884,7 @@ public class Intake {
             //teamUtil.log("Target Angle :  " + rotation);
         }
 
-        extender.setTargetPosition((int)yPos);
+        extender.setTargetPosition((int)(yPos > EXTENDER_LONG_GRAB ? yPos + EXTENDER_LONG_GRAB_Y_ADJUST : yPos));
         axonSlider.runToEncoderPosition(xPos, false, timeOut); // will not return until done
         while(extender.isBusy() && teamUtil.keepGoing(timeoutTime)){
             teamUtil.pause(10);
@@ -899,8 +935,7 @@ public class Intake {
     }
 
     public boolean goToSampleV5(long timeOut, boolean phase1){
-        teamUtil.log("GoToSampleV5 has started");
-        teamUtil.log("Processor State" + arduPortal.getProcessorEnabled(sampleDetector));
+        teamUtil.log("GoToSampleV5 has started. Processor State" + arduPortal.getProcessorEnabled(sampleDetector));
         long timeoutTime = System.currentTimeMillis() + timeOut;
         long startTime = System.currentTimeMillis();
         OpenCVSampleDetectorV2.FrameData frameData = null;
@@ -1521,12 +1556,11 @@ public class Intake {
         teamUtil.log("flipAndRotateToSampleAndGrab");
         // TODO: Use timeOut
 
-        flipperGoToGrab(1000);
-//        flipper.setPosition(FLIPPER_GRAB);
-//        FlipperInSeek.set(false);
-//
-//        FlipperInUnload.set(false);
-//        teamUtil.pause(FLIPPER_GRAB_PAUSE);
+        if (extender.getCurrentPosition() > EXTENDER_LONG_GRAB) {
+            flipperGoToGrabExtended(1000); // handle droop in extenders when extended a long way
+        } else {
+            flipperGoToGrab(1000);
+        }
         grab();
         if(System.currentTimeMillis()>timeoutTime){
             timedOut.set(true);

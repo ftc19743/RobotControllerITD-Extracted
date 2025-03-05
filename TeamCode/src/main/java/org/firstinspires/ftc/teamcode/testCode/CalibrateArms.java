@@ -246,10 +246,12 @@ public class CalibrateArms extends LinearOpMode {
             intake.grabberReady();
         }
         if(gp1.wasXPressed()){
-            intake.grabber.setPosition(Intake.GRABBER_READY);
+            intake.grabber.setPosition(Intake.GRABBER_GRAB);
+            intake.sweeper.setPosition(Intake.SWEEPER_GRAB);
         }
         if(gp1.wasBPressed()){
-            intake.sweeper.setPosition(Intake.SWEEPER_HORIZONTAL_READY);
+            intake.grabber.setPosition(Intake.GRABBER_RELEASE);
+            intake.sweeper.setPosition(Intake.SWEEPER_RELEASE);
         }
         if(gp1.wasRightTriggerPressed()){
             intake.wrist.setPosition(Intake.WRIST_MIDDLE);
@@ -262,15 +264,12 @@ public class CalibrateArms extends LinearOpMode {
     public void intakeSeekTesting() {
         if (gp1.wasUpPressed()) {
             intake.lightsOnandOff(WHITE_NEOPIXEL,Intake.RED_NEOPIXEL,Intake.GREEN_NEOPIXEL,Intake.BLUE_NEOPIXEL,true);
-
             intake.goToSampleV5(5000,true);
             intake.restartCVPipeline();
-            //intake.goToSampleAndGrabV2(5000);
         } if (gp1.wasRightBumperPressed()) {
             intake.lightsOnandOff(WHITE_NEOPIXEL,Intake.RED_NEOPIXEL,Intake.GREEN_NEOPIXEL,Intake.BLUE_NEOPIXEL,true);
-
             intake.goToSampleAndGrabV3(false, true,true);
-            //intake.goToSampleAndGrabV2(5000);
+            intake.restartCVPipeline();
         } if(gp1.wasLeftPressed()){
             intake.flipper.setPosition(Intake.FLIPPER_SEEK);
         }if(gp1.wasRightPressed()){
@@ -284,13 +283,16 @@ public class CalibrateArms extends LinearOpMode {
             intake.grab();
         }
         if(gp1.wasAPressed()){
-            //intake.grabberReady();
+            intake.grabberReady();
         }
         if(gp1.wasXPressed()){
-            intake.grabber.setPosition(Intake.GRABBER_READY);
+            intake.extender.setVelocity(0);
+            //intake.grabber.setPosition(Intake.GRABBER_READY);
         }
         if(gp1.wasBPressed()){
-            intake.sweeper.setPosition(Intake.SWEEPER_HORIZONTAL_READY);
+            intake.flipToSampleAndGrab(2000);
+            intake.flipper.setPosition(Intake.FLIPPER_SEEK);
+            //intake.sweeper.setPosition(Intake.SWEEPER_HORIZONTAL_READY);
         }
         if(gp1.wasRightTriggerPressed()){
             intake.wrist.setPosition(Intake.WRIST_MIDDLE);
