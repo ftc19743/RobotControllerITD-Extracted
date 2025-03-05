@@ -28,9 +28,9 @@ public class Teleop extends LinearOpMode {
     boolean lowBucketToggle= false;
     int optionsPresses = 0;
     boolean hangManualControl= false;
-    public static boolean initCV= false;
+    public static boolean enableLiveView = false;
     boolean outtakeUp = true;
-
+    public static boolean proportionalBucketControl = false;
 
 
     // Internal state
@@ -86,7 +86,7 @@ public class Teleop extends LinearOpMode {
         armsGamepad.initilize(false);
         robot = new Robot();
         robot.initialize();
-        robot.initCV(initCV);// TODO: false for competition
+        robot.initCV(enableLiveView);// TODO: false for competition
 
         if (!teamUtil.justRanAuto&&!teamUtil.justRanCalibrateRobot) { // Auto already took care of this, so save time and don't move anything!
             robot.calibrate();
@@ -244,8 +244,12 @@ public class Teleop extends LinearOpMode {
 
 
             //OUTPUT
-            if (armsGamepad.wasRightTriggerPressed()) {
-                robot.dropSampleOutBackWithFlipperResetNoWait();
+            if (proportionalBucketControl && !robot.output.outputLiftAtBottom.get()) {
+                robot.output.bucket.setPosition(Output.BUCKET_TRAVEL - armsGamepad.gamepad.right_trigger * (Output.BUCKET_TRAVEL - Output.BUCKET_DEPLOY_AT_TOP)) ;
+            } else {
+                if (armsGamepad.wasRightTriggerPressed()) {
+                    robot.dropSampleOutBackWithFlipperResetNoWait();
+                }
             }
             if(armsGamepad.wasHomePressed()){
                 if(lowBucketToggle){
