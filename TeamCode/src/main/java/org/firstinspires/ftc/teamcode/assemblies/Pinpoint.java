@@ -264,18 +264,19 @@ public class Pinpoint extends I2cDeviceSynchDevice<I2cDeviceSynchSimple> {
         float xPos     = byteArrayToFloat(Arrays.copyOfRange(bArr, 16,20), ByteOrder.LITTLE_ENDIAN);
         float yPos    = byteArrayToFloat(Arrays.copyOfRange(bArr, 20,24), ByteOrder.LITTLE_ENDIAN);
         float orientation  = byteArrayToFloat(Arrays.copyOfRange(bArr, 24,28), ByteOrder.LITTLE_ENDIAN);
-        xVelocity     = byteArrayToFloat(Arrays.copyOfRange(bArr, 28,32), ByteOrder.LITTLE_ENDIAN);
-        yVelocity     = byteArrayToFloat(Arrays.copyOfRange(bArr, 32,36), ByteOrder.LITTLE_ENDIAN);
+        float xVel    = byteArrayToFloat(Arrays.copyOfRange(bArr, 28,32), ByteOrder.LITTLE_ENDIAN);
+        float yVel     = byteArrayToFloat(Arrays.copyOfRange(bArr, 32,36), ByteOrder.LITTLE_ENDIAN);
         hVelocity     = byteArrayToFloat(Arrays.copyOfRange(bArr, 36,40), ByteOrder.LITTLE_ENDIAN);
         
         xPosition = updateCheck(xPosition, xPos);
         yPosition = updateCheck(yPosition, yPos);
         hOrientation = updateCheck(hOrientation, orientation);
-
+        xVelocity = updateCheck(xVelocity, xVel);
+        yVelocity = updateCheck(yVelocity, yVel);
     }
 
     public float updateCheck(float old,float newval){
-        if(Float.isNaN(newval)||Math.abs(newval)>5000){
+        if(Float.isNaN(newval)||Math.abs(newval)>10000){
             teamUtil.log("=============!!ODO Returned garbage data " + newval + " !!==================");
             return old;
         }
