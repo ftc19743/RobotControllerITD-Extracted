@@ -437,11 +437,23 @@ public class Robot {
     }
 
 
+    public void reverseUntilForwardMotionStopped( long timeout) {
+        teamUtil.log("reverseUntilForwardMotionStopped");
+        drive.driveMotorsHeadingsFR(180,0,BasicDrive.MAX_VELOCITY);
+        drive.odo.update();
+        while (drive.odo.getVelX() > 0) {
+            drive.odo.update();
+            if (details) {
+                teamUtil.log("reversing: xPos: " + drive.odo.getPosX() + " xVel: " + drive.odo.getVelX());
+            }
+        }
+        teamUtil.log("reverseUntilForwardMotionStopped Finished. xPos: " + drive.odo.getPosX() + " xVel: " + drive.odo.getVelX());
+    }
+
     static public float G18b_ADJUSTED_MAX_DECLINATION = 35;
     static public int G19_CYCLE_MIDFIELD_X = 500; // was 550 when we were trying for 6
     static public int G20_CYCLE_SPECIMEN_Y_ADJUSTMENT = 25;
-    static public int G21_CYCLE_PLACE_SAMPLE_X = 675;
-    static public int G21b_CYCLE_PLACE_SAMPLE_X = 670;
+    static public int G21_CYCLE_PLACE_SAMPLE_X = 670;
     static public int G22_CYCLE1_WRIST_CALLBACK = -450;
     static public int G22b_CYCLE2_WRIST_CALLBACK = -800;
     static public int G22c_CYCLE345_WRIST_CALLBACK = -600;
@@ -450,6 +462,7 @@ public class Robot {
     static public int G23b_CYCLE_REVERSE_PLACE_SPECIMEN_PAUSE = 200;
     static public int G24_CYCLE_BACKUP_X = 700;
     static public int G24_CYCLE_SHIFT_X = 780;
+    static public int G24_CYCLE_BACKUP_SHIFT_X = 650;
 
     static public int G25_CYCLE_PICKUP_Y = -690; //was 550
     static public float G25_CYCLE_PICKUP_POWER = .3f;
@@ -473,8 +486,12 @@ public class Robot {
                 }, cycle == 1? G22_CYCLE1_WRIST_CALLBACK:(cycle==2?G22b_CYCLE2_WRIST_CALLBACK : G22c_CYCLE345_WRIST_CALLBACK), 5000);
         BasicDrive.STRAFE_MAX_DECLINATION = strafeMaxDeclination;
 
+        // Drive straight at sub reversing motors when we get close to decelerate
+        drive.straightHoldingStrafePower(G00_MAX_POWER, G21_CYCLE_PLACE_SAMPLE_X, cycleYTarget, 0);
+        reverseUntilForwardMotionStopped(1000);
 
-        if(cycle>=2){ // TODO: If we stick with grabbing a sample on first place, this should be ">3" as cycle 2 will be the one from deep in the observation zone
+        /*  Replaced by velocity sensing reverse above
+        if(cycle>=2){ //  If we stick with grabbing a sample on first place, this should be ">3" as cycle 2 will be the one from deep in the observation zone
             drive.straightHoldingStrafePower(G00_MAX_POWER, G21b_CYCLE_PLACE_SAMPLE_X, cycleYTarget, 0);
             drive.driveMotorsHeadingsFR(180,0,BasicDrive.MAX_VELOCITY);
             teamUtil.pause(G23b_CYCLE_REVERSE_PLACE_SPECIMEN_PAUSE); // give it time to decelerate
@@ -483,6 +500,8 @@ public class Robot {
             drive.driveMotorsHeadingsFR(180,0,BasicDrive.MAX_VELOCITY);
             teamUtil.pause(G23b_CYCLE_REVERSE_PLACE_SPECIMEN_PAUSE); // give it time to decelerate and coast to submersible
         }
+
+         */
         return true;
     }
 
@@ -498,7 +517,11 @@ public class Robot {
 
         if(getNextSpecimen) {
             // moves robot out of the way of the submersible
-            drive.straightHoldingStrafePower(G00_MAX_POWER,G24_CYCLE_BACKUP_X,G02_PLACE_SPECIMEN_Y,0);
+            if (shiftSpecimens) {
+                drive.straightHoldingStrafePower(G00_MAX_POWER,G24_CYCLE_BACKUP_SHIFT_X, shiftYTarget,0);
+            } else {
+                drive.straightHoldingStrafePower(G00_MAX_POWER,G24_CYCLE_BACKUP_X, G02_PLACE_SPECIMEN_Y,0);
+            }
             outtake.outtakeGrab();
 
             //moves robot into position to drive forward to grab next specimen
@@ -518,8 +541,8 @@ public class Robot {
 
 
     // Work in progress on 6 specimen auto
-    static public int[] G33_6_CYCLE_Y_PLACEMENTS = {20, 130, 20, 69, 120}; // was {0, 68, 112, 145, 178}
-    static public int G33_6_CYCLE_SHIFT_2 = 40;
+    static public int[] G33_6_CYCLE_Y_PLACEMENTS = {20, 130, 20, 75, 130}; // was {0, 68, 112, 145, 178}
+    static public int G33_6_CYCLE_SHIFT_2 = 70;
     static public int G33_6_TIME_FOR_LAST_SPECIMEN = 28500;
     static public int G33_7_TIME_FOR_PARK = 28500;
 

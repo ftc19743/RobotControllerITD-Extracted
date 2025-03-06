@@ -94,6 +94,7 @@ public class Intake {
     static public float FLIPPER_GRAB_EXTENDED = 0.237f;
     static public int EXTENDER_LONG_GRAB = 900; // The point at which pre-grab and grab will switch to EXTENDED settings to handle droop in extenders
     static public float EXTENDER_LONG_GRAB_Y_ADJUST = EXTENDER_TIC_PER_MM * -6.25f; // tics to adjust ytarget if we are not going all the way down to grab with flipper
+
     static public float FLIPPER_GRAB_STEP_1 =.255f;
     static public float FLIPPER_GRAB_STEP_2 = .240f;
     static public long FLIPPER_GRAB_STEP_1_PAUSE = 50;
