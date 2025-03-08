@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.testCode;
 
+import static org.firstinspires.ftc.teamcode.testCode.CalibrateDrive.Ops.Test_Power_Consumption;
+
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
@@ -34,6 +36,7 @@ public class CalibrateDrive extends LinearOpMode {
     public enum Ops {Test_Wiring,
         Test_Rot_Bug,
         Test_Power_Consumption,
+        test_MoveToHolding,
         Move_No_Acc_Heading,
         Move_Power_No_Acc_Heading,
         Move_No_Acc_With_Heading,
@@ -90,6 +93,7 @@ public class CalibrateDrive extends LinearOpMode {
 
         drive = new BasicDrive();
         drive.initalize();
+        drive.calibrate();
 
         gp1.initilize(true); // Game Pads can be plugged into the computer
         gp2.initilize(false);
@@ -145,8 +149,10 @@ public class CalibrateDrive extends LinearOpMode {
                 reverseTest();
             } else if (AAOP==Ops.Test_Rot_Bug){
                 testRotBug();
-            } else if (AAOP==Ops.Test_Power_Consumption) {
+            } else if (AAOP== Test_Power_Consumption) {
                 testPowerConsumption();
+            } else if (AAOP==Ops.test_MoveToHolding) {
+                testMoveToHolding();
             }
 
             // Drawing stuff on the field
@@ -171,6 +177,14 @@ public class CalibrateDrive extends LinearOpMode {
             //sleep(20);
         }
     }
+
+    public void testMoveToHolding() {
+        if (gamepad1.dpad_up) {
+            drive.moveToXHoldingStrafe(testPower, botX, botY, (int) HEADING, (int) HELD_HEADING, testEndVelocity, null, 0, 3000);
+            drive.stopMotors();
+        }
+    }
+
 
     public void testRotBug() {
         if (gamepad1.dpad_up) {

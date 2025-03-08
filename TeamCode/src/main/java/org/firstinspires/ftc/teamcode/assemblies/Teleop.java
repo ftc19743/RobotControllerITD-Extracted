@@ -90,7 +90,7 @@ public class Teleop extends LinearOpMode {
 
         if (!teamUtil.justRanAuto&&!teamUtil.justRanCalibrateRobot) { // Auto already took care of this, so save time and don't move anything!
             robot.calibrate();
-
+            robot.drive.setHeading(0);
         }
         teamUtil.justRanAuto=false;
         teamUtil.justRanCalibrateRobot=false;
@@ -102,10 +102,11 @@ public class Teleop extends LinearOpMode {
         telemetry.update();
 
 
-        robot.drive.setHeading(0);
 
         optionsPresses=0;
         hangManualControl = false;
+        boolean inHang = false;
+
 
         while (!opModeIsActive()) {
             driverGamepad.loop();
@@ -129,7 +130,6 @@ public class Teleop extends LinearOpMode {
         robot.intake.extender.setVelocity(EXTENDER_HOLD_RETRACT_VELOCITY);
         
         robot.intake.setTargetColor(OpenCVSampleDetectorV2.TargetColor.YELLOW);
-
         while (opModeIsActive()){
             driverGamepad.loop();
             armsGamepad.loop();
@@ -251,7 +251,7 @@ public class Teleop extends LinearOpMode {
                     robot.dropSampleOutBackWithFlipperResetNoWait();
                 }
             }
-            if(armsGamepad.wasHomePressed()){
+            if(armsGamepad.wasRightBumperPressed()){
                 if(lowBucketToggle){
                     lowBucketToggle=false;
                 }else{
@@ -273,15 +273,20 @@ public class Teleop extends LinearOpMode {
 
             //HANG
 
-
             if(armsGamepad.wasOptionsPressed()){
                 optionsPresses+=1;
                 if(optionsPresses==1){
+                    inHang = true;
                     robot.hangPhase1NoWait();
                 }if(optionsPresses==2){
                     robot.hangPhase2V3();
                     hangManualControl=true;
                 }
+            }
+
+            if(armsGamepad.wasBackPressed() && inHang){
+                robot.hangPhase2Level2();
+                hangManualControl=true;
             }
 
             if(hangManualControl){

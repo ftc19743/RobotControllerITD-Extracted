@@ -145,7 +145,7 @@ public class BasicDrive {
         odo.setOffsets(ODO_X_OFFSET, ODO_Y_OFFSET); //Center of bot
         odo.setEncoderResolution(Pinpoint.GoBildaOdometryPods.goBILDA_4_BAR_POD);
         odo.setEncoderDirections(Pinpoint.EncoderDirection.REVERSED, Pinpoint.EncoderDirection.REVERSED);
-        odo.resetPosAndIMU();
+
 
         // Set up internal IMU on Control Hub
         imu = hardwareMap.get(BNO055IMU.class, "imu");
@@ -154,12 +154,17 @@ public class BasicDrive {
         parameters.accelUnit = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
         imu.initialize(parameters);
 
+
         //TODO Initialize Correctly
         //forwardEncoder = hardwareMap.get(DcMotorEx.class, "leftForwardEncoder");
         //strafeEncoder = hardwareMap.get(DcMotorEx.class, "strafeEncoder");
 
         setMotorsBrake();
         teamUtil.log("Initializing Drive - FINISHED");
+    }
+
+    public void calibrate(){
+        odo.resetPosAndIMU();
     }
 
     public void loop() { // Call this frequently so that odometry data is up to date
@@ -1651,6 +1656,71 @@ public class BasicDrive {
             return false;
         }
         teamUtil.log("strafeHoldingStraightPower--Finished.  Current Strafe Encoder:" + odo.getPosY());
+        return true;
+    }
+
+    public static double distanceToLine(double targetX, double targetY, double driveHeading, double posX, double posY) {
+        // Convert angle to radians
+        double angleRadians = Math.toRadians(driveHeading);
+        // Compute A, B, and C for the line equation Ax + By + C = 0
+        double A = -Math.sin(angleRadians);
+        double B = Math.cos(angleRadians);
+        double C = -A * targetX - B * targetY;
+        // Compute signed perpendicular distance
+        double distance = (A * posX + B * posY + C) / Math.sqrt(A * A + B * B);
+        return distance;
+    }
+
+    public static double POWER_DECEL_COEFF = .002;
+    public boolean moveToXHoldingStrafe(float power, double xTarget, double yTarget, int driveHeading, int robotHeading, float endPower, ActionCallback action, double actionTarget, long timeout) {
+        if(robotHeading != driveHeading && robotHeading != adjustAngle(180+driveHeading)){
+            teamUtil.log("moveToXHoldingStrafe - ERROR INCOMPATIBLE ROBOT/DRIVE HEADING");
+            stopMotors();
+            return false;
+        }
+        long startTime = System.currentTimeMillis();
+        long timeoutTime = startTime+timeout;
+        odo.update();
+        double startEncoder = odo.getPosX();
+        boolean goingUp;
+        if(xTarget-startEncoder >=0){
+            goingUp = true;
+        }else{
+            goingUp=false;
+        }
+        if (endPower == 0) {
+            endPower = MIN_END_POWER;
+        }
+        double totalTics = Math.abs(startEncoder-xTarget);
+        teamUtil.log("moveToXHoldingStrafe xTarget: " + xTarget +  " yTarget: " + yTarget + " robotH: " + robotHeading + " driveH: " + driveHeading + " Power: " + power + " TotalMMss: " + totalTics + " Starting Forward Pos: "+ odo.getPosX() + " Starting Strafe Pos: "+ odo.getPosY() + " Starting Heading:" + getHeadingODO());
+        double distanceRemaining = Math.abs(xTarget - odo.getPosX());
+        setMotorsWithEncoder();
+        boolean actionDone = false;
+        double currentPos;
+        double adjustedDriveHeading;
+        float adjustedPower;
+
+        //-------ONLY a CRUISE PHASE (but with deceleration)
+        while ((distanceRemaining > 0) && teamUtil.keepGoing(timeoutTime)) {
+            odo.update();
+            currentPos = odo.getPosX();
+            distanceRemaining = (!goingUp) ? currentPos-xTarget : xTarget - currentPos;
+            adjustedPower = (float) MathUtils.clamp(distanceRemaining* POWER_DECEL_COEFF + endPower,endPower, power);
+            adjustedDriveHeading = driveHeading - MathUtils.clamp(distanceToLine(xTarget, yTarget, driveHeading, odo.getPosX(), odo.getPosY())* STRAIGHT_HEADING_DECLINATION, -STRAIGHT_MAX_DECLINATION, STRAIGHT_MAX_DECLINATION);
+            if(details)teamUtil.log("Driving at Power: "+ adjustedPower + " Adjusted Drive Heading: " + adjustedDriveHeading + " X MMs Remaining: " + distanceRemaining);
+            driveMotorsHeadingsFRPower(adjustedDriveHeading, robotHeading, adjustedPower);
+            if(action!=null&&!actionDone&&((goingUp&&currentPos>=actionTarget)||(!goingUp&&currentPos<=actionTarget))){
+                action.action();
+                actionDone=true;
+            }
+        }
+
+        if(System.currentTimeMillis()>timeoutTime){
+            teamUtil.log("TIMEOUT Triggered");
+            stopMotors();
+            return false;
+        }
+        teamUtil.log("moveToXHoldingStrafe--Finished.  Current xPos:" + odo.getPosX() + " Current yPos: "+ odo.getPosY());
         return true;
     }
 

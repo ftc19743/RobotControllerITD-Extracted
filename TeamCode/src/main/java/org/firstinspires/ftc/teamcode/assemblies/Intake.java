@@ -91,20 +91,20 @@ public class Intake {
     static public float FLIPPER_PRE_GRAB = 0.27f;
     static public float FLIPPER_PRE_GRAB_EXTENDED = 0.28f;
     static public float FLIPPER_GRAB = 0.225f;
-    static public float FLIPPER_GRAB_EXTENDED = 0.237f;
+    static public float FLIPPER_GRAB_EXTENDED = 0.234f;
     static public int EXTENDER_LONG_GRAB = 900; // The point at which pre-grab and grab will switch to EXTENDED settings to handle droop in extenders
-    static public float EXTENDER_LONG_GRAB_Y_ADJUST = EXTENDER_TIC_PER_MM * -6.25f; // tics to adjust ytarget if we are not going all the way down to grab with flipper
+    static public float EXTENDER_LONG_GRAB_Y_ADJUST = EXTENDER_TIC_PER_MM * -5f; // tics to adjust ytarget if we are not going all the way down to grab with flipper
 
     static public float FLIPPER_GRAB_STEP_1 =.255f;
     static public float FLIPPER_GRAB_STEP_2 = .240f;
-    static public long FLIPPER_GRAB_STEP_1_PAUSE = 50;
-    static public long FLIPPER_GRAB_STEP_2_PAUSE = 50;
-    static public long FLIPPER_GRAB_STEP_3_PAUSE = 50;
+    static public long FLIPPER_GRAB_STEP_1_PAUSE = 80;
+    static public long FLIPPER_GRAB_STEP_2_PAUSE = 80;
+    static public long FLIPPER_GRAB_STEP_3_PAUSE = 200;
     static public float FLIPPER_GRAB_STEP_1_EXTENDED =.255f;
     static public float FLIPPER_GRAB_STEP_2_EXTENDED = .245f;
-    static public long FLIPPER_GRAB_STEP_1_PAUSE_EXTENDED = 50;
-    static public long FLIPPER_GRAB_STEP_2_PAUSE_EXTENDED = 50;
-    static public long FLIPPER_GRAB_STEP_3_PAUSE_EXTENDED = 50;
+    static public long FLIPPER_GRAB_STEP_1_PAUSE_EXTENDED = 80;
+    static public long FLIPPER_GRAB_STEP_2_PAUSE_EXTENDED = 80;
+    static public long FLIPPER_GRAB_STEP_3_PAUSE_EXTENDED = 80;
     static public double FLIPPER_PRE_GRAB_POT_VOLTAGE = 2.338;
     static public long FLIPPER_PRE_GRAB_MOMENTUM_PAUSE = 100;
     static public long FLIPPER_SEEK_TO_PRE_GRAB_TIME = 150;
@@ -153,7 +153,7 @@ public class Intake {
     /* Values without potentiometer */
     static public float SWEEPER_HORIZONTAL_READY = 0.35f;
     static public float SWEEPER_EXPAND = 0.59f;
-    static public float SWEEPER_GRAB = 0.521f; // was .525
+    static public float SWEEPER_GRAB = 0.520f; // was .525
     static public float SWEEPER_RELEASE = .95f;
     static public float SWEEPER_STOW = .95f;
     static public float SWEEPER_VERTICAL_READY = 0.5f;
@@ -174,7 +174,7 @@ public class Intake {
 
     /* Values without potentiometer */
     static public float GRABBER_READY = 0.25f; //No Pot .25f
-    static public float GRABBER_GRAB = 0.659f; // was .655
+    static public float GRABBER_GRAB = 0.660f; // was .655
     static public float GRABBER_STOW = 0.75f;
     static public float GRABBER_RELEASE = .17f; // No Pot .63f TODO: Is this really the right value? Almost the same as grab?
     static public long GRABBER_UNLOAD_PAUSE = 0; // No Pot .63f TODO: Is this really the right value? Almost the same as grab?
@@ -517,11 +517,13 @@ public class Intake {
         teamUtil.pause(FLIPPER_GRAB_STEP_2_PAUSE_EXTENDED);
 
         flipper.setPosition(FLIPPER_GRAB_EXTENDED);
+        teamUtil.pause(FLIPPER_GRAB_STEP_3_PAUSE_EXTENDED);
 
-        while(Math.abs(flipperPotentiometer.getVoltage()-FLIPPER_GRAB_POT_VOLTAGE_EXTENDED)>FLIPPER_GRAB_POT_THRESHOLD&&teamUtil.keepGoing(timeoutTime)){
-            if(details)teamUtil.log("Voltage: " + flipperPotentiometer.getVoltage() + "Target Voltage: " + FLIPPER_GRAB_POT_VOLTAGE_EXTENDED);
-            teamUtil.pause(10);
-        }
+//        while(Math.abs(flipperPotentiometer.getVoltage()-FLIPPER_GRAB_POT_VOLTAGE_EXTENDED)>FLIPPER_GRAB_POT_THRESHOLD&&teamUtil.keepGoing(timeoutTime)){
+//            if(details)teamUtil.log("Voltage: " + flipperPotentiometer.getVoltage() + "Target Voltage: " + FLIPPER_GRAB_POT_VOLTAGE_EXTENDED);
+//            teamUtil.pause(10);
+//        }
+
 
         if(!teamUtil.keepGoing(timeoutTime)) {
             teamUtil.log("flipperGoToGrabExtended has FAILED");
@@ -544,6 +546,7 @@ public class Intake {
 
 
         flipper.setPosition(FLIPPER_GRAB);
+
 
         while(Math.abs(flipperPotentiometer.getVoltage()-FLIPPER_GRAB_POT_VOLTAGE)>FLIPPER_GRAB_POT_THRESHOLD&&teamUtil.keepGoing(timeoutTime)){
             if(details)teamUtil.log("Voltage: " + flipperPotentiometer.getVoltage() + "Target Voltage: " + FLIPPER_GRAB_POT_VOLTAGE);
@@ -1234,6 +1237,72 @@ public class Intake {
     }
 
 
+    public static long FLIP_TIME = 600;
+    public static long AUTO_SAFE_UNLOAD_RELEASE_PAUSE =0;
+    public void autoRetractAllAndUnload(long timeOut){
+        teamUtil.log("autoRetractAllAndUnload Started");
+        long timeOutTime = System.currentTimeMillis()+timeOut;
+
+        flipper.setPosition(FLIPPER_PRE_GRAB);
+        wrist.setPosition(WRIST_MIDDLE);
+
+        //starts slider movement
+        axonSlider.runToEncoderPositionNoWait(axonSlider.SLIDER_UNLOAD, true, 3000);
+        timedOut.set(axonSlider.timedOut.get());
+
+        //starts extender movement
+        extender.setTargetPositionTolerance(EXTENDER_TOLERANCE_RETRACT);
+        extender.setTargetPosition(EXTENDER_UNLOAD);
+        extender.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
+        extender.setVelocity(EXTENDER_MAX_VELOCITY);
+
+        int sliderEncoderPos = axonSlider.getPositionEncoder();
+        while((sliderEncoderPos<axonSlider.RETRACT_LEFT_LIMIT || sliderEncoderPos> axonSlider.RETRACT_RIGHT_LIMIT) && teamUtil.keepGoing(timeOutTime)){
+            teamUtil.pause(50);
+            sliderEncoderPos = axonSlider.getPositionEncoder();
+        }
+
+        if(System.currentTimeMillis()>timeOutTime){
+            teamUtil.log("Slider Movement Timed Out In autoRetractAllAndUnload");
+        }
+
+        if((sliderEncoderPos<axonSlider.RETRACT_LEFT_LIMIT || sliderEncoderPos> axonSlider.RETRACT_RIGHT_LIMIT)){
+            teamUtil.log("Slider Didnt Make it In autoRetractAllAndUnload");
+        }
+
+
+        flipper.setPosition(FLIPPER_UNLOAD);
+        long flipperStartTime = System.currentTimeMillis();
+
+
+        while((axonSlider.moving.get() || extender.getCurrentPosition()>EXTENDER_GOTOUNLOAD_THRESHOLD)&&teamUtil.keepGoing(timeOutTime)){
+            teamUtil.pause(50);
+        }
+
+        if(System.currentTimeMillis()>timeOutTime){
+            teamUtil.log("Extender Movement Timed Out In autoRetractAllAndUnload");
+        }
+        if(extender.getCurrentPosition()>EXTENDER_GOTOUNLOAD_THRESHOLD){
+            teamUtil.log("Extender Didnt Make it In autoRetractAllAndUnload");
+        }
+
+        long pauseTime = flipperStartTime+FLIP_TIME-System.currentTimeMillis();
+        if(pauseTime>0){
+            teamUtil.pause(pauseTime);
+        }
+
+        sweeper.setPosition(SWEEPER_RELEASE);
+        grabber.setPosition(GRABBER_RELEASE);
+        teamUtil.pause(AUTO_SAFE_UNLOAD_RELEASE_PAUSE); // let sweeper get out of the way
+        extender.setTargetPosition(EXTENDER_UNLOAD_POST); // move grabber back to avoid hitting it when bucket flips
+        extender.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
+        extender.setVelocity(EXTENDER_MAX_VELOCITY);
+
+        moving.set(false);
+        teamUtil.log("autoRetractAllAndUnload Finished");
+    }
+
+
     public void retractAllNoWait(boolean unload, long timeOut) {
         if (moving.get()) { // Intake is already moving in another thread
             teamUtil.log("WARNING: Attempt to retractAllNoWait while intake is moving--ignored");
@@ -1560,7 +1629,8 @@ public class Intake {
         if (extender.getCurrentPosition() > EXTENDER_LONG_GRAB) {
             flipperGoToGrabExtended(1000); // handle droop in extenders when extended a long way
         } else {
-            flipperGoToGrab(1000);
+            //flipperGoToGrab(1000);
+            flipperGoToGrabNoPot(1000);
         }
         grab();
         if(System.currentTimeMillis()>timeoutTime){

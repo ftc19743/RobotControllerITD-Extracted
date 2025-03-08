@@ -61,6 +61,10 @@ public class Hang {
     public static int HANG_LEVEL_3_L = 8024;//5884
     public static int HANG_LEVEL_3_R = 9325;//6838
 
+    public static int HANG_LEVEL_2_L = 3300;//
+    public static int HANG_LEVEL_2_R = 4600;//
+
+
     public static int HANG_LEVEL_3 = 7000;
     public static int HANG_PAUSE_FOR_LEFT =250;
 

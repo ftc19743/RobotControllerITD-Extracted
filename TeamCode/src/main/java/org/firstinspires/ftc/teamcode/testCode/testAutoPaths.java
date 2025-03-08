@@ -123,7 +123,9 @@ public class testAutoPaths extends LinearOpMode {
 
                 if(driverGamepad.wasUpPressed()) {
                     long startTime = System.currentTimeMillis();
-                    robot.autoV4Specimen();
+                    //robot.autoV4Specimen();
+                    robot.specimenCycleV4(5, Robot.G33_6_CYCLE_Y_PLACEMENTS[4],false,  0, false);
+                    robot.park();
                     robot.drive.stopMotors();
                     elapsedTime = System.currentTimeMillis()-startTime;
                 }
@@ -206,14 +208,14 @@ public class testAutoPaths extends LinearOpMode {
                 }
                 if (driverGamepad.wasRightPressed()) {
                     long startTime = System.currentTimeMillis();
-                    robot.bucketToSub(true);
+                    robot.bucketToSubV2(GRAB_SAMPLE);
                     elapsedTime = System.currentTimeMillis() - startTime;
                     teamUtil.pause(500);
                     robot.drive.stopMotors();
                 }
                 if(driverGamepad.wasLeftPressed()){
                     long startTime = System.currentTimeMillis();
-                    robot.subToBucket();
+                    robot.subToBasketV2(GRAB_SAMPLE);
                     elapsedTime = System.currentTimeMillis() - startTime;
                     teamUtil.pause(500);
                     robot.drive.stopMotors();
@@ -228,11 +230,16 @@ public class testAutoPaths extends LinearOpMode {
                     robot.drive.stopMotors();
                 }
                 if(driverGamepad.wasDownPressed()){
-                    robot.sampleAutoUnloadHighBucket(false);
+                    //robot.sampleAutoUnloadHighBucket(false);
+                    long startTime = System.currentTimeMillis();
+                    robot.drive.setRobotPosition(0,0,0);
+                    robot.deliver4Samples();
+                    robot.drive.stopMotors();
+                    elapsedTime = System.currentTimeMillis() - startTime;
                 }
                 if(driverGamepad.wasBPressed()){
                     robot.intake.setTargetColor(OpenCVSampleDetectorV2.TargetColor.YELLOW);
-                    robot.intake.goToSampleAndGrabV3(false,false,true);
+                    robot.intake.goToSampleAndGrabV3(true,true,true);
                 }
 
                 if(driverGamepad.wasAPressed()){
@@ -252,7 +259,8 @@ public class testAutoPaths extends LinearOpMode {
                     robot.hangPhase2V3();
                 }
                 if(driverGamepad.wasRightPressed()){
-                    robot.hang.clearHangServos();
+                    robot.hang.hang_Left.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                    robot.hang.hang_Right.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                 }
                 if( driverGamepad.wasUpPressed()){
                     robot.hang.extendHang();
@@ -268,8 +276,7 @@ public class testAutoPaths extends LinearOpMode {
                     robot.hang.stowHookGrabber();
                 }
                 if (driverGamepad.wasXPressed()) {
-                    robot.hang.hang_Left.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-                    robot.hang.hang_Right.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                    robot.hangPhase2Level2();
                 }
                 robot.hang.joystickDriveV2(gamepad1.left_stick_x, gamepad1.left_stick_y);
                 robot.hangPhase2DelayedOps();

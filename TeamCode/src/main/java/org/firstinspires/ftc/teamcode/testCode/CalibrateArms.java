@@ -265,6 +265,8 @@ public class CalibrateArms extends LinearOpMode {
         if (gp1.wasUpPressed()) {
             intake.lightsOnandOff(WHITE_NEOPIXEL,Intake.RED_NEOPIXEL,Intake.GREEN_NEOPIXEL,Intake.BLUE_NEOPIXEL,true);
             intake.goToSampleV5(5000,true);
+            intake.flipToSampleAndGrab(3000);
+            intake.autoRetractAllAndUnload(3000);
             intake.restartCVPipeline();
         } if (gp1.wasRightBumperPressed()) {
             intake.lightsOnandOff(WHITE_NEOPIXEL,Intake.RED_NEOPIXEL,Intake.GREEN_NEOPIXEL,Intake.BLUE_NEOPIXEL,true);
@@ -273,7 +275,7 @@ public class CalibrateArms extends LinearOpMode {
         } if(gp1.wasLeftPressed()){
             intake.flipper.setPosition(Intake.FLIPPER_SEEK);
         }if(gp1.wasRightPressed()){
-            intake.flipper.setPosition(Intake.FLIPPER_GRAB);
+            intake.flipperGoToGrabNoPot(1000);
         }if(gp1.wasDownPressed()){
             intake.rotateToSample(intake.sampleDetector.rectAngle.get());
         } if(gp1.wasHomePressed()){
@@ -312,7 +314,7 @@ public class CalibrateArms extends LinearOpMode {
 
         if (gp1.wasDownPressed()) {
             //intake.goToGrab();
-            intake.flipperGoToGrab(2000);
+            intake.flipperGoToGrabNoPot(2000);
 
         }
         if (gp1.wasLeftTriggerPressed()) {
@@ -695,7 +697,7 @@ public class CalibrateArms extends LinearOpMode {
             intake.unloadV2(true);
         }
         if(gp1.wasLeftTriggerPressed()){
-            output.bucket.setPosition(Output.BUCKET_IDLE);
+            output.bucket.setPosition(Output.BUCKET_RELOAD);
         }
         if(gp1.wasXPressed()){
             intake.flipperGoToSeek(2000);
