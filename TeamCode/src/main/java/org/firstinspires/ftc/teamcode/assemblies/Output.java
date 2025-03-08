@@ -245,7 +245,7 @@ public class Output {
                 teamUtil.pause(5);
             }
             bucket.setPosition(BUCKET_TRAVEL);
-            teamUtil.log("outputHighBucket Completed"); // TODO: The lift is still moving right now...is this OK?
+            teamUtil.log("outputHighBucket on its way");
             outputLiftAtBottom.set(false);
             outputMoving.set(false);
         }

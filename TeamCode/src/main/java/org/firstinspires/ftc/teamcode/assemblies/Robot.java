@@ -239,9 +239,13 @@ public class Robot {
 
     public void AutoReadyToSeekNoWait(int sliderPos, int extenderPos) {
         teamUtil.log("Launching Thread to AutoReadyToSeek");
+
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
+                while(intake.moving.get()){
+                    teamUtil.pause(10);
+                }
                 AutoReadyToSeek(sliderPos, extenderPos);
             }
         });
@@ -928,30 +932,33 @@ public class Robot {
     public static int A00_MAX_SPEED_NEAR_BUCKET = 2500;
     public static int A00_TRANSITION_SPEED = 750;
     public static int A00_END_SPEED = 400;
+    public static float A00_ROTATION_ADJUST_FACTOR_POWER = BasicDrive.ROTATION_ADJUST_FACTOR_POWER;
     public static int A01_SAMPLE_1_SLIDER = (int)AxonSlider.SLIDER_READY;
-    public static int A01_SAMPLE_1_EXTENDER = 500;
+    public static int A01_SAMPLE_1_EXTENDER = 1000;
     public static int A02_SAMPLE_2_SLIDER = (int)AxonSlider.SLIDER_READY;
     public static int A02_SAMPLE_2_EXTENDER = 500;
     public static int A03_SAMPLE_3_SLIDER = -17000;
     public static int A03_SAMPLE_3_EXTENDER = 500;
     public static int A03_DROP_TIME = 400;
-    public static int A04_READY_FOR_BUCKET_STRAIGHT = 120;
+    public static int A04_READY_FOR_BUCKET_STRAIGHT = 100;
     public static int A04_READY_FOR_BUCKET_STRAFE = 120;
+    public static int A04_END_VELOCITY = 1500;
     public static int A05_1_BUCKET_STRAIGHT = 90;
-    public static int A05_1_BUCKET_STRAFE = 500;
-    public static int A05_1_BUCKET_HEADING = 315;
+    public static int A05_1_BUCKET_STRAFE = 430;
+    public static int A05_1_BUCKET_HEADING = 330;
+    public static int A05_1_BUCKET_END_VELOCITY = 800;
 
-    public static int A06_1_SAMPLE_PICKUP_STRAFE = 400; //390
-    public static int A06_1_SAMPLE_PICKUP_STRAIGHT = 470;//260
+    public static int A06_1_SAMPLE_PICKUP_STRAFE = 480; //390
+    public static int A06_1_SAMPLE_PICKUP_STRAIGHT = 230;//260
     public static int A06_1_SAMPLE_PICKUP_DH = 340;//347
     public static int A06_1_SAMPLE_PICKUP_RH =340;//347
-
-    public static float A06_1_SAMPLE_PICKUP_POWER = 0.25f;//347
-
+    public static float A06_1_SAMPLE_PICKUP_POWER = 0.5f;//347
     public static int A06_1_BRAKE_PAUSE = 100;
+
     public static int A07_2_BUCKET_STRAIGHT = 90;
     public static int A07_2_BUCKET_STRAFE = 500;
-    public static int A07_2_BUCKET_HEADING = 315;
+    public static int A07_2_BUCKET_HEADING = 330;
+
     public static int A08_2_SAMPLE_PICKUP_STRAFE = 475;
     public static int A08_2_SAMPLE_PICKUP_STRAIGHT = 385;
     public static int A08_2_SAMPLE_PICKUP_HEADING = 0;
@@ -983,9 +990,11 @@ public class Robot {
         outtakeUpandGoToHighBucketNoWait();
         AutoReadyToSeekNoWait(A01_SAMPLE_1_SLIDER, A01_SAMPLE_1_EXTENDER); // move intake out for the grab
 
+        float savedRotationAdjust = BasicDrive.ROTATION_ADJUST_FACTOR_POWER;
+
         // Move to first drop
-        drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET, A04_READY_FOR_BUCKET_STRAFE,A04_READY_FOR_BUCKET_STRAIGHT,0,A00_TRANSITION_SPEED,null,0, false,5000);
-        drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET, A05_1_BUCKET_STRAFE, A05_1_BUCKET_STRAIGHT,A05_1_BUCKET_HEADING,A00_END_SPEED,null,0, false, 5000);
+        drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET, A04_READY_FOR_BUCKET_STRAFE,A04_READY_FOR_BUCKET_STRAIGHT,0,A04_END_VELOCITY,null,0, false,5000);
+        drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET, A05_1_BUCKET_STRAFE, A05_1_BUCKET_STRAIGHT,A05_1_BUCKET_HEADING,A05_1_BUCKET_END_VELOCITY,null,0, false, 5000);
         drive.setMotorsActiveBrake();
 
         liftAtTop(2000);
@@ -993,10 +1002,13 @@ public class Robot {
         teamUtil.pause(A03_DROP_TIME);
         autoGoToLoadNoWait(3000);
 
+
         // Move to pickup 1st sample
-        BasicDrive.ROTATION_ADJUST_FACTOR_POWER = BasicDrive.ROTATION_ADJUST_FACTOR_POWER/2;
+        BasicDrive.ROTATION_ADJUST_FACTOR_POWER = A00_ROTATION_ADJUST_FACTOR_POWER;
         BasicDrive.STRAIGHT_MAX_DECLINATION = BasicDrive.STRAIGHT_MAX_DECLINATION*2;
-        drive.moveToXHoldingStrafe(A06_1_SAMPLE_PICKUP_POWER,A06_1_SAMPLE_PICKUP_STRAIGHT,A06_1_SAMPLE_PICKUP_STRAFE, A06_1_SAMPLE_PICKUP_DH,A06_1_SAMPLE_PICKUP_RH,A06_1_SAMPLE_PICKUP_POWER,null,0,3000);
+
+        drive.moveToPower(A06_1_SAMPLE_PICKUP_POWER,A06_1_SAMPLE_PICKUP_STRAFE,A06_1_SAMPLE_PICKUP_STRAIGHT,A06_1_SAMPLE_PICKUP_RH,A06_1_SAMPLE_PICKUP_POWER,null,0,false,3000);
+        //drive.moveToXHoldingStrafe(A06_1_SAMPLE_PICKUP_POWER,A06_1_SAMPLE_PICKUP_STRAIGHT,A06_1_SAMPLE_PICKUP_STRAFE, A06_1_SAMPLE_PICKUP_DH,A06_1_SAMPLE_PICKUP_RH,A06_1_SAMPLE_PICKUP_POWER,null,0,3000);
         //drive.straightHoldingStrafePower(A06_1_SAMPLE_PICKUP_POWER,A06_1_SAMPLE_PICKUP_STRAIGHT,A06_1_SAMPLE_PICKUP_STRAFE,A06_1_SAMPLE_PICKUP_HEADING); //heading 0
 
         drive.stopMotors();
@@ -1004,19 +1016,25 @@ public class Robot {
         teamUtil.pause(A06_1_BRAKE_PAUSE);
 
 
+
         // Grab and unload (counting on bucket to be at the bottom by the time we get there!
         boolean grabbedSample=intake.autoGoToSampleAndGrabV3(false,false,true,3000);
         sampleAutoUnloadHighBucketNoWait();
 
         drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,A07_2_BUCKET_STRAFE,A07_2_BUCKET_STRAIGHT,A07_2_BUCKET_HEADING,A00_END_SPEED,null,0, false, 5000);
-        AutoReadyToSeekNoWait(A02_SAMPLE_2_SLIDER, A02_SAMPLE_2_EXTENDER); // move intake out for the next grab
         drive.setMotorsActiveBrake();
+
+        AutoReadyToSeekNoWait(A02_SAMPLE_2_SLIDER, A02_SAMPLE_2_EXTENDER); // move intake out for the next grab
+
 
         liftAtTop(2000);
         output.bucket.setPosition(Output.BUCKET_DEPLOY_AT_TOP);
         teamUtil.pause(A03_DROP_TIME);
         autoGoToLoadNoWait(3000);
 
+        BasicDrive.ROTATION_ADJUST_FACTOR_POWER=savedRotationAdjust;
+
+        if(true) return;
 
         // Move to pickup 2nd sample
         drive.straightHoldingStrafePower(A08_2_SAMPLE_PICKUP_POWER,A08_2_SAMPLE_PICKUP_STRAIGHT,A08_2_SAMPLE_PICKUP_STRAFE,A08_2_SAMPLE_PICKUP_HEADING);
@@ -1029,8 +1047,10 @@ public class Robot {
         sampleAutoUnloadHighBucketNoWait();
 
         drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,A09_3_BUCKET_STRAFE,A09_3_BUCKET_STRAIGHT,A09_3_BUCKET_HEADING,A00_END_SPEED,null,0, false, 5000);
-        AutoReadyToSeekNoWait(A03_SAMPLE_3_SLIDER, A03_SAMPLE_3_EXTENDER); // move intake out for the next grab
         drive.setMotorsActiveBrake();
+
+        AutoReadyToSeekNoWait(A03_SAMPLE_3_SLIDER, A03_SAMPLE_3_EXTENDER); // move intake out for the next grab
+
 
         liftAtTop(2000);
         output.bucket.setPosition(Output.BUCKET_DEPLOY_AT_TOP);
@@ -1059,7 +1079,6 @@ public class Robot {
         teamUtil.pause(A03_DROP_TIME);
         autoGoToLoadNoWait(3000);
 
-        BasicDrive.ROTATION_ADJUST_FACTOR_POWER = BasicDrive.ROTATION_ADJUST_FACTOR_POWER*2;
         BasicDrive.STRAIGHT_MAX_DECLINATION = BasicDrive.STRAIGHT_MAX_DECLINATION/2;
 
     }
@@ -1128,25 +1147,26 @@ public class Robot {
     }
 
     public static float C00_MAX_POWER = 1f;
-    public static float C00_END_POWER = 1f;
+    public static float C00_END_POWER = .5f;
     public static float C00_ROTATION_ADJUST_FACTOR_POWER = .022f;
-    public static int C01_SUB_HEADING = 270;
-    public static int C02_SUB_BACKUP_Y = -350;
-    public static int C02_SUB_BACKUP_HEADING = 90;
-    public static int C02_SUB_BASKET_X = 550;
-    public static int C02_SUB_BASKET_Y = 350;
-    public static int C02_SUB_BASKET_HEADING = 155;
-    public static int C02_BASKET_BRAKE_PAUSE = 200;
 
     public static float C00_SUB_POWER = .8f;
     public static float C00_SUB_ALIGN_POWER_1 = .8f;
     public static float C00_SUB_ALIGN_POWER_2 = .2f;
+    public static int C01_SUB_HEADING = 270;
     public static int C01_SUB_X1 = 800;
     public static int C01_SUB_X = 880;
     public static int C01_SUB_Y = -230;
     public static int C01_SUB_STALL_PAUSE = 100;
     public static int C01_EXTENDER_POS = 250;
     public static int C01_SLIDER_POS = (int) AxonSlider.SLIDER_READY;
+
+    public static int C02_SUB_BACKUP_Y = -350;
+    public static int C02_SUB_BACKUP_HEADING = 90;
+    public static int C02_SUB_BASKET_X = 550;
+    public static int C02_SUB_BASKET_Y = 350;
+    public static int C02_SUB_BASKET_HEADING = 155;
+    public static int C02_BASKET_BRAKE_PAUSE = 300;
 
     public void bucketToSubV2 (boolean launchIntake) {
         // chill out rotational adjust for these movements
@@ -1281,13 +1301,15 @@ public class Robot {
 
     }
 
-    public static int LIFT_THRESHOLD = 100;
+    public static int LIFT_THRESHOLD = 200;
     public void liftAtTop(long timeout){
         teamUtil.log("Waiting for lift at top");
+        long startTime = System.currentTimeMillis();
         long timeOutTime = System.currentTimeMillis()+timeout;
         while(output.lift.getCurrentPosition()<(Output.LIFT_TOP_BUCKET- LIFT_THRESHOLD)&&teamUtil.keepGoing(timeOutTime)){
-            teamUtil.pause(10);
+            teamUtil.pause(4);
         }
+        teamUtil.log("liftAtTop Finished in " + (System.currentTimeMillis()-startTime));
     }
 
     public void outtakeUpAndGoToHighBucket(){

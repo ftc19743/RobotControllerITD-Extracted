@@ -1725,6 +1725,7 @@ public class BasicDrive {
     }
 
 
+
     public void moveToV2(double maxVelocity, double strafeTarget, double straightTarget, double robotHeading, double endVelocity,ActionCallback action, double actionTarget, boolean endInDeadband, long timeout){
         teamUtil.log("MoveTo StrafeTarget: " + strafeTarget +  " Straight target: " + straightTarget + " robotH: " + robotHeading + " MaxV: " + maxVelocity + " EndV: " + endVelocity + " EndInDeadband: " + endInDeadband);
 
@@ -2002,7 +2003,8 @@ public class BasicDrive {
             stopMotors();
             teamUtil.log("Stopping Motors");
         }
-        teamUtil.log("MoveToPower FINISHED");
+
+        teamUtil.log("MoveToPower FINISHED Heading: " + Math.toDegrees(odo.getHeading()) + " Xpos: " + odo.getPosX() + " Ypos: " + odo.getPosY());
     }
 
 
