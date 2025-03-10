@@ -1239,12 +1239,15 @@ public class Intake {
 
     public static long FLIP_TIME = 600;
     public static long AUTO_SAFE_UNLOAD_RELEASE_PAUSE =0;
-    public void autoRetractAllAndUnload(long timeOut){
+    public void autoRetractAllAndUnload(boolean fromSub, long timeOut){
         moving.set(true);
         teamUtil.log("autoRetractAllAndUnload Started");
         long timeOutTime = System.currentTimeMillis()+timeOut;
-
-        flipper.setPosition(FLIPPER_PRE_GRAB);
+        if(fromSub){
+            flipper.setPosition(FLIPPER_SEEK);
+        }else{
+            flipper.setPosition(FLIPPER_PRE_GRAB);
+        }
         wrist.setPosition(WRIST_MIDDLE);
 
         //starts slider movement

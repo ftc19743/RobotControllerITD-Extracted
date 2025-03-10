@@ -207,7 +207,7 @@ public class Auto extends LinearOpMode {
             robot.intake.extender.setVelocity(EXTENDER_HOLD_RETRACT_VELOCITY);
 
             if (teamUtil.SIDE == teamUtil.Side.BASKET) {
-                robot.sampleAutoV3();
+                //robot.sampleAutoV3(); // TODO: Change to V4 and add positions array
             } else {
                 robot.autoV5Specimen();
             }

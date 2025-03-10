@@ -266,7 +266,7 @@ public class CalibrateArms extends LinearOpMode {
             intake.lightsOnandOff(WHITE_NEOPIXEL,Intake.RED_NEOPIXEL,Intake.GREEN_NEOPIXEL,Intake.BLUE_NEOPIXEL,true);
             intake.goToSampleV5(5000,true);
             intake.flipToSampleAndGrab(3000);
-            intake.autoRetractAllAndUnload(3000);
+            intake.autoRetractAllAndUnload(true,3000);
             intake.restartCVPipeline();
         } if (gp1.wasRightBumperPressed()) {
             intake.lightsOnandOff(WHITE_NEOPIXEL,Intake.RED_NEOPIXEL,Intake.GREEN_NEOPIXEL,Intake.BLUE_NEOPIXEL,true);

@@ -35,11 +35,12 @@ public class testAutoPaths extends LinearOpMode {
 
     public static int teethXOffset = 0;
     public static int teethYOffset = 0;
-
+    public static int[] position = {2 ,2};
 
     public enum Ops {Specimen,
         Sample,
-        Hang
+        Hang,
+        TestMovements
     };
     public static testAutoPaths.Ops AA_Operation = Ops.Specimen;
     public long elapsedTime;
@@ -203,18 +204,33 @@ public class testAutoPaths extends LinearOpMode {
                 }
                 if (driverGamepad.wasXPressed()) {
                     long startTime = System.currentTimeMillis();
-                    robot.sampleAutoV3();
+                    robot.sampleAutoV4(position);
                     elapsedTime = System.currentTimeMillis() - startTime;
                 }
                 if (driverGamepad.wasRightPressed()) {
                     long startTime = System.currentTimeMillis();
-                    robot.bucketToSubV2(GRAB_SAMPLE);
+                    robot.bucketToSubV3(GRAB_SAMPLE ? 2: 0);
+                    if (GRAB_SAMPLE) {
+                        robot.intake.autoGoToSampleAndGrabV3(false,false,true,3000);
+                    }
+
                     elapsedTime = System.currentTimeMillis() - startTime;
                     teamUtil.pause(500);
                     robot.drive.stopMotors();
                 }
                 if(driverGamepad.wasLeftPressed()){
                     long startTime = System.currentTimeMillis();
+                    robot.subToBasketV2(GRAB_SAMPLE);
+                    elapsedTime = System.currentTimeMillis() - startTime;
+                    teamUtil.pause(500);
+                    robot.drive.stopMotors();
+                }
+                if(driverGamepad.wasHomePressed()){
+                    long startTime = System.currentTimeMillis();
+                    robot.bucketToSubV3(GRAB_SAMPLE ? 2: 0);
+                    if (GRAB_SAMPLE) {
+                        robot.intake.autoGoToSampleAndGrabV3(false,false,true,3000);
+                    }
                     robot.subToBasketV2(GRAB_SAMPLE);
                     elapsedTime = System.currentTimeMillis() - startTime;
                     teamUtil.pause(500);
@@ -246,7 +262,7 @@ public class testAutoPaths extends LinearOpMode {
                     robot.outtake.outtakeRest();
                 }
 
-            } else {
+            } else if (AA_Operation == Ops.Hang) {
                 ////////////////////////////////////////////////////////////////////////////
                 // TESTING HANG
                 if (driverGamepad.wasAPressed()) {
@@ -284,10 +300,53 @@ public class testAutoPaths extends LinearOpMode {
                 //teamUtil.log("Hangleft: " + robot.hang.hang_Left.getCurrentPosition()+ " Hangright: "+ robot.hang.hang_Right.getCurrentPosition());
                 telemetry.addLine("Hangleft: " + robot.hang.hang_Left.getCurrentPosition() + " Hangright: " + robot.hang.hang_Right.getCurrentPosition());
 
+            } else { // Testing various movements
+                if (driverGamepad.wasYPressed()) {
+                    robot.intake.flipperGoToSeek(2000);
+                    robot.intake.extendersToPositionMaxVelo(Robot.A02_SAMPLE_2_EXTENDER, 2000);
+                }
+                if (driverGamepad.wasAPressed()) {
+                    robot.intake.goToUnload(2000);
+                }
+                if (driverGamepad.wasUpPressed()) { // sample 1 pickup
+                    long startTime = System.currentTimeMillis();
+
+                    robot.drive.moveToPower(Robot.A06_1_SAMPLE_PICKUP_POWER, Robot.A06_1_SAMPLE_PICKUP_STRAFE, Robot.A06_1_SAMPLE_PICKUP_STRAIGHT, Robot.A06_1_SAMPLE_PICKUP_RH, Robot.A06_1_SAMPLE_PICKUP_POWER, null, 0, false, 3000);
+                    robot.drive.stopMotors();
+                    robot.drive.waitForRobotToStop(1000);
+                    teamUtil.pause(Robot.A06_1_BRAKE_PAUSE);
+                    elapsedTime = System.currentTimeMillis() - startTime;
+
+                }
+                if (driverGamepad.wasDownPressed()) { // sample 3 pickup
+                    long startTime = System.currentTimeMillis();
+
+                    robot.drive.moveTo(Robot.A00_MAX_SPEED_NEAR_BUCKET, Robot.A06_1_SAMPLE_PICKUP_STRAFE, Robot.A06_1_SAMPLE_PICKUP_STRAIGHT, Robot.A06_1_SAMPLE_PICKUP_RH, Robot.A00_END_SPEED, null, 0, false, 3000);
+                    robot.drive.stopMotors();
+                    robot.drive.waitForRobotToStop(1000);
+                    teamUtil.pause(Robot.A06_1_BRAKE_PAUSE);
+                    elapsedTime = System.currentTimeMillis() - startTime;
+                }
+                if (driverGamepad.wasRightPressed()) { // sample 2 pickup
+                    long startTime = System.currentTimeMillis();
+
+                    robot.drive.moveToPower(Robot.A08_2_SAMPLE_PICKUP_POWER, Robot.A08_2_SAMPLE_PICKUP_STRAFE, Robot.A08_2_SAMPLE_PICKUP_STRAIGHT, Robot.A08_2_SAMPLE_PICKUP_HEADING, Robot.A08_2_SAMPLE_PICKUP_POWER, null, 0, false, 3000);
+                    robot.drive.stopMotors();
+                    robot.drive.waitForRobotToStop(1000);
+                    teamUtil.pause(Robot.A06_1_BRAKE_PAUSE);
+                    elapsedTime = System.currentTimeMillis() - startTime;
+
+                }
+                if (driverGamepad.wasLeftPressed()) { // back to bucket from 1 and 2
+                    long startTime = System.currentTimeMillis();
+
+                    elapsedTime = System.currentTimeMillis() - startTime;
+                }
             }
 
             robot.drive.odo.update();
             robot.drive.driveMotorTelemetry();
+            robot.intake.intakeTelemetry();
             telemetry.addLine("Last Auto Elapsed Time: " + elapsedTime);
             telemetry.update();
         }
