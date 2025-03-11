@@ -203,6 +203,7 @@ public class Intake {
     static public int EXTENDER_THRESHOLD = 30;
     static public int EXTENDER_UNLOAD = 5;
     static public int EXTENDER_UNLOAD_POST = 50;
+    static public int EXTENDER_SAFE_TO_FLIP = 110; // position at which the flipper can be moved from unload back to seek without hitting a sample in the bucket.
     static public int EXTENDER_CALIBRATE = 5;
     static public int EXTENDER_START_SEEK = 60; // TODO Determine this number
     static public int EXTENDER_AUTO_START_SEEK = 400;
@@ -684,9 +685,9 @@ public class Intake {
         autoSeeking.set(true);
         teamUtil.log("Launched Auto GoToSample and Grab" );
         timedOut.set(false);
-        long timeOutTime = System.currentTimeMillis() + 1000;
+        long timeOutTime = System.currentTimeMillis() + timeout;
         teamUtil.theBlinkin.setSignal(Blinkin.Signals.GOLD);
-        if(goToSampleV5(timeOutTime,phase1) && !timedOut.get()) {
+        if(goToSampleV5(timeout,phase1) && !timedOut.get()) {
             long loopStartTime = System.currentTimeMillis();
             //TODO: This looks like a bug...setToPreGrabTime
             while( System.currentTimeMillis()-setToPreGrabTime <FLIPPER_SEEK_TO_PRE_GRAB_TIME && teamUtil.keepGoing(timeOutTime)){
@@ -1238,7 +1239,7 @@ public class Intake {
 
 
     public static long FLIP_TIME = 600;
-    public static long AUTO_SAFE_UNLOAD_RELEASE_PAUSE =0;
+    public static long AUTO_SAFE_UNLOAD_RELEASE_PAUSE = 100;
     public void autoRetractAllAndUnload(boolean fromSub, long timeOut){
         moving.set(true);
         teamUtil.log("autoRetractAllAndUnload Started");

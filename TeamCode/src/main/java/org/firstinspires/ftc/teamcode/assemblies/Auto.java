@@ -12,6 +12,8 @@ import org.firstinspires.ftc.teamcode.libs.OpenCVSampleDetectorV2;
 import org.firstinspires.ftc.teamcode.libs.TeamGamepad;
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
 
+import java.util.Arrays;
+
 @Config
 
 @Autonomous(name = "Auto", group = "LinearOpMode")
@@ -112,6 +114,9 @@ public class Auto extends LinearOpMode {
         }
         robot.calibrate();
 
+
+        int[] samplePickup = {2,2};
+        int startingSampleIndex  = 0;
         if(teamUtil.SIDE == teamUtil.Side.BASKET){
             while (!gamepad.wasAPressed()&&!isStopRequested()) {
                 gamepad.loop();
@@ -122,9 +127,51 @@ public class Auto extends LinearOpMode {
             robot.outtake.outtakeRest();
             teamUtil.pause(1000);
             robot.output.outputLoad(3000);
-            robot.output.bucket.setPosition(Output.BUCKET_RELOAD);
+            robot.output.bucket.setPosition(Output.BUCKET_TRAVEL);
             teamUtil.pause(1000);
             robot.outtake.secondCalibrate();
+            while (!gamepad.wasAPressed()&&!isStopRequested()) {
+                gamepad.loop();
+
+                if(gamepad.wasUpPressed()){
+                    samplePickup[startingSampleIndex]+=1;
+                    if(samplePickup[startingSampleIndex]>3){
+                        samplePickup[startingSampleIndex]=1;
+                    }
+                }
+                if(gamepad.wasDownPressed()){
+                    samplePickup[startingSampleIndex]-=1;
+                    if(samplePickup[startingSampleIndex]<1){
+                        samplePickup[startingSampleIndex]=3;
+                    }
+                }
+                if(gamepad.wasLeftPressed()){
+                    startingSampleIndex-=1;
+                    if(startingSampleIndex<0){
+                        startingSampleIndex=1;
+                    }
+                }
+                if(gamepad.wasRightPressed()){
+                    startingSampleIndex+=1;
+                    if(startingSampleIndex>1){
+                        startingSampleIndex=0;
+                    }
+                }
+
+                teamUtil.telemetry.addLine("Press X on Game Pad 1 to CONFIRM NUMBERS AND MOVE ON");
+
+                teamUtil.telemetry.addLine("Press RIGHT/LEFT on DPAD to CHANGE BLOCK INDEX");
+                teamUtil.telemetry.addLine("Press UP/DOWN on DPAD to TO CHANGE WHICH BLOCK");
+                if(startingSampleIndex==0) teamUtil.telemetry.addLine("CHANGING FIRST BLOCK");
+                else teamUtil.telemetry.addLine("CHANGING SECOND BLOCK");
+                teamUtil.telemetry.addLine("//////////////////////////////////////////////");
+
+
+                teamUtil.telemetry.addLine("CURRENT SAMPLE POSITION ARRAY: " + Arrays.toString(samplePickup));
+
+
+                teamUtil.telemetry.update();
+            }
         }
 
 
@@ -184,10 +231,15 @@ public class Auto extends LinearOpMode {
             telemetry.addLine("Ready to Go!");
             teamUtil.telemetry.addLine("Alliance: " + teamUtil.alliance);
             teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
-            teamUtil.telemetry.addLine("Tooth X Offset: " + teethXOffset);
-            teamUtil.telemetry.addLine("Tooth Y Offset: " + teethYOffset);
-            teamUtil.telemetry.addLine("Calculated Extender Position: " + robot.extenderTeethToEncoder(teethXOffset));
-            teamUtil.telemetry.addLine("Calculated Slider Position: " + robot.extenderTeethToEncoder(teethYOffset));
+            if(teamUtil.SIDE == teamUtil.Side.OBSERVATION){
+                teamUtil.telemetry.addLine("Tooth X Offset: " + teethXOffset);
+                teamUtil.telemetry.addLine("Tooth Y Offset: " + teethYOffset);
+                teamUtil.telemetry.addLine("Calculated Extender Position: " + robot.extenderTeethToEncoder(teethXOffset));
+                teamUtil.telemetry.addLine("Calculated Slider Position: " + robot.sliderTeethToEncoder(teethYOffset));
+            }else{
+                teamUtil.telemetry.addLine("Block Positions: " + Arrays.toString(samplePickup));
+            }
+
 
             if (teamUtil.SIDE == teamUtil.Side.BASKET) {
                 telemetry.addLine("Running Basket");
@@ -207,7 +259,7 @@ public class Auto extends LinearOpMode {
             robot.intake.extender.setVelocity(EXTENDER_HOLD_RETRACT_VELOCITY);
 
             if (teamUtil.SIDE == teamUtil.Side.BASKET) {
-                //robot.sampleAutoV3(); // TODO: Change to V4 and add positions array
+                robot.sampleAutoV4(samplePickup);
             } else {
                 robot.autoV5Specimen();
             }

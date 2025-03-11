@@ -198,7 +198,7 @@ public class testAutoPaths extends LinearOpMode {
                     robot.outtake.outtakeRest();
                     teamUtil.pause(1000);
                     robot.output.outputLoad(3000);
-                    robot.output.bucket.setPosition(Output.BUCKET_RELOAD);
+                    robot.output.bucket.setPosition(Output.BUCKET_TRAVEL);
                     teamUtil.pause(1000);
                     robot.outtake.secondCalibrate();
                 }
@@ -211,7 +211,7 @@ public class testAutoPaths extends LinearOpMode {
                     long startTime = System.currentTimeMillis();
                     robot.bucketToSubV3(GRAB_SAMPLE ? 2: 0);
                     if (GRAB_SAMPLE) {
-                        robot.intake.autoGoToSampleAndGrabV3(false,false,true,3000);
+                        robot.intake.autoGoToSampleAndGrabV3(false,false,true,1500);
                     }
 
                     elapsedTime = System.currentTimeMillis() - startTime;
