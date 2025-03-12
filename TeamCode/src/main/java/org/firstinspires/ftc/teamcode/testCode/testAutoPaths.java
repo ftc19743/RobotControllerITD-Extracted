@@ -78,6 +78,7 @@ public class testAutoPaths extends LinearOpMode {
         driverGamepad.reset();
         armsGamepad.reset();
         waitForStart();
+        teamUtil.inInitialization = false;
 
         driverGamepad.reset();
         armsGamepad.reset();
@@ -163,6 +164,7 @@ public class testAutoPaths extends LinearOpMode {
                     robot.nextSliderPos = robot.sliderTeethToEncoder(teethYOffset);
                     robot.autoV5Specimen();
                     elapsedTime = System.currentTimeMillis()-startTime;
+                    robot.drive.stopMotors();
                 }
                 if(driverGamepad.wasHomePressed()){
                     robot.nextExtenderPos = robot.extenderTeethToEncoder(teethXOffset);
@@ -206,6 +208,7 @@ public class testAutoPaths extends LinearOpMode {
                     long startTime = System.currentTimeMillis();
                     robot.sampleAutoV4(position);
                     elapsedTime = System.currentTimeMillis() - startTime;
+                    robot.drive.stopMotors();
                 }
                 if (driverGamepad.wasRightPressed()) {
                     long startTime = System.currentTimeMillis();

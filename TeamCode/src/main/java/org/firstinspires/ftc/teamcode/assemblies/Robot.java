@@ -37,21 +37,13 @@ public class Robot {
     static public long DROP_SAMPLE_OUT_BACK_WITH_FLIPPER_RESET_1 = 500;
     static public long DROP_SAMPLE_OUT_BACK_WITH_FLIPPER_RESET_2 = 300;
 
-    public static float G00_MAX_POWER = 1f;
-    public static float G00_SAFE_POWER = 0.9f;
-    public static int G0a_FAST_STRAFE_ADJUST = 300;
-    public static int G0a_FAST_STRAIGHT_ADJUST1 = 200;
-    public static int G0a_FAST_REVERSE_ADJUST = 0;
-    public static int G0a_SLOW_STRAFE_ADJUST = 50;
-
-    static public int G18_CYCLE_PLACE_SPECIMEN_1_Y = -70; // was 140
-    static public int G18a_CYCLE_PLACE_SPECIMEN_Y = -40; //was 140
 
     public AtomicBoolean autoUnloadNoWaitDone = new AtomicBoolean(false);
 
     static public boolean waitingForButtonPress = true;
     public static double OUTAKE_ARM_ENGAGE_VAL = 0;
 
+    /*
     static public boolean AA_DEBUG_AUTO = false;
 
     public boolean keepGoing() {
@@ -69,6 +61,7 @@ public class Robot {
             }
         }
     }
+*/
 
     public Robot() {
         telemetry = teamUtil.theOpMode.telemetry;
@@ -160,17 +153,22 @@ public class Robot {
 
     //ONLY FOR TELEOP
     public void goToSampleAndGrabAndLiftToBucket(boolean HighBucket){
-        if(!intake.goToSampleAndGrabV3(true, true,false)){
-            return;
-        }
-        if(HighBucket){
-            output.outputHighBucket(3000);
-        }
-        else{
+        if(HighBucket) {
+            if(!intake.goToSampleAndGrabV3(false, false,false)){
+                return;
+            }
+            sampleAutoUnloadHighBucketNoWait(true);
+
+        } else {
+            if(!intake.goToSampleAndGrabV3(true, true,false)){
+                return;
+            }
             output.outputLowBucket(3000);
+
         }
         intake.flipperGoToSafe(3000);
     }
+
     public void goToSampleAndGrabAndLiftToBucketNoWait(boolean highBucket){
 
         teamUtil.log("hangPhase1NoWait");
@@ -231,8 +229,9 @@ public class Robot {
 // SPECIMEN AUTO
     public static int EXTENSION_LIFT_HEIGHT = 300;
     public void AutoReadyToSeek(int sliderPos, int extenderPos, boolean delayFlipper) {
+        long timeoutTime = System.currentTimeMillis()+1000;
         if (delayFlipper) {
-            while (output.lift.getCurrentPosition() < EXTENSION_LIFT_HEIGHT) {
+            while (output.lift.getCurrentPosition() < EXTENSION_LIFT_HEIGHT && teamUtil.keepGoing(timeoutTime)) {
                 teamUtil.pause(50);
             }
         }
@@ -251,7 +250,7 @@ public class Robot {
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                while(intake.moving.get()){
+                while(intake.moving.get() && !teamUtil.theOpMode.isStopRequested()){ // wait for intake in other thread to stop before launching this one!
                     teamUtil.pause(10);
                 }
                 AutoReadyToSeek(sliderPos, extenderPos, delayFlipper);
@@ -289,9 +288,18 @@ public class Robot {
     }
 
 
-    // TODO: Adjust these manually in auto setup
     public int nextSliderPos = (int) AxonSlider.SLIDER_READY; // default value for a grab
     public int nextExtenderPos = Intake.EXTENDER_AUTO_START_SEEK; // default value for a grab
+
+    public static float G00_MAX_POWER = 1f;
+    public static float G00_SAFE_POWER = 0.9f;
+    public static int G0a_FAST_STRAFE_ADJUST = 300;
+    public static int G0a_FAST_STRAIGHT_ADJUST1 = 200;
+    public static int G0a_FAST_REVERSE_ADJUST = 0;
+    public static int G0a_SLOW_STRAFE_ADJUST = 50;
+
+    static public int G18_CYCLE_PLACE_SPECIMEN_1_Y = -70; // was 140
+    static public int G18a_CYCLE_PLACE_SPECIMEN_Y = -40; //was 140
 
     static public int G01_PLACE_SPECIMEN1_X = 590;
     static public int G01_PLACE_AND_GRAB_SPECIMEN1_X = 540;
@@ -349,7 +357,7 @@ public class Robot {
             // retract set to true so we wait here until fully retracted (could be sped up but we need to be careful not to clip the sub with the intake while leaving!
             successfullyGrabbedSample = intake.autoGoToSampleAndGrabV3(false, false,true,3000); // TODO: <- Specify phase 1 timeout?
             intake.retractAllNoWait(false,3000);
-            while (intake.extender.getCurrentPosition()>Intake.EXTENDER_AUTO_RETRACT_THRESHOLD){
+            while (intake.extender.getCurrentPosition()>Intake.EXTENDER_AUTO_RETRACT_THRESHOLD && !teamUtil.theOpMode.isStopRequested()){
                 teamUtil.pause(5);
             }
             teamUtil.theBlinkin.setSignal(Blinkin.Signals.OFF);
@@ -462,7 +470,7 @@ public class Robot {
         teamUtil.log("reverseUntilForwardMotionStoppedSpecimen");
         long startTime = System.currentTimeMillis();
         drive.odo.update();
-        while (drive.odo.getVelX() > 0) {
+        while (drive.odo.getVelX() > 0 && !teamUtil.theOpMode.isStopRequested()) {
             drive.driveMotorsHeadingsFRPower(180,0,power);
             drive.odo.update();
             if (details) {
@@ -476,7 +484,7 @@ public class Robot {
         teamUtil.log("allignToSubmersibleSpecimen");
         long startTime = System.currentTimeMillis();
         drive.odo.update();
-        while (drive.odo.getVelX() < 0) {
+        while (drive.odo.getVelX() < 0 && !teamUtil.theOpMode.isStopRequested()) {
             drive.driveMotorsHeadingsFRPower(0,0,power1);
             drive.odo.update();
             if (details) {
@@ -484,7 +492,7 @@ public class Robot {
             }
         }
         teamUtil.pause(10);
-        while (drive.odo.getVelX() > 0) {
+        while (drive.odo.getVelX() > 0 && !teamUtil.theOpMode.isStopRequested()) {
             drive.driveMotorsHeadingsFRPower(0,0,power2);
             drive.odo.update();
             if (details) {
@@ -499,7 +507,7 @@ public class Robot {
         long startTime = System.currentTimeMillis();
         drive.driveMotorsHeadingsFR(90,270,velocity);
         drive.odo.update();
-        while (drive.odo.getVelY() < 0) {
+        while (drive.odo.getVelY() < 0 && !teamUtil.theOpMode.isStopRequested()) {
             drive.odo.update();
             if (details) {
                 teamUtil.log("reversing: yPos: " + drive.odo.getPosY() + " yVel: " + drive.odo.getVelY());
@@ -512,7 +520,7 @@ public class Robot {
         long startTime = System.currentTimeMillis();
         drive.driveMotorsHeadingsFRPower(270,270,power);
         drive.odo.update();
-        while (drive.odo.getVelY() < 0) {
+        while (drive.odo.getVelY() < 0 && !teamUtil.theOpMode.isStopRequested()) {
             drive.driveMotorsHeadingsFRPower(270,270,power);
             drive.odo.update();
             if (details) {
@@ -525,7 +533,7 @@ public class Robot {
         teamUtil.log("alignToSubmersibleSample");
         long startTime = System.currentTimeMillis();
         drive.odo.update();
-        while (drive.odo.getVelY() > 0) {
+        while (drive.odo.getVelY() > 0 && !teamUtil.theOpMode.isStopRequested()) {
             drive.driveMotorsHeadingsFRPower(270,270,power1);
             drive.odo.update();
             if (details) {
@@ -533,7 +541,7 @@ public class Robot {
             }
         }
         teamUtil.pause(10);
-        while (drive.odo.getVelY() < 0) {
+        while (drive.odo.getVelY() < 0 && !teamUtil.theOpMode.isStopRequested()) {
             drive.driveMotorsHeadingsFRPower(270, 270,power2);
             drive.odo.update();
             if (details) {
@@ -804,7 +812,7 @@ public class Robot {
         hang.hook_grabber.setPosition(Hang.HOOKGRABBER_PRE_RELEASE);
         output.lift.setVelocity(Output.LIFT_MAX_VELOCITY); // Run to near bottom
         output.lift.setTargetPosition(Output.LIFT_DOWN);
-        while (output.lift.getCurrentPosition() > Output.LIFT_DOWN+10) {
+        while (output.lift.getCurrentPosition() > Output.LIFT_DOWN+10 && !teamUtil.theOpMode.isStopRequested()) {
             teamUtil.pause(50);
         }
         output.lift.setVelocity(0); // Turn off lift motor at bottom
@@ -881,7 +889,7 @@ public class Robot {
 
         output.lift.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         output.lift.setPower(LIFT_PICKUP_HOOKS_POWER_1);
-        while(output.lift.getCurrentPosition()<Output.LIFT_SAFE_FOR_HOOK_HOLDER){
+        while(output.lift.getCurrentPosition()<Output.LIFT_SAFE_FOR_HOOK_HOLDER && !teamUtil.theOpMode.isStopRequested()){
             teamUtil.pause(10);
         }
         output.lift.setPower(0);
@@ -890,7 +898,7 @@ public class Robot {
         teamUtil.pause(PICK_UP_HOOKS_PAUSE_2);
 
         output.lift.setPower(LIFT_PICKUP_HOOKS_POWER_2);
-        while(output.lift.getCurrentPosition()>Output.LIFT_PICKUP_FOR_HOOK_HOLDER){
+        while(output.lift.getCurrentPosition()>Output.LIFT_PICKUP_FOR_HOOK_HOLDER && !teamUtil.theOpMode.isStopRequested()){
             teamUtil.pause(10);
         }
         output.lift.setPower(0);
@@ -1165,8 +1173,6 @@ public class Robot {
             sampleAutoUnloadHighBucketNoWait(true); // pull in sample, transfer, and send high bucket to top
         }
         drive.moveToY(C00_MAX_POWER, C02_SUB_BACKUP_Y, C02_SUB_BACKUP_HEADING, C01_SUB_HEADING);
-        // TODO: Flip bucket at the right moment and put lift down
-        // TODO: Need some sort of active braking strategy at the right moment
         drive.moveToXHoldingStrafe(C00_MAX_POWER, C02_SUB_BASKET_X, C02_SUB_BASKET_Y, C02_SUB_BASKET_HEADING, C02_SUB_BASKET_RH, C00_END_POWER, null, 0, 2000);
         drive.stopMotors();
         teamUtil.pause(C02_BASKET_BRAKE_PAUSE);
@@ -1244,7 +1250,7 @@ public class Robot {
         deliver4Samples();
         teamUtil.log("---------- DELIVERED 4 in : " + (System.currentTimeMillis()-startTime));
 
-        while(System.currentTimeMillis()-startTime<30000-Z0_CYCLE_GRAB_TIME){
+        while(System.currentTimeMillis()-startTime<30000-Z0_CYCLE_GRAB_TIME && !teamUtil.theOpMode.isStopRequested()){
             if(!bucketCycleV2(startTime, position[i])){
                 failed = true;
                 teamUtil.log("Cycle Failed, bailing out");
@@ -1272,7 +1278,7 @@ public class Robot {
 
     public void sampleAutoUnloadHighBucket(boolean fromSub){
         intake.autoRetractAllAndUnload(fromSub, 3000);
-        output.outputHighBucket(3000);
+        output.outputHighBucket(3000); // TODO : add low bucket mode here to re-enable low bucket in teleop?
     }
 
     public void sampleAutoUnloadHighBucketNoWait(boolean fromSub) {
@@ -1321,7 +1327,7 @@ public class Robot {
         while(output.lift.getCurrentPosition()<(Output.LIFT_TOP_BUCKET- LIFT_THRESHOLD)&&teamUtil.keepGoing(timeOutTime)){
             teamUtil.pause(4);
         }
-        if (timeOutTime>=System.currentTimeMillis()) {
+        if (System.currentTimeMillis()>=timeOutTime) {
             teamUtil.log("WaitForLiftReadyToUnloadSampleHighBucket - TIMED OUT!");
         }
         teamUtil.log("WaitForLiftReadyToUnloadSampleHighBucket Waited for: " + (System.currentTimeMillis()-startTime));
@@ -1329,7 +1335,7 @@ public class Robot {
 
     public void outtakeUpAndGoToHighBucket(){
         outtake.outtakeRest();
-        while(outtake.outakePotentiometer.getVoltage()<Outtake.POTENTIOMETER_OUTPUT_CLEAR){
+        while(outtake.outakePotentiometer.getVoltage()<Outtake.POTENTIOMETER_OUTPUT_CLEAR && !teamUtil.theOpMode.isStopRequested()){
             teamUtil.pause(10);
         }
         output.outputHighBucket(3000);

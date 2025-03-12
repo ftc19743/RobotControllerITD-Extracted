@@ -308,7 +308,7 @@ public class Teleop extends LinearOpMode {
                         driverGamepad.gamepad.left_stick_y,
                         driverGamepad.gamepad.right_stick_x,
                         driverGamepad.gamepad.right_trigger > .5,driverGamepad.gamepad.left_trigger > .5,
-                        robot.drive.getHeading()); //TODO bug should use odo Heading
+                        robot.drive.getHeadingODO());
             }
 
 

@@ -43,7 +43,7 @@ public class teamUtil {
     // Wait for the specified milliseconds
     public static void pause(long sleepTime) {
         long wakeupTime= System.currentTimeMillis()+sleepTime;
-        while(System.currentTimeMillis()< wakeupTime){
+        while(System.currentTimeMillis()< wakeupTime && !theOpMode.isStopRequested()){
             theOpMode.idle();
         }
     }

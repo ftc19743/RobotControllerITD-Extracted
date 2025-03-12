@@ -65,6 +65,7 @@ public class Auto extends LinearOpMode {
             }
             teamUtil.telemetry.update();
         }
+        if (isStopRequested()) return;
 
         while (!gamepad.wasAPressed()&&!isStopRequested()) {
             gamepad.loop();
@@ -82,6 +83,7 @@ public class Auto extends LinearOpMode {
             }
             teamUtil.telemetry.update();
         }
+        if (isStopRequested()) return;
 
         //Calibrate CV
 
@@ -92,6 +94,8 @@ public class Auto extends LinearOpMode {
         else{
             robot.intake.setTargetColor(OpenCVSampleDetectorV2.TargetColor.YELLOW);
         }
+        if (isStopRequested()) return;
+
         while (!gamepad.wasAPressed()&&!isStopRequested()) {
             gamepad.loop();
             teamUtil.telemetry.addLine("Found One" + robot.intake.sampleDetector.foundOne.get());
@@ -99,6 +103,8 @@ public class Auto extends LinearOpMode {
             teamUtil.telemetry.addLine("Press X on Game Pad 1 to Move On");
             teamUtil.telemetry.update();
         }
+        if (isStopRequested()) return;
+
         robot.intake.lightsOff();
         teamUtil.theBlinkin.setSignal(Blinkin.Signals.OFF);
         robot.intake.stopCVPipeline();
@@ -112,6 +118,8 @@ public class Auto extends LinearOpMode {
             teamUtil.telemetry.addLine("Press X on Game Pad 1 to CALIBRATE");
             teamUtil.telemetry.update();
         }
+        if (isStopRequested()) return;
+
         robot.calibrate();
 
 
@@ -124,6 +132,8 @@ public class Auto extends LinearOpMode {
                 teamUtil.telemetry.addLine("Press X on Game Pad 1 to PREPARE OUTTAKE AND BUCKET");
                 teamUtil.telemetry.update();
             }
+            if (isStopRequested()) return;
+
             robot.outtake.outtakeRest();
             teamUtil.pause(1000);
             robot.output.outputLoad(3000);
@@ -173,6 +183,8 @@ public class Auto extends LinearOpMode {
                 teamUtil.telemetry.update();
             }
         }
+        if (isStopRequested()) return;
+
 
 
         int teethXOffset = 3;
@@ -217,6 +229,7 @@ public class Auto extends LinearOpMode {
         }
         robot.nextExtenderPos = robot.extenderTeethToEncoder(teethXOffset);
         robot.nextSliderPos = robot.sliderTeethToEncoder(teethYOffset);
+        if (isStopRequested()) return;
 
 
         //if (teamUtil.SIDE == teamUtil.SIDE.BASKET) { // get camera running but only if we will use it
@@ -249,9 +262,10 @@ public class Auto extends LinearOpMode {
             }
             telemetry.update();
         }
-
+        if (isStopRequested()) return;
 
         waitForStart();
+        teamUtil.inInitialization=false;
         //teamUtil.theBlinkin.setSignal(Blinkin.Signals.OFF);
         if(!isStopRequested()) {
             long startTime = System.currentTimeMillis();
@@ -263,11 +277,12 @@ public class Auto extends LinearOpMode {
             } else {
                 robot.autoV5Specimen();
             }
+            robot.drive.stopMotors();
             long endTime = System.currentTimeMillis();
             long elapsedTime = endTime - startTime;
             teamUtil.log("Elapsed Auto Time Without Wait At End: " + elapsedTime);
 
-            while (opModeIsActive()) {
+            while (opModeIsActive()) { // don't kill opMode until the last possible moment to allow other threads to finish
             }
 
             teamUtil.justRanAuto = true; // avoid recalibration at start of teleop

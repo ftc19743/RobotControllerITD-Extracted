@@ -4,6 +4,7 @@ import androidx.core.math.MathUtils;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -35,7 +36,8 @@ public class BasicDrive {
     HardwareMap hardwareMap;
     Telemetry telemetry;
 
-    public BNO055IMU imu; //This variable is the imu
+    //public BNO055IMU imu; //This variable is the imu
+    public IMU imu;
     public Pinpoint odo; // PinPoint Odometry Computer
     static public double ODO_X_OFFSET = 192;
     static public double ODO_Y_OFFSET = -64;
@@ -148,11 +150,15 @@ public class BasicDrive {
 
 
         // Set up internal IMU on Control Hub
-        imu = hardwareMap.get(BNO055IMU.class, "imu");
-        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
-        parameters.angleUnit = BNO055IMU.AngleUnit.DEGREES;
-        parameters.accelUnit = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
-        imu.initialize(parameters);
+        //imu = hardwareMap.get(BNO055IMU.class, "imu");
+        imu = hardwareMap.get(IMU.class, "imu");
+        //BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
+        //IMU.Parameters parameters = new IMU.Parameters();
+        //parameters.angleUnit = AngleUnit.DEGREES;
+        //parameters.accelUnit = IMU.AccelUnit.METERS_PERSEC_PERSEC;
+        //parameters.angleUnit = BNO055IMU.AngleUnit.DEGREES;
+        //parameters.accelUnit = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
+        //imu.initialize(parameters);
 
 
         //TODO Initialize Correctly
@@ -462,9 +468,9 @@ public class BasicDrive {
     }
 
     public double getRawHeading() {
-        Orientation anglesCurrent = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
-        return (anglesCurrent.firstAngle);
-
+        //Orientation anglesCurrent = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+        //return (anglesCurrent.firstAngle);
+        return 0;
     }
 
     public double getHeading() {
@@ -1566,11 +1572,18 @@ public class BasicDrive {
         odo.update();
         double startEncoder = odo.getPosY();
         boolean goingUp;
+        if (driveHeading > 0 && driveHeading < 180){
+            goingUp = true;
+        }else{
+            goingUp=false;
+        }
+        /*
         if (y-startEncoder >=0){
             goingUp = true;
         }else{
             goingUp=false;
         }
+         */
         double totalTics = Math.abs(startEncoder-y);
         teamUtil.log("moveToY target: " + y + " driveH: " + driveHeading + " robotH: " + robotHeading + " Power: " + power + " TotalMMss: " + totalTics + " Starting Forward Pos: "+ odo.getPosX() + " Starting Strafe Pos: "+ odo.getPosY() + " Starting Heading:" + getHeadingODO());
         double distanceRemaining = Math.abs(y - odo.getPosY());
@@ -2359,6 +2372,9 @@ public class BasicDrive {
             if (!holdingHeading) { // start to hold current heading
                 heldHeading = getHeadingODO();
                 holdingHeading = true;
+                if(details){
+                    teamUtil.log("New heldHeading from turn: "+heldHeading);
+                }
             }
             // old code
             //rotationAdjustment = (float) getHeadingError(heldHeading) * -1f * .05f; // auto rotate to held heading

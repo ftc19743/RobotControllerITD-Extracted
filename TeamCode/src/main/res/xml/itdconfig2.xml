@@ -55,8 +55,7 @@
             <AnalogInput name = "liftServoRPotentiometer" port ="2"/>
             <AnalogInput name = "liftServoLPotentiometer" port ="3"/>
 
-            <!-- <LynxEmbeddedIMU name="imu" port="0" bus="0" /> -->
-            <ControlHubImuBHI260AP name="imu" port="0" bus="0" />
+            <LynxEmbeddedIMU name="imu" port="0" bus="0" />
             <goBILDAPinpoint name="pinpoint" port="0" bus="1" />
             <OctoQuadFTC name="octoquad" port="0" bus="3" />
 
