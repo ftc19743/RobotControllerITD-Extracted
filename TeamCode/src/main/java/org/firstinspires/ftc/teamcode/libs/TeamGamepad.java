@@ -329,6 +329,12 @@ public class TeamGamepad {
         return false;
     }
 
+    public void resetWasRightTriggerPressed(){
+        rightTriggerBumpToDo = false;
+        rightTriggerWasPressed = 0;
+        rightTriggerWasPressedLastTime = 0;
+    }
+
     public boolean wasRightJoystickFlickedRight(){
         if(rightJoystickWasRightToDo){
             rightJoystickWasRightToDo = false;

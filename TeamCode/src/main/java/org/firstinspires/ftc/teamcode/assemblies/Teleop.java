@@ -30,7 +30,7 @@ public class Teleop extends LinearOpMode {
     boolean hangManualControl= false;
     public static boolean enableLiveView = false;
     boolean outtakeUp = true;
-    public static boolean proportionalBucketControl = false;
+    public static boolean proportionalBucketControl = true;
 
 
     // Internal state
@@ -200,6 +200,11 @@ public class Teleop extends LinearOpMode {
                 }
             }
 
+            //manual moving override
+            if(armsGamepad.wasHomePressed()){
+                robot.intake.moving.set(false);
+            }
+
             if(!robot.intake.autoSeeking.get()) {
                 robot.intake.manualX(armsGamepad.gamepad.left_stick_x);
             }
@@ -246,9 +251,10 @@ public class Teleop extends LinearOpMode {
             //OUTPUT
             if (proportionalBucketControl && !robot.output.outputLiftAtBottom.get()) {
                 robot.output.bucket.setPosition(Output.BUCKET_TRAVEL - armsGamepad.gamepad.right_trigger * (Output.BUCKET_TRAVEL - Output.BUCKET_DEPLOY_AT_TOP)) ;
+                armsGamepad.resetWasRightTriggerPressed();
             } else {
                 if (armsGamepad.wasRightTriggerPressed()) {
-                    robot.dropSampleOutBackWithFlipperResetNoWait();
+                    robot.output.dropSampleOutBackNoWait();
                 }
             }
             if(armsGamepad.wasRightBumperPressed()){

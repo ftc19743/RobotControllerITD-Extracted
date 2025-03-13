@@ -14,6 +14,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
@@ -37,7 +38,7 @@ public class BasicDrive {
     Telemetry telemetry;
 
     //public BNO055IMU imu; //This variable is the imu
-    public IMU imu;
+    //public IMU imu; // new control hub imu
     public Pinpoint odo; // PinPoint Odometry Computer
     static public double ODO_X_OFFSET = 192;
     static public double ODO_Y_OFFSET = -64;
@@ -148,18 +149,17 @@ public class BasicDrive {
         odo.setEncoderResolution(Pinpoint.GoBildaOdometryPods.goBILDA_4_BAR_POD);
         odo.setEncoderDirections(Pinpoint.EncoderDirection.REVERSED, Pinpoint.EncoderDirection.REVERSED);
 
-
         // Set up internal IMU on Control Hub
-        //imu = hardwareMap.get(BNO055IMU.class, "imu");
-        imu = hardwareMap.get(IMU.class, "imu");
+        //imu = hardwareMap.get(BNO055IMU.class, "imu"); // old control hub
         //BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
-        //IMU.Parameters parameters = new IMU.Parameters();
         //parameters.angleUnit = AngleUnit.DEGREES;
         //parameters.accelUnit = IMU.AccelUnit.METERS_PERSEC_PERSEC;
         //parameters.angleUnit = BNO055IMU.AngleUnit.DEGREES;
         //parameters.accelUnit = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
         //imu.initialize(parameters);
 
+        //imu = hardwareMap.get(IMU.class, "imu"); // new control hub
+        //IMU.Parameters parameters = new IMU.Parameters();
 
         //TODO Initialize Correctly
         //forwardEncoder = hardwareMap.get(DcMotorEx.class, "leftForwardEncoder");
@@ -189,6 +189,12 @@ public class BasicDrive {
         String velocity = String.format(Locale.US,"X: %.1f, YVel: %.1f, HVel: %.1f", vel.getX(DistanceUnit.MM), vel.getY(DistanceUnit.MM), vel.getHeading(AngleUnit.DEGREES));
         telemetry.addData("ODO Velocity ", velocity);
         telemetry.addData("Headings: CH IMU: ", "%.1f  ODO: %.1f", getHeading(), getHeadingODO());
+        telemetry.addData("Held Heading: ", heldHeading);
+        String currents = String.format(Locale.US, "FR: %.0f, FL: %.0f, BR: %.0f, BL: %.0f" , fr.getCurrent(CurrentUnit.AMPS), fl.getCurrent(CurrentUnit.AMPS),br.getCurrent(CurrentUnit.AMPS), bl.getCurrent(CurrentUnit.AMPS));
+        telemetry.addData("Current To Subsequent Motors: ", currents);
+
+        //TODO remove log
+        //teamUtil.log("FR: " + fr.getCurrent(CurrentUnit.AMPS) +" FL: " + fl.getCurrent(CurrentUnit.AMPS) + " BR: " + br.getCurrent(CurrentUnit.AMPS) + "BL" + bl.getCurrent(CurrentUnit.AMPS));
     }
 
     public void logMotorPositions() {
@@ -2387,7 +2393,7 @@ public class BasicDrive {
         frontLeft = -(leftY - leftX - rotationAdjustment);
         frontRight = (-leftY - leftX - rotationAdjustment);
         backRight = (-leftY + leftX - rotationAdjustment);
-        backLeft = -(leftY + leftX - rotationAdjustment);
+        backLeft = -(leftY + leftX - rotationAdjustment); // TODO: fix powers being above 1
 
 
 
@@ -2420,6 +2426,7 @@ public class BasicDrive {
         //TODO: take out soon just for testing purposes
         telemetry.addLine("Left Joystick Y: " + leftJoyStickY);
         telemetry.addLine("Left Joystick X: " + leftJoyStickX);
+
 
         telemetry.addLine("fl power: " + frontLeft);
         telemetry.addLine("fr power: " + frontRight);
