@@ -87,9 +87,9 @@ public class teamUtil {
 
     }
     public static void logSystemHealth () {
-        log("ControlHub Temp: " + chModule.getTemperature(TempUnit.CELSIUS) + " Current: " + chModule.getCurrent(CurrentUnit.AMPS) + " Input Voltage: " + chModule.getInputVoltage(VoltageUnit.VOLTS));
+        log("ControlHub Temp: " + chModule.getTemperature(TempUnit.CELSIUS) + "C  Current: " + chModule.getCurrent(CurrentUnit.AMPS) + " Input Voltage: " + chModule.getInputVoltage(VoltageUnit.VOLTS));
         logOverTemp("Control Hub", chModule);
-        log("ExpansionHub Temp: " + ehModule.getTemperature(TempUnit.CELSIUS) + " Current: " + ehModule.getCurrent(CurrentUnit.AMPS)+ " Input Voltage: " + chModule.getInputVoltage(VoltageUnit.VOLTS));
+        log("ExpansionHub Temp: " + ehModule.getTemperature(TempUnit.CELSIUS) + "C  Current: " + ehModule.getCurrent(CurrentUnit.AMPS)+ " Input Voltage: " + chModule.getInputVoltage(VoltageUnit.VOLTS));
         logOverTemp("Expansion Hub", ehModule);
 
         List<String> warnings = chModule.getGlobalWarnings();

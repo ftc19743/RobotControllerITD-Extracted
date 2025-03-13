@@ -112,6 +112,9 @@ public class CalibrateDrive extends LinearOpMode {
             drive.loop(); // keep odometry data up to date
             drive.driveMotorTelemetry();
 
+            if (gp1.gamepad.left_stick_button) {
+                teamUtil.logSystemHealth();
+            }
             // Left bumper toggles Alliance
             if (gp1.wasLeftBumperPressed()) {
                 if (teamUtil.alliance == teamUtil.Alliance.RED) {
@@ -154,6 +157,12 @@ public class CalibrateDrive extends LinearOpMode {
             } else if (AAOP==Ops.test_MoveToHolding) {
                 testMoveToHolding();
             }
+            drive.universalDriveJoystickV2(
+                    gp1.gamepad.left_stick_x,
+                    gp1.gamepad.left_stick_y,
+                    gp1.gamepad.right_stick_x,
+                    gp1.gamepad.right_trigger > .5,gp1.gamepad.left_trigger > .5,
+                    drive.getHeadingODO());
 
             // Drawing stuff on the field
             TelemetryPacket packet = new TelemetryPacket();

@@ -95,6 +95,9 @@ public class testAutoPaths extends LinearOpMode {
 
 
 
+            if (driverGamepad.gamepad.left_stick_button) {
+                teamUtil.logSystemHealth();
+            }
 
             if (driverGamepad.wasLeftBumperPressed()) {
                 if (teamUtil.alliance== RED) {

@@ -153,6 +153,10 @@ public class CalibrateArms extends LinearOpMode {
             gp1.loop();
             gp2.loop();
 
+            if (gp1.gamepad.left_stick_button) {
+                teamUtil.logSystemHealth();
+            }
+
             if (gp1.wasOptionsPressed()) {
                 intake.sampleDetector.configureCam(intake.arduPortal,OpenCVSampleDetector.APEXPOSURE, OpenCVSampleDetector.AEPRIORITY, OpenCVSampleDetector.EXPOSURE, OpenCVSampleDetector.GAIN, OpenCVSampleDetector.WHITEBALANCEAUTO, OpenCVSampleDetector.TEMPERATURE, OpenCVSampleDetector.AFOCUS, OpenCVSampleDetector.FOCUSLENGTH);
             }
