@@ -1,16 +1,26 @@
 package org.firstinspires.ftc.teamcode.libs;
 
+import com.qualcomm.hardware.lynx.LynxModule;
+import com.qualcomm.hardware.lynx.commands.standard.LynxGetModuleStatusCommand;
+import com.qualcomm.hardware.lynx.commands.standard.LynxGetModuleStatusResponse;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.RobotLog;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.TempUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.VoltageUnit;
 import org.firstinspires.ftc.teamcode.assemblies.Robot;
+
+import java.util.List;
 
 public class teamUtil {
 
     public static LinearOpMode theOpMode;
     public static boolean inInitialization = true;
     public static Telemetry telemetry;
+    public static LynxModule chModule;
+    public static LynxModule ehModule;
     public static boolean justRanAuto = false;
     public static boolean justRanCalibrateRobot = false;
 
@@ -33,12 +43,64 @@ public class teamUtil {
     public static void init (LinearOpMode opMode) {
         theOpMode = opMode;
         telemetry = theOpMode.telemetry;
+        List<LynxModule> modules = theOpMode.hardwareMap.getAll(LynxModule.class);
+        if (modules.isEmpty()) {
+            log("No Lynx modules found in the hardware map!");
+        } else {
+            log("Lynx modules found:");
+            for (LynxModule module : modules) {
+                log("- " + module.getDeviceName() + " Parent: " + module.isParent());
+                if (module.isParent()) {
+                    chModule = module;
+                } else {
+                    ehModule = module;
+                }
+            }
+        }
         inInitialization = true;
         theBlinkin = new Blinkin(opMode.hardwareMap, opMode.telemetry);
         theBlinkin.init();
+
     }
 
+    public static void logOverTemp(String hub, LynxModule module) {
+        LynxGetModuleStatusCommand command = new LynxGetModuleStatusCommand(module);
+        try
+        {
+            LynxGetModuleStatusResponse response = command.sendReceive();
+            String msg = new String("------------------------" + hub+ " MOTOR BRIDGES OVERTEMP! : ");
+            boolean overtemp = false;
+            for (int i = -0;i<4;i++) {
+                if (response.isMotorBridgeOverTemp(i)) {
+                    overtemp = true;
+                    msg = msg + " Port " + i;
+                }
+            }
+            if (overtemp) {
+                log (msg);
+            }
+        }
+        catch (Exception e)
+        {
+            log("Exception Caught in LogSystemHealth while checking" + hub + " status: " + e);
+        }
 
+    }
+    public static void logSystemHealth () {
+        log("ControlHub Temp: " + chModule.getTemperature(TempUnit.CELSIUS) + " Current: " + chModule.getCurrent(CurrentUnit.AMPS) + " Input Voltage: " + chModule.getInputVoltage(VoltageUnit.VOLTS));
+        logOverTemp("Control Hub", chModule);
+        log("ExpansionHub Temp: " + ehModule.getTemperature(TempUnit.CELSIUS) + " Current: " + ehModule.getCurrent(CurrentUnit.AMPS)+ " Input Voltage: " + chModule.getInputVoltage(VoltageUnit.VOLTS));
+        logOverTemp("Expansion Hub", ehModule);
+
+        List<String> warnings = chModule.getGlobalWarnings();
+        for (String warning : warnings) {
+            log("CH Warning: "+ warning);
+        }
+        warnings = ehModule.getGlobalWarnings();
+        for (String warning : warnings) {
+            log("EH Warning: "+ warning);
+        }
+    }
 
     // Wait for the specified milliseconds
     public static void pause(long sleepTime) {
