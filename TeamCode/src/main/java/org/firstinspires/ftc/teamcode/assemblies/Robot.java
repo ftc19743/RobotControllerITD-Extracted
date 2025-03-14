@@ -959,8 +959,8 @@ public class Robot {
     public static int A04_READY_FOR_BUCKET_STRAIGHT = 100;
     public static int A04_READY_FOR_BUCKET_STRAFE = 120;
     public static int A04_END_VELOCITY = 1500;
-    public static int A05_1_BUCKET_STRAIGHT = 90;
-    public static int A05_1_BUCKET_STRAFE = 430;
+    public static int A05_1_BUCKET_STRAIGHT = 80;
+    public static int A05_1_BUCKET_STRAFE = 450;
     public static int A05_1_BUCKET_HEADING = 325;
     public static int A05_1_BUCKET_END_VELOCITY = 800;
 
