@@ -128,8 +128,14 @@ public class Teleop extends LinearOpMode {
         robot.intake.extender.setTargetPosition(robot.intake.extender.getCurrentPosition());
         robot.intake.extender.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
         robot.intake.extender.setVelocity(EXTENDER_HOLD_RETRACT_VELOCITY);
-        
-        robot.intake.setTargetColor(OpenCVSampleDetectorV2.TargetColor.YELLOW);
+
+        if(teamUtil.SIDE == teamUtil.Side.OBSERVATION){
+            robot.intake.setTargetColor(teamUtil.alliance == teamUtil.Alliance.RED? OpenCVSampleDetectorV2.TargetColor.RED: OpenCVSampleDetectorV2.TargetColor.BLUE);
+        }
+        else{
+            robot.intake.setTargetColor(OpenCVSampleDetectorV2.TargetColor.YELLOW);
+        }
+
         while (opModeIsActive()){
             driverGamepad.loop();
             armsGamepad.loop();
@@ -249,7 +255,7 @@ public class Teleop extends LinearOpMode {
 
 
             //OUTPUT
-            if (proportionalBucketControl && !robot.output.outputLiftAtBottom.get()) {
+            if (proportionalBucketControl && !robot.output.outputLiftAtBottom.get()&&armsGamepad.gamepad.right_trigger>.1f) {
                 robot.output.bucket.setPosition(Output.BUCKET_TRAVEL - armsGamepad.gamepad.right_trigger * (Output.BUCKET_TRAVEL - Output.BUCKET_DEPLOY_AT_TOP)) ;
                 armsGamepad.resetWasRightTriggerPressed();
             } else {
@@ -275,6 +281,13 @@ public class Teleop extends LinearOpMode {
             }
             if (armsGamepad.wasLeftBumperPressed()) {
                 robot.output.outputLoadNoWait(4000);
+            }
+
+            if(armsGamepad.wasUpPressed()){
+                robot.output.bucket.setPosition(Output.BUCKET_IDLE);
+            }
+            if(armsGamepad.wasDownPressed()){
+                robot.output.bucket.setPosition(Output.BUCKET_RELOAD);
             }
 
             //HANG

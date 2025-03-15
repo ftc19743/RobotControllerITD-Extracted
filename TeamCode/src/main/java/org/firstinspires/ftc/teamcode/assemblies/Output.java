@@ -159,9 +159,12 @@ public class Output {
             }
             teamUtil.log("Time to bottom out lift: "+ (System.currentTimeMillis()-startTime));
             lift.setVelocity(0);
-            bucket.setPosition(BUCKET_IDLE);
 
             outputLiftAtBottom.set(true);
+
+            bucket.setPosition(BUCKET_RELOAD);
+
+
             teamUtil.log("Go To Load: Finished");
 
         }

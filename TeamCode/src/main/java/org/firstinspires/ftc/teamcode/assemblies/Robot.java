@@ -166,7 +166,7 @@ public class Robot {
             output.outputLowBucket(3000);
 
         }
-        intake.flipperGoToSafe(3000);
+        //intake.flipperGoToSafe(3000);
     }
 
     public void goToSampleAndGrabAndLiftToBucketNoWait(boolean highBucket){
@@ -293,6 +293,12 @@ public class Robot {
 
     public static float G00_MAX_POWER = 1f;
     public static float G00_SAFE_POWER = 0.9f;
+    public static boolean G0a_EASIER_PICKUP = true;
+    public static boolean G0a_EASIER_PICKUP_CYCLE_2 = false;
+    public static int G0a_EASIER_PICKUP_STRAFE_ADJUST1 = 250;
+    public static int G0a_EASIER_PICKUP_STRAFE_ADJUST2 = 220;
+    public static int G0a_EASIER_PICKUP_PAUSE = 100;
+
     public static int G0a_FAST_STRAFE_ADJUST = 300;
     public static int G0a_FAST_STRAIGHT_ADJUST1 = 200;
     public static int G0a_FAST_REVERSE_ADJUST = 0;
@@ -391,7 +397,13 @@ public class Robot {
         outtake.outtakeGrab();
 
         //moves robot into position to drive forward to grab next specimen
-        drive.strafeHoldingStraightPower(G00_MAX_POWER,G31_DELIVER_AND_PICKUP_Y+G0a_FAST_STRAFE_ADJUST,G33_DELIVER_AND_PICKUP_PREPARE_FOR_PICKUP_X,0);
+        if (G0a_EASIER_PICKUP) {
+            drive.strafeHoldingStraightPower(G00_MAX_POWER,G31_DELIVER_AND_PICKUP_Y+G0a_EASIER_PICKUP_STRAFE_ADJUST1,G33_DELIVER_AND_PICKUP_PREPARE_FOR_PICKUP_X,0);
+            drive.stopMotors();
+            teamUtil.pause(G0a_EASIER_PICKUP_PAUSE);
+        } else {
+            drive.strafeHoldingStraightPower(G00_MAX_POWER,G31_DELIVER_AND_PICKUP_Y+G0a_FAST_STRAFE_ADJUST,G33_DELIVER_AND_PICKUP_PREPARE_FOR_PICKUP_X,0);
+        }
         intake.unloadToChuteNoWait(); // drop the sample down the chute
 
         //moves robot to wall for grab
@@ -566,7 +578,7 @@ public class Robot {
     static public int G24_CYCLE_SHIFT_X = 780;
     static public int G24_CYCLE_BACKUP_SHIFT_X = 650;
 
-    static public int G25_CYCLE_PICKUP_Y = -690; //was 550
+    static public int G25_CYCLE_PICKUP_Y = -710; //was -690
     static public float G25_CYCLE_PICKUP_POWER = .3f;
     static public int G26_CYCLE_PREPARE_FOR_PICKUP_X = 300;
     static public int G26a_CYCLE_PICKUP_X = 75;
@@ -627,8 +639,17 @@ public class Robot {
             outtake.outtakeGrab();
 
             //moves robot into position to drive forward to grab next specimen
-            drive.strafeHoldingStraightPower(G00_MAX_POWER,G25_CYCLE_PICKUP_Y+G0a_FAST_STRAFE_ADJUST,G26_CYCLE_PREPARE_FOR_PICKUP_X,0);
-
+            if (G0a_EASIER_PICKUP || (G0a_EASIER_PICKUP_CYCLE_2 && cycle==2)) {
+                if (shiftSpecimens) {
+                    drive.strafeHoldingStraightPower(G00_MAX_POWER, G25_CYCLE_PICKUP_Y + G0a_EASIER_PICKUP_STRAFE_ADJUST2, G26_CYCLE_PREPARE_FOR_PICKUP_X, 0);
+                } else {
+                    drive.strafeHoldingStraightPower(G00_MAX_POWER, G25_CYCLE_PICKUP_Y + G0a_EASIER_PICKUP_STRAFE_ADJUST1, G26_CYCLE_PREPARE_FOR_PICKUP_X, 0);
+                }
+                drive.stopMotors();
+                teamUtil.pause(G0a_EASIER_PICKUP_PAUSE);
+            } else {
+                drive.strafeHoldingStraightPower(G00_MAX_POWER, G25_CYCLE_PICKUP_Y + G0a_FAST_STRAFE_ADJUST, G26_CYCLE_PREPARE_FOR_PICKUP_X, 0);
+            }
             //moves robot to wall for grab
             drive.straightHoldingStrafePower(G25_CYCLE_PICKUP_POWER,G26a_CYCLE_PICKUP_X,G25_CYCLE_PICKUP_Y,0);
             teamUtil.pause(G28_CYCLE_PICKUP_PAUSE);
@@ -672,6 +693,9 @@ public class Robot {
                 park();
             } else {
                 teamUtil.log("No Time for Park");
+                drive.driveMotorsHeadingsPower(180,0,1);
+                teamUtil.pause(Z_FINAL_DROP_MOVE_TIME);
+                drive.stopMotors();
             }
         }
         drive.stopMotors();
