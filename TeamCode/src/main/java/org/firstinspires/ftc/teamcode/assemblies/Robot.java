@@ -395,6 +395,7 @@ public class Robot {
         // moves robot out of the way of the submersible
         drive.straightHoldingStrafePower(G00_MAX_POWER,G30_DELIVER_AND_PICKUP_BACKUP_X,G02_PLACE_SPECIMEN_Y,0);
         outtake.outtakeGrab();
+        intake.flipper.setPosition(Intake.FLIPPER_UNLOAD);
 
         //moves robot into position to drive forward to grab next specimen
         if (G0a_EASIER_PICKUP) {
@@ -404,10 +405,12 @@ public class Robot {
         } else {
             drive.strafeHoldingStraightPower(G00_MAX_POWER,G31_DELIVER_AND_PICKUP_Y+G0a_FAST_STRAFE_ADJUST,G33_DELIVER_AND_PICKUP_PREPARE_FOR_PICKUP_X,0);
         }
-        intake.unloadToChuteNoWait(); // drop the sample down the chute
+        //intake.unloadToChuteNoWait(); // drop the sample down the chute
 
         //moves robot to wall for grab
         drive.straightHoldingStrafePower(G32_DELIVER_AND_PICKUP_POWER,G34_DELIVER_AND_PICKUP_X,G31_DELIVER_AND_PICKUP_Y,0);
+        intake.release();
+
         teamUtil.pause(G28_CYCLE_PICKUP_PAUSE);
 
     }
@@ -425,7 +428,7 @@ public class Robot {
     static public int G13a_DROP_SAMPLE2_X = 500;
     static public int G14_SAMPLE_3_Y = -1470; // was -1280 // also adjusted 50 For better wall contact
     static public int G14a_SAMPLE3_Y_ADJUST = 100; // adjusted 50 for better wall contact
-    static public int G14a_DROP_SAMPLE3_X = 600;
+    static public int G14a_DROP_SAMPLE3_X = 550;
     static public int G15_PICKUP_1_X = 150;
     static public int G15_PICKUP_1_Y = -1350; // was -1150
     static public float G16_PICKUP_1_POWER = .3f;
