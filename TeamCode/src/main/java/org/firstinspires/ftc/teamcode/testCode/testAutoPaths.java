@@ -279,7 +279,7 @@ public class testAutoPaths extends LinearOpMode {
                 }
                 if (driverGamepad.wasYPressed()) {
                     robot.hangPhase2V3();
-                }
+                }d
                 if(driverGamepad.wasRightPressed()){
                     robot.hang.hang_Left.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                     robot.hang.hang_Right.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
