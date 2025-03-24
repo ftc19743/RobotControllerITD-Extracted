@@ -756,14 +756,41 @@ public class Robot {
 
     }
 
+    public static float HANG_MOTOR_SQUARE_POWER = -.3f;
+
+    public void engageHangWithDrive(){
+        drive.setMotorPower(HANG_MOTOR_SQUARE_POWER); // get hooks flush to the bar
+        hang.engageHangV2();
+        drive.setMotorPower(0);
+    }
+
+    public void engageHangWithDriveNoWait(){
+        if (hang.hangMoving.get()) {
+            teamUtil.log("WARNING: Attempt to extendHang while Hang is moving--ignored");
+            return;
+        } else {
+            hang.hangMoving.set(true);
+            teamUtil.log("Launching Thread to engageHangWithDriveV2");
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    engageHangWithDrive();
+                }
+            });
+            thread.start();
+            hang.hangMoving.set(false);
+        }
+    }
 
     public void hangPhase2V3(){
         long timeOutTime = System.currentTimeMillis() + 8000;
         hang.hang_Left.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER); // Assumes 33.5" of string out
         hang.hang_Right.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER); // Assumes 39.5" of string out
-
-        hang.engageHangV2NoWait();
+        engageHangWithDriveNoWait();
         teamUtil.pause(Hang.HANG_PHASE_2_ENGAGE_PAUSE); // don't put hooks on bar until we are off of ground
+        if(true){
+            return;
+        }
         output.lift.setVelocity(Robot.PLACE_HOOKS_VELOCITY);
         output.lift.setTargetPosition(Output.LIFT_AT_BAR);
 
