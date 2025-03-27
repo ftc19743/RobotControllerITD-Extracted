@@ -19,12 +19,12 @@ public class AxonHang {
     public AtomicBoolean timedOut = new AtomicBoolean(false);
     public static boolean details = false;
 
-    public int HANG_L_STOW = 0; //set during calibration
-    public int HANG_L_EXTEND = 0; //set during calibration
-    public int HANG_L_ENGAGE = 0; //set during calibration
-    public int HANG_R_STOW = 0; //set during calibration
-    public int HANG_R_EXTEND = 0; //set during calibration
-    public int HANG_R_ENGAGE = 0; //set during calibration
+    public static int HANG_L_STOW = 0; //set during calibration
+    public static int HANG_L_EXTEND = 0; //set during calibration
+    public static int HANG_L_ENGAGE = 0; //set during calibration
+    public static int HANG_R_STOW = 0; //set during calibration
+    public static int HANG_R_EXTEND = 0; //set during calibration
+    public static int HANG_R_ENGAGE = 0; //set during calibration
     public static float RTP_MAX_VELOCITY = .5f;
     public boolean CALIBRATED = false;
 

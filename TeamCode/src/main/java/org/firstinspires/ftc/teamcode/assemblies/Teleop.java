@@ -166,6 +166,10 @@ public class Teleop extends LinearOpMode {
                 robot.drive.setHeldHeading(270);
             }
 
+            if(driverGamepad.wasUpPressed()){
+                robot.hang.extendHangNoWait();
+            }
+
             //ARMS GAMEPAD
             //Outake
             if(driverGamepad.wasLeftBumperPressed()){
