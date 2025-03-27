@@ -105,7 +105,7 @@ public class JudgingOpMode extends LinearOpMode {
             if (driverGamepad.wasAPressed() && !robot.intake.autoSeeking.get()) {
                 if(robot.intake.extender.getCurrentPosition()<robot.intake.EXTENDER_GO_TO_SEEK_THRESHOLD){
                     //robot.intake.unloadV2NoWait(true); (fast unload)
-                    robot.intake.safeUnloadNoWait();
+                   // robot.intake.safeUnloadNoWait();
                 }
                 else{
                     robot.intake.extenderSafeRetractNoWait(4000);

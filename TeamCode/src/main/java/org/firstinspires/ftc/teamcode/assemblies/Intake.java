@@ -97,12 +97,12 @@ public class Intake {
 
     static public float FLIPPER_GRAB_STEP_1 =.255f;
     static public float FLIPPER_GRAB_STEP_2 = .240f;
-    static public long FLIPPER_GRAB_STEP_1_PAUSE = 80;
-    static public long FLIPPER_GRAB_STEP_2_PAUSE = 80;
-    static public long FLIPPER_GRAB_STEP_3_PAUSE = 200;
+    static public long FLIPPER_GRAB_STEP_1_PAUSE = 60;
+    static public long FLIPPER_GRAB_STEP_2_PAUSE = 60;
+    static public long FLIPPER_GRAB_STEP_3_PAUSE = 150;
     static public float FLIPPER_GRAB_STEP_1_EXTENDED =.255f;
     static public float FLIPPER_GRAB_STEP_2_EXTENDED = .245f;
-    static public long FLIPPER_GRAB_STEP_1_PAUSE_EXTENDED = 80;
+    static public long FLIPPER_GRAB_STEP_1_PAUSE_EXTENDED = 100;
     static public long FLIPPER_GRAB_STEP_2_PAUSE_EXTENDED = 80;
     static public long FLIPPER_GRAB_STEP_3_PAUSE_EXTENDED = 80;
     static public double FLIPPER_PRE_GRAB_POT_VOLTAGE = 2.338;
@@ -1253,6 +1253,7 @@ public class Intake {
     public static int SAFE_UNLOAD_FROM_SEEK_PAUSE = 350;
     public static int SAFE_UNLOAD_RELEASE_PAUSE = 500;
 
+    /* UNUSED CODE
     public void safeUnload(){
         teamUtil.log("safeUnload has started");
         flipperGoToUnload(1500);
@@ -1285,24 +1286,25 @@ public class Intake {
         }
     }
 
+     */
+    public static long UNLOAD_TO_CHUTE_PAUSE_1 = 300;
+    public static long UNLOAD_TO_CHUTE_PAUSE_2 = 100;
+
     public void unloadToChute(){
         teamUtil.log("unloadToChute has started");
         flipper.setPosition(FLIPPER_UNLOAD);
         wrist.setPosition(WRIST_UNLOAD);
-        long timeOutTime = 2000+System.currentTimeMillis();
 
-        while(flipperPotentiometer.getVoltage()> FLIPPER_CHUTE_SWEEPER_THRESHOLD&&teamUtil.keepGoing(timeOutTime)){
-            if(details)teamUtil.log("Flipper Potentiometer Voltage" + flipperPotentiometer.getVoltage());
-            teamUtil.pause(FLIPPER_CHUTE_LOOP_TIME);
-        }
+
+
+        teamUtil.pause(UNLOAD_TO_CHUTE_PAUSE_1);
 
         if(details)teamUtil.log("SWEEPER Set to RELEASE");
         sweeper.setPosition(SWEEPER_RELEASE);
-        long timeOutTime2 = 2000+System.currentTimeMillis();
-        while(flipperPotentiometer.getVoltage()>FLIPPER_CHUTE_GRABBER_THRESHOLD&&teamUtil.keepGoing(timeOutTime2)){
-            if(details)teamUtil.log("Flipper Potentiometer Voltage" + flipperPotentiometer.getVoltage());
-            teamUtil.pause(FLIPPER_CHUTE_LOOP_TIME);
-        }
+
+
+        teamUtil.pause(UNLOAD_TO_CHUTE_PAUSE_2);
+
         grabber.setPosition(GRABBER_RELEASE);
 
         if(details)teamUtil.log("GRABBER Set to RELEASE");
