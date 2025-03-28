@@ -128,6 +128,7 @@ public class Teleop extends LinearOpMode {
         robot.intake.extender.setTargetPosition(robot.intake.extender.getCurrentPosition());
         robot.intake.extender.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
         robot.intake.extender.setVelocity(EXTENDER_HOLD_RETRACT_VELOCITY);
+        robot.outtake.ledOff();
 
         if(teamUtil.SIDE == teamUtil.Side.OBSERVATION){
             robot.intake.setTargetColor(teamUtil.alliance == teamUtil.Alliance.RED? OpenCVSampleDetectorV2.TargetColor.RED: OpenCVSampleDetectorV2.TargetColor.BLUE);
@@ -174,7 +175,7 @@ public class Teleop extends LinearOpMode {
             //Outake
             if(driverGamepad.wasLeftBumperPressed()){
                 if(outtakeUp){
-                    robot.outtake.outtakeGrab();
+                    robot.outtake.outtakeGrabTeleopNoWait(2000);
                     outtakeUp = false;
                 }else{
                     robot.outtake.deployArmNoWait(2000);
@@ -345,5 +346,6 @@ public class Teleop extends LinearOpMode {
 
 
         }
+        robot.outtake.ledOff();
     }
 }

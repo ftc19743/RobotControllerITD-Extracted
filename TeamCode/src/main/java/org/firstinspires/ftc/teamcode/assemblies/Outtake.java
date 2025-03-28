@@ -3,10 +3,13 @@ package org.firstinspires.ftc.teamcode.assemblies;
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.LED;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Config // Makes Static data members available in Dashboard
 public class Outtake {
@@ -15,7 +18,12 @@ public class Outtake {
     public Servo outakewrist;
     public Servo outakearm;
     public AnalogInput outakePotentiometer;
+    LED frontLED_red;
+    LED frontLED_green;
 
+
+    public AtomicBoolean outtakeMoving = new AtomicBoolean(false);
+    public AtomicBoolean interruptOuttakeThread = new AtomicBoolean(false);
 
     static public float ARM_UP = 0.22f;
     static public float ARM_DOWN = 0.805f;
@@ -45,7 +53,10 @@ public class Outtake {
     public Outtake() {
         teamUtil.log("Constructing Outtake");
         hardwareMap = teamUtil.theOpMode.hardwareMap;
+        frontLED_green = hardwareMap.get(LED.class, "front_led_green");
+        frontLED_red = hardwareMap.get(LED.class, "front_led_red");
         telemetry = teamUtil.theOpMode.telemetry;
+
     }
 
     public void initalize() {
@@ -62,6 +73,21 @@ public class Outtake {
     public void testWiring() {
         outakearm.setPosition(ARM_UP);
         outakewrist.setPosition(WRIST_GRAB);
+    }
+
+    public void ledRed(){
+        frontLED_red.on();
+        frontLED_green.off();
+    }
+
+    public void ledGreen(){
+        frontLED_red.off();
+        frontLED_green.on();
+    }
+
+    public void ledOff(){
+        frontLED_red.off();
+        frontLED_green.off();
     }
 
     public void firstCalibrate(){
@@ -82,12 +108,17 @@ public class Outtake {
 
     }
     public void deployArmTeleOP(long timeout){
+        ledRed();
+        outtakeMoving.set(true);
         outakearm.setPosition(ARM_UP);
         long timeoutTime = System.currentTimeMillis()+timeout;
-        while(outakePotentiometer.getVoltage()<POTENTIOMETER_WRIST_DEPLOY&&teamUtil.keepGoing(timeoutTime)){
+        teamUtil.log("InterruptOuttakeThread State: " + interruptOuttakeThread.get());
+
+        while(outakePotentiometer.getVoltage()<POTENTIOMETER_WRIST_DEPLOY&&teamUtil.keepGoing(timeoutTime)&&!interruptOuttakeThread.get()){
             teamUtil.pause(30);
         }
         outakewrist.setPosition(WRIST_RELEASE);
+        outtakeMoving.set(false);
     }
 
     public void deployArm(){
@@ -96,10 +127,18 @@ public class Outtake {
         outakewrist.setPosition(WRIST_RELEASE);
     }
     public void deployArmNoWait(long timeout){
+        if(outtakeMoving.get()){
+            teamUtil.log("Outtake is moving shutting down other thread");
+            interruptOuttakeThread.set(true);
+        }
         teamUtil.log("Launching Thread to deployArm");
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
+                while(outtakeMoving.get()){
+                    teamUtil.pause(5);
+                }
+                interruptOuttakeThread.set(false);
                 deployArmTeleOP(timeout);
             }
         });
@@ -109,11 +148,47 @@ public class Outtake {
     public void outtakeGrab(){
         outakearm.setPosition(ARM_DOWN);
         outakewrist.setPosition(WRIST_GRAB);
+
+        ledGreen();
+    }
+
+    public void outtakeGrabTeleop(long timeout){
+        outtakeMoving.set(true);
+        long timeOutTime = timeout+System.currentTimeMillis();
+        outakearm.setPosition(ARM_DOWN);
+        outakewrist.setPosition(WRIST_GRAB);
+        teamUtil.log("InterruptOuttakeThread State: " + interruptOuttakeThread.get());
+
+        while(outakePotentiometer.getVoltage()>POTENTIOMETER_GRAB+0.1 && teamUtil.keepGoing(timeOutTime)&&!interruptOuttakeThread.get()){
+            teamUtil.pause(10);
+        }
+        ledGreen();
+        outtakeMoving.set(false);
+    }
+
+    public void outtakeGrabTeleopNoWait(long timeout){
+        if(outtakeMoving.get()){
+            teamUtil.log("Outtake is moving shutting down other thread");
+            interruptOuttakeThread.set(true);
+        }
+        teamUtil.log("Launching Thread to deployArm");
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while(outtakeMoving.get()){
+                    teamUtil.pause(5);
+                }
+                interruptOuttakeThread.set(false);
+                outtakeGrabTeleop(timeout);
+            }
+        });
+        thread.start();
     }
 
     public void outtakeRest(){
         outakearm.setPosition(ARM_REST);
         outakewrist.setPosition(WRIST_REST);
+        ledOff();
     }
 
     public void setArmLevelOneAscent(){

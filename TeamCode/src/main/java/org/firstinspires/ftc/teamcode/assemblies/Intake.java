@@ -89,11 +89,11 @@ public class Intake {
     static public double FLIPPER_PRE_UNLOAD_POT_THRESHOLD = 0.1;
 
     static public float FLIPPER_PRE_GRAB = 0.27f;
-    static public float FLIPPER_PRE_GRAB_EXTENDED = 0.28f;
+    static public float FLIPPER_PRE_GRAB_EXTENDED = 0.285f;
     static public float FLIPPER_GRAB = 0.225f;
     static public float FLIPPER_GRAB_EXTENDED = 0.234f;
     static public int EXTENDER_LONG_GRAB = 900; // The point at which pre-grab and grab will switch to EXTENDED settings to handle droop in extenders
-    static public float EXTENDER_LONG_GRAB_Y_ADJUST = EXTENDER_TIC_PER_MM * -5f; // tics to adjust ytarget if we are not going all the way down to grab with flipper
+    static public float EXTENDER_LONG_GRAB_Y_ADJUST = EXTENDER_TIC_PER_MM * -7f; // tics to adjust ytarget if we are not going all the way down to grab with flipper
 
     static public float FLIPPER_GRAB_STEP_1 =.255f;
     static public float FLIPPER_GRAB_STEP_2 = .240f;
@@ -220,7 +220,7 @@ public class Intake {
     static public int EXTENDER_GOTOUNLOAD_THRESHOLD = 20;
     static public float EXTENDER_CALIBRATE_POWER = -0.3f;
     static public float EXTENDER_JUMP_VELOCITY = 1200;//was 200
-    static public float EXTENDER_SEEK_PHASE1_VELOCITY = 400;
+    static public float EXTENDER_SEEK_PHASE1_VELOCITY = 600;
 
 
     static public float EXTENDER_GO_TO_SEEK_THRESHOLD = 50;
@@ -846,6 +846,8 @@ public class Intake {
         }
     }
 
+    public static long SEEK_MOMENTUM_PAUSE = 100;
+
     public boolean goToSampleV5(long timeOut, boolean phase1){
         teamUtil.log("GoToSampleV5 has started. Processor State" + arduPortal.getProcessorEnabled(sampleDetector));
         long timeoutTime = System.currentTimeMillis() + timeOut;
@@ -878,6 +880,7 @@ public class Intake {
                 teamUtil.pause(30); // TODO: We need to worry about a detection outside our horizontal target range
                 frameData = sampleDetector.frameDataQueue.peek();
             }
+
             if(System.currentTimeMillis()>timeoutTime){
                 extender.setVelocity(0);
                 moving.set(false);
@@ -888,7 +891,9 @@ public class Intake {
             }
 
             extender.setVelocity(0);
-            teamUtil.pause(300); // let extenders come to a stop TODO: Is this enough time?
+            waitForArmatureStop(500);
+            teamUtil.pause(SEEK_MOMENTUM_PAUSE); // let extenders come to a stop
+
             frameData = sampleDetector.processNextFrame(false, true, false, timeOut);
 
             if(frameData==null){
