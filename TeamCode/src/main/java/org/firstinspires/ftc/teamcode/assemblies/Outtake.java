@@ -43,7 +43,7 @@ public class Outtake {
     static public double POTENTIOMETER_GRAB = .83;
     static public float ARM_START = 0.85f;
     static public float ARM_LEVEL_ONE_ASCENT = 0.13f;
-    static public double POTENTIOMETER_WRIST_DEPLOY = 2.2;
+    static public double POTENTIOMETER_WRIST_DEPLOY = 1.4;
     static public float ARM_LEVEL_THREE_ASCENT = 0.13f;
 
 
@@ -53,8 +53,7 @@ public class Outtake {
     public Outtake() {
         teamUtil.log("Constructing Outtake");
         hardwareMap = teamUtil.theOpMode.hardwareMap;
-        frontLED_green = hardwareMap.get(LED.class, "front_led_green");
-        frontLED_red = hardwareMap.get(LED.class, "front_led_red");
+
         telemetry = teamUtil.theOpMode.telemetry;
 
     }
@@ -64,8 +63,9 @@ public class Outtake {
         outakewrist = hardwareMap.get(Servo.class,"outakewrist");
         outakearm = hardwareMap.get(Servo.class,"outakearm");
         outakePotentiometer = hardwareMap.analogInput.get("outakePotentiometer");
-
-
+        frontLED_green = hardwareMap.get(LED.class, "front_led_green");
+        frontLED_red = hardwareMap.get(LED.class, "front_led_red");
+        ledOff();
 
         teamUtil.log("Intake Outtake");
     }
@@ -127,6 +127,7 @@ public class Outtake {
         outakewrist.setPosition(WRIST_RELEASE);
     }
     public void deployArmNoWait(long timeout){
+        long timeoutTime = System.currentTimeMillis() + timeout;
         if(outtakeMoving.get()){
             teamUtil.log("Outtake is moving shutting down other thread");
             interruptOuttakeThread.set(true);
@@ -135,8 +136,8 @@ public class Outtake {
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                while(outtakeMoving.get()){
-                    teamUtil.pause(5);
+                while(outtakeMoving.get() && teamUtil.keepGoing(timeoutTime)){
+                    teamUtil.pause(10);
                 }
                 interruptOuttakeThread.set(false);
                 deployArmTeleOP(timeout);
@@ -167,6 +168,8 @@ public class Outtake {
     }
 
     public void outtakeGrabTeleopNoWait(long timeout){
+        long timeOutTime = timeout+System.currentTimeMillis();
+
         if(outtakeMoving.get()){
             teamUtil.log("Outtake is moving shutting down other thread");
             interruptOuttakeThread.set(true);
@@ -175,8 +178,8 @@ public class Outtake {
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                while(outtakeMoving.get()){
-                    teamUtil.pause(5);
+                while(outtakeMoving.get() && teamUtil.keepGoing(timeOutTime)){
+                    teamUtil.pause(10);
                 }
                 interruptOuttakeThread.set(false);
                 outtakeGrabTeleop(timeout);

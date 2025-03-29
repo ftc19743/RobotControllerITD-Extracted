@@ -281,7 +281,7 @@ public class Auto extends LinearOpMode {
             long endTime = System.currentTimeMillis();
             long elapsedTime = endTime - startTime;
             teamUtil.log("Elapsed Auto Time Without Wait At End: " + elapsedTime);
-
+            robot.outtake.ledOff();
             while (opModeIsActive()) { // don't kill opMode until the last possible moment to allow other threads to finish
             }
 

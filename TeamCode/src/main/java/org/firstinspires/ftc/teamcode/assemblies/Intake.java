@@ -131,7 +131,8 @@ public class Intake {
     public static double FLIPPER_UNLOAD_GRABBER_THRESHOLD_FROM_SEEK = 0.4;
     static public int FLIPPER_PRE_UNLOAD_PAUSE = 250;
 
-
+    public static double GO_TO_SAMPLE_DIST_THRESHOLD = 5;
+    public static double GO_TO_SAMPLE_HEADING_THRESHOLD = 0.5;
 
 //    static public float FLIPPER_POTENTIOMETER_SAFE = ;
 //    static public float FLIPPER_POTENTIOMETER_SAFE = ;
@@ -854,6 +855,8 @@ public class Intake {
         long startTime = System.currentTimeMillis();
         OpenCVSampleDetectorV2.FrameData frameData = null;
 
+        BasicDrive drive = teamUtil.robot.drive;
+
         lightsOnandOff(WHITE_NEOPIXEL,RED_NEOPIXEL,GREEN_NEOPIXEL,BLUE_NEOPIXEL,true);
         //setSeekSignal();
 
@@ -867,6 +870,12 @@ public class Intake {
         waitForArmatureStop(1000);
         // Process one frame (and one frame only--even if nothing is detected)
         // leave processor running in case we need to do a phase 1 seek
+
+        drive.odo.update();
+        double preGrabX = drive.odo.getPosX();
+        double preGrabY = drive.odo.getPosY();
+        double preGrabHeading = drive.odo.getHeading();
+
         frameData = sampleDetector.processNextFrame(false, false, false, timeOut);
 
         if(frameData==null&&phase1){ // did not see anything so move forward to try and find one (Phase 1)
@@ -894,6 +903,7 @@ public class Intake {
             waitForArmatureStop(500);
             teamUtil.pause(SEEK_MOMENTUM_PAUSE); // let extenders come to a stop
 
+
             frameData = sampleDetector.processNextFrame(false, true, false, timeOut);
 
             if(frameData==null){
@@ -913,15 +923,17 @@ public class Intake {
         // Get ready to make a series of targeted movements to the block
         // frame holds our current target
         extender.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
-        teamUtil.theBlinkin.setSignal(Blinkin.Signals.NORMAL_WHITE); // signal that we are now jumping
+        teamUtil.theBlinkin.setSignal(Blinkin.Signals.NORMAL_WHITE);
+
+        // signal that we are now jumping
         while (teamUtil.keepGoing(timeoutTime)) {
             if(frameData==null){
                 moving.set(false);
                 teamUtil.log("Failed to Detect Sample During Jumps: moving = false");
-                teamUtil.theBlinkin.setSignal(Blinkin.Signals.OFF);
-                stopCVPipeline();
+                goToSeekNoExtenders();
                 return false;
             }
+
             teamUtil.log("Target Frame:" + sampleDetector.frameString(frameData));
             //boolean lastJumpStartedInGrabZone = inGrabZone(frame.rectCenterXOffset, frame.rectCenterYOffset);
             boolean lastJumpStartedInGrabZone = inGrabZone(frameData.adjRectCenterXOffset, frameData.adjRectCenterYOffset);
@@ -929,6 +941,7 @@ public class Intake {
                 teamUtil.log("Starting Jump IN Grab Zone; Setting Flipper Down To Pre Grab");
                 // flipper is moved to pre-grab inside of jumpToSampleV5()!
                 setToPreGrabTime=System.currentTimeMillis();
+
             } else {
                 teamUtil.log("Starting Jump OUTSIDE Grab Zone");
             }
@@ -937,8 +950,7 @@ public class Intake {
                  // We failed, clean up and bail out
                  moving.set(false);
                  teamUtil.log("Intake: moving = false");
-                 stopCVPipeline();
-                 lightsOnandOff(WHITE_NEOPIXEL,RED_NEOPIXEL,GREEN_NEOPIXEL,BLUE_NEOPIXEL,false);
+                 goToSeekNoExtenders();
                  teamUtil.theBlinkin.setSignal(Blinkin.Signals.OFF);
                  return (false);
              }
@@ -946,15 +958,38 @@ public class Intake {
                  break;
              }
             teamUtil.pause(GO_TO_SAMPLE_JUMP_PAUSE);// let actuators settle down before we grab the next CV result
+            drive.odo.update();
+            preGrabX = drive.odo.getPosX();
+            preGrabY = drive.odo.getPosY();
+            preGrabHeading = drive.odo.getHeading();
             frameData = sampleDetector.processNextFrame(false, true, false, timeOut);
         }
-        stopCVPipeline();
+
         moving.set(false);
+
+        if(robotMoved(preGrabX, preGrabY, preGrabHeading)){
+            teamUtil.log("GoToSample has failed due to being moved");
+            goToSeekNoExtenders();
+            return false;
+        }
+
+
+        stopCVPipeline();
         lightsOnandOff(WHITE_NEOPIXEL,RED_NEOPIXEL,GREEN_NEOPIXEL,BLUE_NEOPIXEL,false);
         teamUtil.theBlinkin.setSignal(Blinkin.Signals.DARK_GREEN);
         teamUtil.log("GoToSample has finished--At Block.  Total Time: "+ (System.currentTimeMillis()-startTime)+ ": moving = false");
 
         return true;
+    }
+
+    public boolean robotMoved(double startX, double startY, double startHeading){
+        BasicDrive drive = teamUtil.robot.drive;
+        drive.odo.update();
+        double distFromStart = Math.sqrt(Math.pow(drive.odo.getPosX() - startX, 2) + Math.pow(drive.odo.getPosY() - startY, 2));
+        if(distFromStart > GO_TO_SAMPLE_DIST_THRESHOLD || Math.abs(startHeading-drive.odo.getHeading()) > GO_TO_SAMPLE_HEADING_THRESHOLD){
+            return true;
+        }
+        return false;
     }
 
 
@@ -1135,6 +1170,8 @@ public class Intake {
         wrist.setPosition(WRIST_MIDDLE);
         axonSlider.runToEncoderPosition(axonSlider.SLIDER_UNLOAD, false, timeOut);
         timedOut.set(axonSlider.timedOut.get());
+        stopCVPipeline();
+        lightsOnandOff(WHITE_NEOPIXEL,RED_NEOPIXEL,GREEN_NEOPIXEL,BLUE_NEOPIXEL,false);
         moving.set(false);
         teamUtil.log("goToSafeRetract--Finished: moving = false");
     }
