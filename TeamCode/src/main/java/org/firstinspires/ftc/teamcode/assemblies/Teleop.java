@@ -342,6 +342,7 @@ public class Teleop extends LinearOpMode {
             //telemetry.addData("Right Hang Velocity", robot.hang.hang_Right.getVelocity());
             //telemetry.addLine("Low Bucket Toggled: " + lowBucketToggle);
             //telemetry.addLine("Hang Manual: " + hangManualControl);
+
             telemetry.update();
 
 

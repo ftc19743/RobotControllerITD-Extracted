@@ -33,6 +33,8 @@ public class Hang {
     public static int HANG_EXTEND = 3100;
     public static int HANG_ENGAGE = 800;
     public static int HANG_VELOCITY = 2800;
+    public static int HANG_REDUCED_VELOCITY_L = 2400;
+    public static int HANG_VELOCITY_R = 2800;
 
     public static float PULLEYLEFT_STOW = 0.31f;
     public static float PULLEYLEFT_HANG = 0.42f;

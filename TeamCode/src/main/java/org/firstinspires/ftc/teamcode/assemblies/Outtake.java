@@ -28,8 +28,8 @@ public class Outtake {
     static public float ARM_UP = 0.22f;
     static public float ARM_DOWN = 0.805f;
     static public float ARM_BUCKET_SAFE = .55f;
-    static public float WRIST_GRAB = 0.15f;
-    static public float WRIST_RELEASE = .82f;
+    static public float WRIST_GRAB = 0.16f;
+    static public float WRIST_RELEASE = .813f;
     static public float ARM_REST = .26f;
     static public float ARM_ENGAGE = 0.2f;
     static public float ARM_SOFT_ENGAGE = 0.19f;

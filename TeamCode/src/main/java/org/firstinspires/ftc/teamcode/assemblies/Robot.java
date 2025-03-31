@@ -5,7 +5,6 @@ import static org.firstinspires.ftc.teamcode.libs.teamUtil.Alliance.RED;
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
@@ -791,9 +790,7 @@ public class Robot {
         hang.hang_Right.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER); // Assumes 39.5" of string out
         engageHangWithDriveNoWait();
         teamUtil.pause(Hang.HANG_PHASE_2_ENGAGE_PAUSE); // don't put hooks on bar until we are off of ground
-        if(true){
-            return;
-        }
+
         output.lift.setVelocity(Robot.PLACE_HOOKS_VELOCITY);
         output.lift.setTargetPosition(Output.LIFT_AT_BAR);
 
@@ -820,6 +817,7 @@ public class Robot {
 
         // Head to the top
         teamUtil.log("Heading Up");
+        hang.hang_Left.setVelocity(Hang.HANG_REDUCED_VELOCITY_L);
         hang.hang_Right.setTargetPosition(Hang.HANG_LEVEL_3_R);
         hang.hang_Left.setTargetPosition(Hang.HANG_LEFT_INTERMEDIATE);
         //hang.hang_Left.setTargetPosition(Hang.HANG_LEVEL_3_L);
@@ -832,8 +830,8 @@ public class Robot {
         long timeOutTime = System.currentTimeMillis() + 8000;
         hang.hang_Left.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER); // Assumes 33.5" of string out
         hang.hang_Right.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER); // Assumes 39.5" of string out
-
-        hang.stowHangNoWait();
+        engageHangWithDriveNoWait();
+        //hang.stowHangNoWait();
         output.lift.setVelocity(Robot.PLACE_HOOKS_VELOCITY);
         output.lift.setTargetPosition(Output.LIFT_AT_BAR);
 
@@ -857,6 +855,7 @@ public class Robot {
         if(hang.hang_Right.getCurrentPosition()>Hang.HANG_RIGHT_INTERMEDIATE&&!evenedStringsOut){
             evenedStringsOut=true;
             teamUtil.log("Strings evened out");
+            hang.hang_Left.setVelocity(Hang.HANG_VELOCITY);
             hang.hang_Left.setTargetPosition(Hang.HANG_LEVEL_3_L);
         }
     }
@@ -931,6 +930,7 @@ public class Robot {
         stowHangWhenNeeded();
         moveHookArmWhenNeeded();
         evenOutStringsWhenNeeded();
+        teamUtil.log("Motor Velocities: L " + hang.hang_Left.getVelocity() + " R " + hang.hang_Right.getVelocity());
     }
 
     public static float LIFT_PICKUP_HOOKS_POWER_1 = 0.5f;
