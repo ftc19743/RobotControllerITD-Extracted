@@ -394,15 +394,17 @@ public class Robot {
         // moves robot out of the way of the submersible
         drive.straightHoldingStrafePower(G00_MAX_POWER,G30_DELIVER_AND_PICKUP_BACKUP_X,G02_PLACE_SPECIMEN_Y,0);
         outtake.outtakeGrab();
-        intake.flipper.setPosition(Intake.FLIPPER_UNLOAD);
 
         //moves robot into position to drive forward to grab next specimen
         if (G0a_EASIER_PICKUP) {
             drive.strafeHoldingStraightPower(G00_MAX_POWER,G31_DELIVER_AND_PICKUP_Y+G0a_EASIER_PICKUP_STRAFE_ADJUST1,G33_DELIVER_AND_PICKUP_PREPARE_FOR_PICKUP_X,0);
+            intake.flipper.setPosition(Intake.FLIPPER_UNLOAD);
             drive.stopMotors();
             teamUtil.pause(G0a_EASIER_PICKUP_PAUSE);
+            teamUtil.log("Current Y Velo: " + drive.odo.getVelY());
         } else {
             drive.strafeHoldingStraightPower(G00_MAX_POWER,G31_DELIVER_AND_PICKUP_Y+G0a_FAST_STRAFE_ADJUST,G33_DELIVER_AND_PICKUP_PREPARE_FOR_PICKUP_X,0);
+            intake.flipper.setPosition(Intake.FLIPPER_UNLOAD);
         }
         //intake.unloadToChuteNoWait(); // drop the sample down the chute
 
@@ -411,6 +413,34 @@ public class Robot {
         intake.release();
 
         teamUtil.pause(G28_CYCLE_PICKUP_PAUSE);
+
+    }
+
+    public static double H01_VELOCITY_THRESHOLD = -900;
+    public void deliverFirstSampleV2() {
+        long startTime = System.currentTimeMillis();
+        // moves robot out of the way of the submersible
+        drive.straightHoldingStrafePower(G00_MAX_POWER,G30_DELIVER_AND_PICKUP_BACKUP_X,G02_PLACE_SPECIMEN_Y,0);
+        outtake.outtakeGrab();
+
+
+        //moves robot into position to drive forward to grab next specimen
+        if (G0a_EASIER_PICKUP) {
+            drive.strafeHoldingStraightPower(G00_MAX_POWER,G31_DELIVER_AND_PICKUP_Y+G0a_EASIER_PICKUP_STRAFE_ADJUST1,G33_DELIVER_AND_PICKUP_PREPARE_FOR_PICKUP_X,0);
+            intake.flipper.setPosition(Intake.FLIPPER_UNLOAD);
+            brakeRightUntilVeloSpecimen(H01_VELOCITY_THRESHOLD,2000);
+        } else {
+            drive.strafeHoldingStraightPower(G00_MAX_POWER,G31_DELIVER_AND_PICKUP_Y+G0a_FAST_STRAFE_ADJUST,G33_DELIVER_AND_PICKUP_PREPARE_FOR_PICKUP_X,0);
+            intake.flipper.setPosition(Intake.FLIPPER_UNLOAD);
+        }
+        //intake.unloadToChuteNoWait(); // drop the sample down the chute
+
+        //moves robot to wall for grab
+        drive.moveToX(G32_DELIVER_AND_PICKUP_POWER,G34_DELIVER_AND_PICKUP_X,180,0);
+        intake.release();
+
+        teamUtil.pause(G28_CYCLE_PICKUP_PAUSE);
+        teamUtil.log("Elapsed Time For DeliverFirstSampleV2: " + (System.currentTimeMillis()-startTime));
 
     }
 
@@ -529,6 +559,22 @@ public class Robot {
         }
         teamUtil.log("reverseUntilForwardMotionStoppedSample Finished at " + (System.currentTimeMillis()-startTime) + "ms. yPos: " + drive.odo.getPosY() + " yVel: " + drive.odo.getVelY());
     }
+
+
+    public void brakeRightUntilVeloSpecimen(double velocityThreshold, long timeout) {
+        teamUtil.log("brakeRightUntilVeloSpecimen Started");
+        long startTime = System.currentTimeMillis();
+        drive.stopMotors();
+        drive.odo.update();
+        while (drive.odo.getVelY() < velocityThreshold && !teamUtil.theOpMode.isStopRequested()) {
+            drive.odo.update();
+            if (details) {
+                teamUtil.log("yPos: " + drive.odo.getPosY() + " yVel: " + drive.odo.getVelY());
+            }
+        }
+        teamUtil.log("brakeRightUntilVeloSpecimen Finished at " + (System.currentTimeMillis()-startTime) + "ms. yPos: " + drive.odo.getPosY() + " yVel: " + drive.odo.getVelY());
+    }
+
     public void forwardUntilForwardMotionStoppedSample(float power, long timeout) {
         teamUtil.log("forwardUntilForwardMotionStoppedSample");
         long startTime = System.currentTimeMillis();
@@ -647,13 +693,15 @@ public class Robot {
                 } else {
                     drive.strafeHoldingStraightPower(G00_MAX_POWER, G25_CYCLE_PICKUP_Y + G0a_EASIER_PICKUP_STRAFE_ADJUST1, G26_CYCLE_PREPARE_FOR_PICKUP_X, 0);
                 }
-                drive.stopMotors();
-                teamUtil.pause(G0a_EASIER_PICKUP_PAUSE);
+//                drive.stopMotors();
+//                teamUtil.pause(G0a_EASIER_PICKUP_PAUSE);
+                brakeRightUntilVeloSpecimen(H01_VELOCITY_THRESHOLD,2000);
             } else {
                 drive.strafeHoldingStraightPower(G00_MAX_POWER, G25_CYCLE_PICKUP_Y + G0a_FAST_STRAFE_ADJUST, G26_CYCLE_PREPARE_FOR_PICKUP_X, 0);
             }
             //moves robot to wall for grab
-            drive.straightHoldingStrafePower(G25_CYCLE_PICKUP_POWER,G26a_CYCLE_PICKUP_X,G25_CYCLE_PICKUP_Y,0);
+            drive.moveToX(G25_CYCLE_PICKUP_POWER,G26a_CYCLE_PICKUP_X,180,0);
+            //drive.straightHoldingStrafePower(G25_CYCLE_PICKUP_POWER,G26a_CYCLE_PICKUP_X,G25_CYCLE_PICKUP_Y,0);
             teamUtil.pause(G28_CYCLE_PICKUP_PAUSE);
         }
         BasicDrive.MIN_STRAFE_START_VELOCITY = 500;
@@ -678,7 +726,8 @@ public class Robot {
         drive.setRobotPosition(0, 0, 0);
 
         placeFirstSpecimenV2(true);
-        deliverFirstSample();
+        //deliverFirstSample();
+        deliverFirstSampleV2();
         specimenCyclePlace(1, G33_6_CYCLE_Y_PLACEMENTS[0]); //second specimen delivered
         specimenCollectBlocksV3();
 
@@ -768,7 +817,7 @@ public class Robot {
 
     public void engageHangWithDriveNoWait(){
         if (hang.hangMoving.get()) {
-            teamUtil.log("WARNING: Attempt to extendHang while Hang is moving--ignored");
+            teamUtil.log("WARNING: Attempt to engageHangWithDriveNoWait while Hang is moving--ignored");
             return;
         } else {
             hang.hangMoving.set(true);
@@ -930,7 +979,7 @@ public class Robot {
         stowHangWhenNeeded();
         moveHookArmWhenNeeded();
         evenOutStringsWhenNeeded();
-        teamUtil.log("Motor Velocities: L " + hang.hang_Left.getVelocity() + " R " + hang.hang_Right.getVelocity());
+        //teamUtil.log("Motor Velocities: L " + hang.hang_Left.getVelocity() + " R " + hang.hang_Right.getVelocity());
     }
 
     public static float LIFT_PICKUP_HOOKS_POWER_1 = 0.5f;

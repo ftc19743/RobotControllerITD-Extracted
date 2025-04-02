@@ -272,20 +272,14 @@ public class Hang {
     }
 
     public void clearHangServosNoWait() {
-        if (hangMoving.get()) {
-            teamUtil.log("WARNING: Attempt to stowHang while Hang is moving--ignored");
-            return;
-        } else {
-            hangMoving.set(true);
-            teamUtil.log("Launching Thread to stowHang");
-            Thread thread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    clearHangServos();
-                }
-            });
-            thread.start();
-        }
+        teamUtil.log("Launching Thread to clearHangServos");
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                clearHangServos();
+            }
+        });
+        thread.start();
     }
 
     public void joystickDrive(float x, float y) {

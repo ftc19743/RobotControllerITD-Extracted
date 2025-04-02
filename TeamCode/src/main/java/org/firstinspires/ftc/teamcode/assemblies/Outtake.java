@@ -126,6 +126,7 @@ public class Outtake {
 
         outakewrist.setPosition(WRIST_RELEASE);
     }
+
     public void deployArmNoWait(long timeout){
         long timeoutTime = System.currentTimeMillis() + timeout;
         if(outtakeMoving.get()){

@@ -32,6 +32,7 @@ public class testAutoPaths extends LinearOpMode {
     public static int START_CYCLE = 1;
     public static boolean GRAB_SAMPLE = false;
     public static boolean useCV = true;
+    public static boolean deliverFirstSampleV2 = false;
 
     public static int teethXOffset = 0;
     public static int teethYOffset = 0;
@@ -175,7 +176,12 @@ public class testAutoPaths extends LinearOpMode {
                     long startTime = System.currentTimeMillis();
                     robot.drive.setRobotPosition(0,0,0);
                     robot.placeFirstSpecimenV2(true);
-                    robot.deliverFirstSample();
+                    if(!deliverFirstSampleV2){
+                        robot.deliverFirstSample();
+                    }
+                    else{
+                        robot.deliverFirstSampleV2();
+                    }
                     robot.drive.stopMotors();
                     elapsedTime = System.currentTimeMillis()-startTime;
                 }
@@ -194,6 +200,13 @@ public class testAutoPaths extends LinearOpMode {
                         robot.drive.stopMotors();
                     }
                     elapsedTime = System.currentTimeMillis()-startTime;
+                }
+                if(driverGamepad.wasLeftPressed()){
+                    robot.outtake.outtakeRest();
+                    teamUtil.pause(2000);
+                    robot.output.bucket.setPosition(Output.BUCKET_IDLE);
+                    teamUtil.pause(1000);
+                    robot.outtake.secondCalibrate();
                 }
 
             } else if (AA_Operation == Ops.Sample) {
@@ -343,11 +356,7 @@ public class testAutoPaths extends LinearOpMode {
                     elapsedTime = System.currentTimeMillis() - startTime;
 
                 }
-                if (driverGamepad.wasLeftPressed()) { // back to bucket from 1 and 2
-                    long startTime = System.currentTimeMillis();
 
-                    elapsedTime = System.currentTimeMillis() - startTime;
-                }
             }
 
             robot.drive.odo.update();
