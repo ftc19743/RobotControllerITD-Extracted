@@ -51,6 +51,7 @@ public class Intake {
     public AtomicBoolean FlipperInUnload = new AtomicBoolean(false);
     public AtomicBoolean FlipperInSeek = new AtomicBoolean(true);
     public AtomicBoolean autoSeeking = new AtomicBoolean(false);
+    public AtomicBoolean processorOn = new AtomicBoolean(false);
 
     public static final int NUM_PIXELS = 12;
     public static final int BYTES_PER_PIXEL=4; // RGBW neo pixel device
@@ -423,9 +424,14 @@ public class Intake {
     public void startCVPipeline () {
         sampleDetector.reset();
         arduPortal.setProcessorEnabled(sampleDetector, true );
+        processorOn.set(true);
+        teamUtil.log("ProcessorOn = " + processorOn.get());
     }
+
     public void stopCVPipeline () {
         arduPortal.setProcessorEnabled(sampleDetector, false );
+        processorOn.set(false);
+        teamUtil.log("ProcessorOn = " + processorOn.get());
     }
 
     public void restartCVPipeline(){
@@ -622,10 +628,11 @@ public class Intake {
     }
     public void goToSeekNoExtenders(){
         teamUtil.log("goToSeek");
-        arduPortal.setProcessorEnabled(sampleDetector, true );
+        startCVPipeline();
+        lightsOnandOff(WHITE_NEOPIXEL,RED_NEOPIXEL,GREEN_NEOPIXEL,BLUE_NEOPIXEL,true);
+
         flipper.setPosition(FLIPPER_SEEK);
         wrist.setPosition(WRIST_MIDDLE);
-        lightsOnandOff(WHITE_NEOPIXEL,RED_NEOPIXEL,GREEN_NEOPIXEL,BLUE_NEOPIXEL,true);
         grabberReady();
         FlipperInSeek.set(true);
         FlipperInUnload.set(false);
@@ -1137,6 +1144,35 @@ public class Intake {
         teamUtil.log("autoRetractAllAndUnload Finished: moving = false");
     }
 
+    public void teleopUnloadToBucket(){
+        flipper.setPosition(FLIPPER_UNLOAD);
+        long flipperStartTime = System.currentTimeMillis();
+
+        long pauseTime = flipperStartTime+FLIP_TIME-System.currentTimeMillis();
+        if(pauseTime>0){
+            teamUtil.pause(pauseTime);
+        }
+        sweeper.setPosition(SWEEPER_RELEASE);
+        grabber.setPosition(GRABBER_RELEASE);
+        teamUtil.pause(AUTO_SAFE_UNLOAD_RELEASE_PAUSE); // let sweeper get out of the way
+    }
+
+    public void teleopUnloadToBucketNoWait() {
+        if (moving.get()) { // Intake is already moving in another thread
+            teamUtil.log("WARNING: Attempt to teleopUnloadToBucketNoWait while intake is moving--ignored");
+            return;
+        } else {
+            teamUtil.log("Launching Thread to teleopUnloadToBucketNoWait: moving = true");
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    teleopUnloadToBucket();
+                }
+            });
+            thread.start();
+        }
+
+    }
 
     public void retractAllNoWait(boolean unload, long timeOut) {
         if (moving.get()) { // Intake is already moving in another thread
@@ -1479,7 +1515,7 @@ public class Intake {
             if(Math.abs(joystickValue) < 0.85){ // slow mode
                 if(joystickValue<0){
                     //if(flipperPotentiometer.getVoltage()<FLIPPER_SEEK_POT_VOLTAGE){ // Do this no matter what since we might have been in manualYNoSeek
-                        goToSeekNoExtenders();
+                        if(!processorOn.get()) goToSeekNoExtenders();
                     //}
                     if(details)teamUtil.log("Extender Manual: " + (EXTENDER_CRAWL_INCREMENT));
                     extender.setVelocity(EXTENDER_MAX_VELOCITY);
@@ -1496,7 +1532,7 @@ public class Intake {
             else{ // fast mode
                 if(joystickValue<0){
                     //if(flipperPotentiometer.getVoltage()<FLIPPER_SEEK_POT_VOLTAGE){ // Do this no matter what since we might have been in manualYNoSeek
-                        goToSeekNoExtenders();
+                        if(!processorOn.get()) goToSeekNoExtenders();
                     //}
                     if(details)teamUtil.log("Extender Manual: " + (EXTENDER_FAST_INCREMENT));
                     extender.setVelocity(EXTENDER_MAX_VELOCITY);
