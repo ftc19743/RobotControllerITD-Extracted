@@ -170,6 +170,33 @@ public class Teleop extends LinearOpMode {
             if(driverGamepad.wasUpPressed()){
                 robot.hang.extendHangNoWait();
             }
+            /*
+            if(driverGamepad.wasDownPressed()){
+                boolean result = robot.grabSpecimenTeleop(2000);
+                outtakeUp = result; // true if finishes and false if returns earlier
+            }
+
+             */
+            if(robot.newOutakeLocation.get()){
+                robot.newOutakeLocation.set(false);
+                outtakeUp = robot.outtakeUp.get();
+            }
+
+            if(driverGamepad.wasRightBumperPressed()){
+                if(robot.doingUniversalDriveOp.get()){
+                    robot.doingUniversalDriveOp.set(false);
+                    robot.stopAutoOperations.set(false);
+                    robot.grabSpecimenTeleopNoWait(2000); //TODO No Wait
+                }else{
+                    robot.doingUniversalDriveOp.set(true);
+
+                    robot.stopAutoOperations.set(true);
+
+
+
+                }
+
+            }
 
             //ARMS GAMEPAD
             //Outake
@@ -332,15 +359,15 @@ public class Teleop extends LinearOpMode {
                 }
             }else{
                 //drive
-                robot.drive.universalDriveJoystickV2(
-                        driverGamepad.gamepad.left_stick_x,
-                        driverGamepad.gamepad.left_stick_y,
-                        driverGamepad.gamepad.right_stick_x,
-                        driverGamepad.gamepad.right_trigger > .5,driverGamepad.gamepad.left_trigger > .5,
-                        robot.drive.getHeadingODO());
+                if(robot.doingUniversalDriveOp.get()){
+                    robot.drive.universalDriveJoystickV2(
+                            driverGamepad.gamepad.left_stick_x,
+                            driverGamepad.gamepad.left_stick_y,
+                            driverGamepad.gamepad.right_stick_x,
+                            driverGamepad.gamepad.right_trigger > .5,driverGamepad.gamepad.left_trigger > .5,
+                            robot.drive.getHeadingODO());
+                }
             }
-
-
             robot.outputTelemetry();
             robot.drive.odo.update();
             //telemetry.addData("Left Hang Velocity", robot.hang.hang_Left.getVelocity());

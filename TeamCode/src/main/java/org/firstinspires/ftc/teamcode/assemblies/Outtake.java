@@ -123,7 +123,6 @@ public class Outtake {
 
     public void deployArm(){
         outakearm.setPosition(ARM_UP);
-
         outakewrist.setPosition(WRIST_RELEASE);
     }
 

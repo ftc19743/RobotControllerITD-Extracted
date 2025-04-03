@@ -32,12 +32,18 @@ public class Robot {
 
     public static boolean AUTO_INTAKE_SAMPLE = true;
 
+    public AtomicBoolean stopAutoOperations = new AtomicBoolean(false);
+
+
 
     static public long DROP_SAMPLE_OUT_BACK_WITH_FLIPPER_RESET_1 = 500;
     static public long DROP_SAMPLE_OUT_BACK_WITH_FLIPPER_RESET_2 = 300;
 
 
     public AtomicBoolean autoUnloadNoWaitDone = new AtomicBoolean(false);
+
+    public AtomicBoolean doingUniversalDriveOp = new AtomicBoolean(true);
+
 
     static public boolean waitingForButtonPress = true;
     public static double OUTAKE_ARM_ENGAGE_VAL = 0;
@@ -1343,6 +1349,107 @@ public class Robot {
         return false; // no more cycling
     }
 
+    public static float D01_GRAB_BACKUP_POWER = .3f;
+    public static double D01_GRAB_VELOCITY_THRESHOLD = -50;
+    public static double D01_MIN_VELOCITY_THRESHOLD = -60;
+    public static double D01_LEAVE_ZONE_ANGLE = 60;
+    public static float D01_LEAVE_WALL_POWER = 1f;
+    public static long D01_LEAVE_WALL_TIMEOUT = 500;
+    public AtomicBoolean newOutakeLocation = new AtomicBoolean(false);
+    public AtomicBoolean outtakeUp = new AtomicBoolean(false);
+
+    public void grabSpecimenTeleop(long timeout){
+        drive.odo.update();
+        long timeoutTime = System.currentTimeMillis() + timeout;
+        while(drive.odo.getVelX() > D01_MIN_VELOCITY_THRESHOLD && teamUtil.keepGoing(timeoutTime)&&!stopAutoOperations.get()){ // start moving so stall detection won't instantly return
+            drive.driveMotorsHeadingsFRPower(180, 0, D01_GRAB_BACKUP_POWER);
+            drive.odo.update();
+            if(details){
+                teamUtil.log("Velocity: "+drive.odo.getVelX());
+            }
+            teamUtil.pause(20);
+        }
+
+        if(stopAutoOperations.get()){
+            teamUtil.log("Interrupt Requested");
+            drive.stopMotors();
+            newOutakeLocation.set(true);
+            outtakeUp.set(false);
+            doingUniversalDriveOp.set(true);
+
+            return;
+        }
+
+        if(!teamUtil.keepGoing(timeoutTime)){
+            drive.stopMotors();
+            teamUtil.log("grabSpecimenTeleop timed out - never reached velocity");
+            newOutakeLocation.set(true);
+            outtakeUp.set(false);
+            doingUniversalDriveOp.set(true);
+
+            return;
+        }
+        teamUtil.log("Reached velocity threshold");
+        while(drive.odo.getVelX()<D01_GRAB_VELOCITY_THRESHOLD && teamUtil.keepGoing(timeoutTime)&&!stopAutoOperations.get()){
+            drive.driveMotorsHeadingsFRPower(180, 0, D01_GRAB_BACKUP_POWER);
+            drive.odo.update();
+            if(details){
+                teamUtil.log("Velocity: "+drive.odo.getVelX());
+            }
+            teamUtil.pause(20);
+        }
+        if(!teamUtil.keepGoing(timeoutTime)){
+            drive.stopMotors();
+            teamUtil.log("grabSpecimenTeleop timed out - no stall detected");
+            newOutakeLocation.set(true);
+            outtakeUp.set(false);
+            doingUniversalDriveOp.set(true);
+
+            return;
+        }
+
+        if(stopAutoOperations.get()){
+            teamUtil.log("Interrupt Requested");
+            drive.stopMotors();
+            newOutakeLocation.set(true);
+            outtakeUp.set(false);
+            doingUniversalDriveOp.set(true);
+
+            return;
+        }
+
+        teamUtil.log("Stalled against wall");
+        drive.setMotorPower(0);
+        outtake.deployArm();
+        outtake.ledRed();
+        while(teamUtil.keepGoing(timeoutTime)&&!stopAutoOperations.get()) { // add driver input to disrupt (consider if ayla should be able to go to seek or not)
+            drive.odo.update();
+            drive.driveMotorsHeadingsFRPower(D01_LEAVE_ZONE_ANGLE, 0, D01_LEAVE_WALL_POWER);
+            teamUtil.pause(20);
+        }
+        if(stopAutoOperations.get()){
+            teamUtil.log("Interrupt Requested");
+        }
+        if(teamUtil.keepGoing(timeoutTime)){
+            teamUtil.log("grabSpecimenTeleop ran out of time");
+        }
+
+        doingUniversalDriveOp.set(true);
+
+        newOutakeLocation.set(true);
+        outtakeUp.set(true);
+    }
+
+    public void grabSpecimenTeleopNoWait(long timeout){
+        teamUtil.log("Thread to sampleAutoUnloadHighBucket LAUNCHED");
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                grabSpecimenTeleop(timeout);
+            }
+        });
+        thread.start();
+    }
 
     public void sampleAutoV4(int[] position){
         boolean failed = false;
