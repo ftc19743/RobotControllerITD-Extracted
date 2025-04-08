@@ -12,6 +12,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 import org.firstinspires.ftc.teamcode.assemblies.AxonSlider;
+import org.firstinspires.ftc.teamcode.assemblies.BasicDrive;
 import org.firstinspires.ftc.teamcode.assemblies.Hang;
 import org.firstinspires.ftc.teamcode.assemblies.Intake;
 import org.firstinspires.ftc.teamcode.assemblies.Output;
@@ -30,6 +31,8 @@ public class CalibrateArms extends LinearOpMode {
     Outtake outtake;
     Output output;
     Hang hang;
+    BasicDrive drive;
+    Robot robot;  // DO NOT USE, not properly initialized!
     boolean hangCalibrated = false;
 
 
@@ -105,13 +108,16 @@ public class CalibrateArms extends LinearOpMode {
         //FtcDashboard.setDrawDefaultField(false); // enable to eliminate field drawing
         telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry()); // write telemetry to Driver Station and Dashboard
 
-
-
         teamUtil.init(this);
         teamUtil.alliance = teamUtil.Alliance.RED;
         teamUtil.SIDE=teamUtil.Side.BASKET;
         Robot robot = new Robot();
         teamUtil.robot = robot;
+        BasicDrive drive = new BasicDrive();
+        drive.initalize();
+        drive.calibrate();
+        teamUtil.robot.drive = drive; // so intake bump detection can work
+
 
         intake = new Intake();
         intake.initialize();
@@ -137,6 +143,7 @@ public class CalibrateArms extends LinearOpMode {
         hang = new Hang();
         hang.initalize();
         hangCalibrated = false;
+
 
         gp1.initilize(true); // Game Pads can be plugged into the computer
         gp2.initilize(false);

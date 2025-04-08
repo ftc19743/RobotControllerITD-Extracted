@@ -512,6 +512,7 @@ public class Robot {
         // Move over a bit to ensure 3rd Sample doesn't block us on wall
         drive.strafeHoldingStraightPower(G00_MAX_POWER,G15_PICKUP_1_Y-G10_SAMPLE_Y_ADJUST, G14a_DROP_SAMPLE3_X,0);
         drive.straightHoldingStrafePower(G16_PICKUP_1_POWER,G15_PICKUP_1_X,G15_PICKUP_1_Y,0);
+        //drive.moveToX(G16_PICKUP_1_POWER, G15_PICKUP_1_X,180,0);
         teamUtil.pause(G17_PICKUP_1_PAUSE);
     }
 
@@ -632,7 +633,7 @@ public class Robot {
     static public int G24_CYCLE_SHIFT_X = 780;
     static public int G24_CYCLE_BACKUP_SHIFT_X = 650;
 
-    static public int G25_CYCLE_PICKUP_Y = -710; //was -690
+    static public int G25_CYCLE_PICKUP_Y = -770; //was -710
     static public float G25_CYCLE_PICKUP_POWER = .3f;
     static public int G26_CYCLE_PREPARE_FOR_PICKUP_X = 300;
     static public int G26a_CYCLE_PICKUP_X = 75;
@@ -1418,11 +1419,12 @@ public class Robot {
             return;
         }
 
+        long stopTime = System.currentTimeMillis() + D01_LEAVE_WALL_TIMEOUT;
         teamUtil.log("Stalled against wall");
         drive.setMotorPower(0);
         outtake.deployArm();
         outtake.ledRed();
-        while(teamUtil.keepGoing(timeoutTime)&&!stopAutoOperations.get()) { // add driver input to disrupt (consider if ayla should be able to go to seek or not)
+        while(teamUtil.keepGoing(timeoutTime)&&!stopAutoOperations.get()&&teamUtil.keepGoing(stopTime)) { // add driver input to disrupt (consider if ayla should be able to go to seek or not)
             drive.odo.update();
             drive.driveMotorsHeadingsFRPower(D01_LEAVE_ZONE_ANGLE, 0, D01_LEAVE_WALL_POWER);
             teamUtil.pause(20);
@@ -1430,7 +1432,7 @@ public class Robot {
         if(stopAutoOperations.get()){
             teamUtil.log("Interrupt Requested");
         }
-        if(teamUtil.keepGoing(timeoutTime)){
+        if(!teamUtil.keepGoing(timeoutTime)){
             teamUtil.log("grabSpecimenTeleop ran out of time");
         }
 

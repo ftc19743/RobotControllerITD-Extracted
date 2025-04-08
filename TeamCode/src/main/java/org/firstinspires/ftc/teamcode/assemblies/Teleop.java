@@ -191,9 +191,6 @@ public class Teleop extends LinearOpMode {
                     robot.doingUniversalDriveOp.set(true);
 
                     robot.stopAutoOperations.set(true);
-
-
-
                 }
 
             }
@@ -358,7 +355,7 @@ public class Teleop extends LinearOpMode {
                     optionsPresses=0;
                 }
             }else{
-                //drive
+                //drive if in universal op mode
                 if(robot.doingUniversalDriveOp.get()){
                     robot.drive.universalDriveJoystickV2(
                             driverGamepad.gamepad.left_stick_x,

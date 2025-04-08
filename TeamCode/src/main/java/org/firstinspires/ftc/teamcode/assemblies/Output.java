@@ -51,7 +51,7 @@ public class Output {
     static public float BUCKET_RELOAD = 0.665f; //was .66
     static public float BUCKET_TRAVEL = 0.5f;
     static public float BUCKET_HANG = 0.245f;
-    static public float BUCKET_IDLE = 0.175f;
+    static public float BUCKET_IDLE = 0.24f;
 
     static public int DROP_SAMPLE_TIME = 500;
     static public int DROP_SAMPLE_TIME_2 = 500;
