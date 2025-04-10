@@ -142,8 +142,8 @@ public class Output {
         intake = teamUtil.robot.intake;
         outtake = teamUtil.robot.outtake;
         lift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        if(intake.FlipperInUnload.get()||outtake.outakePotentiometer.getVoltage()<Outtake.POTENTIOMETER_OUTPUT_CLEAR){
-            teamUtil.log("Couldn't run Output Load Because Outtake is in the way");
+        if(outtake.outakePotentiometer.getVoltage()<Outtake.POTENTIOMETER_OUTPUT_CLEAR){
+            teamUtil.log("Couldn't run Output Load Because Outtake is in the way: " + outtake.outakePotentiometer.getVoltage());
         }
         else{
             outputMoving.set(true);
@@ -195,7 +195,7 @@ public class Output {
         outtake = teamUtil.robot.outtake;
         long timeOutTime = System.currentTimeMillis()+timeout;
 
-        if(intake.FlipperInUnload.get()||outtake.outakePotentiometer.getVoltage()<Outtake.POTENTIOMETER_OUTPUT_CLEAR){
+        if(outtake.outakePotentiometer.getVoltage()<Outtake.POTENTIOMETER_OUTPUT_CLEAR){
             teamUtil.log("Couldn't Put Output Low Bucket");
         }else{
             outputMoving.set(true);

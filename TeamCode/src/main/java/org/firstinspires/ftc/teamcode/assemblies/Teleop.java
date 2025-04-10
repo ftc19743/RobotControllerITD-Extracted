@@ -273,7 +273,12 @@ public class Teleop extends LinearOpMode {
                 robot.outtake.outtakeRest();
                 robot.output.bucket.setPosition(Output.BUCKET_RELOAD);
                 if((robot.drive.getHeadingODO()>45&&robot.drive.getHeadingODO()<135)||(robot.drive.getHeadingODO()>225&&robot.drive.getHeadingODO()<315)){
-                    robot.goToSampleAndGrabAndLiftToBucketNoWait(true);
+                    if(!lowBucketToggle){
+                        robot.goToSampleAndGrabAndLiftToBucketNoWait(true);
+                    }
+                    else{
+                        robot.goToSampleAndGrabAndLiftToBucketNoWait(false);
+                    }
                 }else{
                     robot.intake.goToSampleAndGrabNoWaitV3(false,false);
                 }
