@@ -94,6 +94,25 @@ public class Output {
         outputLiftAtBottom.set(true);
     }
 
+    public void calibrateWithNoBucket(){
+        //bucket.setPosition(BUCKET_RELOAD);
+        lift.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        lift.setPower(-.2);
+        int lastExtenderPosition = lift.getCurrentPosition();
+        teamUtil.pause(250);
+        while (lift.getCurrentPosition() != lastExtenderPosition) {
+            lastExtenderPosition = lift.getCurrentPosition();
+            if (details) teamUtil.log("Calibrate Intake: Extender: " + lift.getCurrentPosition());
+            teamUtil.pause(50);
+        }
+        lift.setPower(0);
+        lift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        lift.setTargetPosition(lift.getCurrentPosition());
+        lift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        teamUtil.log("Calibrate Intake Final: Extender: "+lift.getCurrentPosition());
+        outputLiftAtBottom.set(true);
+    }
+
     public void outputTelemetry(){
         telemetry.addLine("Output Lift Position: " + lift.getCurrentPosition());
         telemetry.addLine("Output PIDF COEFFICIENTS: " + lift.getPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION)); //TODO TAKE OUT

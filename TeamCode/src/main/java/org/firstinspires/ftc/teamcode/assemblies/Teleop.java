@@ -244,6 +244,9 @@ public class Teleop extends LinearOpMode {
             if(armsGamepad.wasHomePressed()){
                 robot.intake.moving.set(false);
             }
+            if(driverGamepad.wasHomePressed()){
+                robot.intake.calibrateExtenders();
+            }
 
             if(!robot.intake.autoSeeking.get()) {
                 robot.intake.manualX(armsGamepad.gamepad.left_stick_x);
@@ -355,10 +358,7 @@ public class Teleop extends LinearOpMode {
                 robot.hangPhase2DelayedOps();
 
                 //break out
-                if(driverGamepad.wasHomePressed()){
-                    hangManualControl=false;
-                    optionsPresses=0;
-                }
+
             }else{
                 //drive if in universal op mode
                 if(robot.doingUniversalDriveOp.get()){

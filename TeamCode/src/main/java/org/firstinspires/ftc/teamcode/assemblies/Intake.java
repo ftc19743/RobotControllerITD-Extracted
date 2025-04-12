@@ -350,6 +350,11 @@ public class Intake {
         axonSlider.runToEncoderPosition(AxonSlider.SLIDER_UNLOAD, false, 1500);
         goToSafe();
 
+        calibrateExtenders();
+    }
+
+    public void calibrateExtenders(){
+        teamUtil.log("Calibrating Extenders Only");
         extender.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
         extender.setPower(EXTENDER_CALIBRATE_POWER);
         int lastExtenderPosition = extender.getCurrentPosition();

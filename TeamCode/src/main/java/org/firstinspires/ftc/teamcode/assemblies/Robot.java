@@ -793,6 +793,7 @@ public class Robot {
 
 
     public void hangPhase1(){
+        output.calibrateWithNoBucket(); //lift calibration
         hang.extendHangNoWait();
         output.bucket.setPosition(Output.BUCKET_HANG);
         pickUpHooks();
